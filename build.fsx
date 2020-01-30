@@ -103,9 +103,9 @@ Target "RunTests" (fun _ ->
 
     let runSingleProject project =
         let arguments =
-            match (hasTeamCity) with
-            | true -> (sprintf "test -c Release --no-build --logger:trx --logger:\"console;verbosity=normal\" --results-directory %s -- -parallel none -teamcity" (outputTests))
-            | false -> (sprintf "test -c Release --no-build --logger:trx --logger:\"console;verbosity=normal\" --results-directory %s -- -parallel none" (outputTests))
+            match (isWindows) with
+            | true -> (sprintf "test -c Release --no-build --logger:trx --logger:\"console;verbosity=normal\" --results-directory %s" (outputTests))
+            | false -> (sprintf "test -c Release --no-build --logger:trx --logger:\"console;verbosity=normal\" --results-directory %s --framework %s" (outputTests testNetCoreVersion))
 
         let result = ExecProcess(fun info ->
             info.FileName <- "dotnet"
