@@ -12,11 +12,12 @@ using Akka.MultiNodeTestRunner.Shared.Persistence;
 using Akka.MultiNodeTestRunner.Shared.Reporting;
 using Akka.MultiNodeTestRunner.Shared.Sinks;
 using Akka.TestKit;
+using FluentAssertions;
 using Xunit;
 
 namespace Akka.MultiNodeTestRunner.Shared.Tests.Persistence
 {
-    public class JsonPersistentTestRunStoreSpec : AkkaSpec
+    public class JsonPersistentTestRunStoreSpec : TestKit.Xunit2.TestKit
     {
         [Fact]
         public void Should_save_TestRunTree_as_JSON()
@@ -46,7 +47,7 @@ namespace Akka.MultiNodeTestRunner.Shared.Tests.Persistence
 
             //save the test run
             var file = Path.GetTempFileName();
-            testRunStore.SaveTestRun(file, testRunData).ShouldBeTrue("Should have been able to save test run");
+            testRunStore.SaveTestRun(file, testRunData).Should().BeTrue("Should have been able to save test run");
         }
 
         [Fact]
@@ -81,7 +82,7 @@ namespace Akka.MultiNodeTestRunner.Shared.Tests.Persistence
 
             //save the test run
             var file = Path.GetTempFileName();
-            testRunStore.SaveTestRun(file, testRunData).ShouldBeTrue("Should have been able to save test run");
+            testRunStore.SaveTestRun(file, testRunData).Should().BeTrue("Should have been able to save test run");
 
             //retrieve the test run from file
             var retrievedFile = testRunStore.FetchTestRun(file);

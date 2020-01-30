@@ -12,8 +12,6 @@
 
   <ItemGroup>
     <PackageReference Include="TeamCity.ServiceMessages" Version="3.0.13" />
-    <PackageReference Include="Akka.Remote.TestKit" Version="$(AkkaVersion)" />
-    <PackageReference Include="Akka.Remote.Xunit2" Version="$(AkkaVersion)" />
   </ItemGroup>
 
   <ItemGroup>

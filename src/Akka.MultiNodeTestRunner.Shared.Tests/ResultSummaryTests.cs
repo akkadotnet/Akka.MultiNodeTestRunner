@@ -77,7 +77,7 @@ namespace Akka.MultiNodeTestRunner.TrxReporter.Tests
         {
             var summary = new ResultSummary(tests, new Output());
 
-            summary.Outcome.ShouldBeEquivalentTo(outcome);
+            summary.Outcome.Should().BeEquivalentTo(outcome);
         }
     }
 }

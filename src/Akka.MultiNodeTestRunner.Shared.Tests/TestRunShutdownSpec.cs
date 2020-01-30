@@ -18,7 +18,7 @@ namespace Akka.MultiNodeTestRunner.Shared.Tests
     /// <summary>
     /// Used to validate that we can get final reporting on shutdown
     /// </summary>
-    public class TestRunShutdownSpec : AkkaSpec
+    public class TestRunShutdownSpec : TestKit.Xunit2.TestKit
     {
         [Fact]
         public void TestCoordinatorEnabledMessageSink_should_receive_TestRunTree_when_EndTestRun_is_received()
@@ -50,6 +50,16 @@ namespace Akka.MultiNodeTestRunner.Shared.Tests
                     TimeSpan.FromSeconds(10));
             Assert.NotNull(sinkReadyToTerminate);
 
+        }
+    }
+
+    public static class AskExtensions
+    {
+        public static TAnswer AskAndWait<TAnswer>(this ICanTell self, object message, TimeSpan timeout)
+        {
+            var task = self.Ask<TAnswer>(message, timeout);
+            task.Wait();
+            return task.Result;
         }
     }
 }

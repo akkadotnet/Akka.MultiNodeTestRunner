@@ -11,6 +11,7 @@ using Akka.Configuration;
 using Akka.Event;
 using Akka.MultiNodeTestRunner.Shared.Sinks;
 using Akka.TestKit;
+using FluentAssertions;
 using Xunit;
 
 namespace Akka.MultiNodeTestRunner.Shared.Tests
@@ -18,7 +19,7 @@ namespace Akka.MultiNodeTestRunner.Shared.Tests
     /// <summary>
     /// Used to test the <see cref="MessageSink"/>'s ability to parse 
     /// </summary>
-    public class ParsingSpec : AkkaSpec
+    public class ParsingSpec : TestKit.Xunit2.TestKit
     {
         public ParsingSpec()
             : base(ConfigurationFactory.ParseString(@"
@@ -50,7 +51,7 @@ namespace Akka.MultiNodeTestRunner.Shared.Tests
             var message = "this is some message";
             var foundMessageStr = "[NODE1]" + message;
             LogMessageFragmentForNode nodeMessage;
-            MessageSink.TryParseLogMessage(foundMessageStr, out nodeMessage).ShouldBeTrue("should have been able to parse log message");
+            MessageSink.TryParseLogMessage(foundMessageStr, out nodeMessage).Should().BeTrue("should have been able to parse log message");
 
             Assert.Equal(1, nodeMessage.NodeIndex);
             Assert.Equal(message, nodeMessage.Message);
@@ -69,7 +70,7 @@ namespace Akka.MultiNodeTestRunner.Shared.Tests
             //format the string as it would appear when reported by multinode test runner
             var foundMessageStr = foundMessage.ToString();
             LogMessageForTestRunner runnerMessage;
-            MessageSink.TryParseLogMessage(foundMessageStr, out runnerMessage).ShouldBeTrue("should have been able to parse log message");
+            MessageSink.TryParseLogMessage(foundMessageStr, out runnerMessage).Should().BeTrue("should have been able to parse log message");
 
             Assert.Equal(foundMessage.LogLevel(), runnerMessage.Level);
             Assert.Equal(foundMessage.LogSource, runnerMessage.LogSource);
@@ -81,7 +82,7 @@ namespace Akka.MultiNodeTestRunner.Shared.Tests
             var specPass = new SpecPass(1, "super_role_1", GetType().GetTypeInfo().Assembly.GetName().Name);
             NodeCompletedSpecWithSuccess nodeCompletedSpecWithSuccess;
             MessageSink.TryParseSuccessMessage(specPass.ToString(), out nodeCompletedSpecWithSuccess)
-                .ShouldBeTrue("should have been able to parse node success message");
+                .Should().BeTrue("should have been able to parse node success message");
 
             Assert.Equal(specPass.NodeIndex, nodeCompletedSpecWithSuccess.NodeIndex);
             Assert.Equal(specPass.NodeRole, nodeCompletedSpecWithSuccess.NodeRole);
@@ -93,7 +94,7 @@ namespace Akka.MultiNodeTestRunner.Shared.Tests
             var specFail = new SpecFail(1, "super_role_1", GetType().GetTypeInfo().Assembly.GetName().Name);
             NodeCompletedSpecWithFail nodeCompletedSpecWithFail;
             MessageSink.TryParseFailureMessage(specFail.ToString(), out nodeCompletedSpecWithFail)
-                .ShouldBeTrue("should have been able to parse node failure message");
+                .Should().BeTrue("should have been able to parse node failure message");
 
             Assert.Equal(specFail.NodeIndex, nodeCompletedSpecWithFail.NodeIndex);
             Assert.Equal(specFail.NodeRole, nodeCompletedSpecWithFail.NodeRole);
@@ -116,12 +117,12 @@ namespace Akka.MultiNodeTestRunner.Shared.Tests
             var nodeMessageFragment = "[NODE1:super_role_1]      Only part of a message!";
             var runnerMessageStr = foundMessage.ToString();
             
-            MessageSink.DetermineMessageType(runnerMessageStr).ShouldBe(MessageSink.MultiNodeTestRunnerMessageType.RunnerLogMessage);
-            MessageSink.DetermineMessageType(specPass.ToString()).ShouldBe(MessageSink.MultiNodeTestRunnerMessageType.NodePassMessage);
-            MessageSink.DetermineMessageType(specFail.ToString()).ShouldBe(MessageSink.MultiNodeTestRunnerMessageType.NodeFailMessage);
-            MessageSink.DetermineMessageType("[Node2][FAIL-EXCEPTION] Type: Xunit.Sdk.TrueException").ShouldBe(MessageSink.MultiNodeTestRunnerMessageType.NodeFailureException);
-            MessageSink.DetermineMessageType(nodeMessageFragment).ShouldBe(MessageSink.MultiNodeTestRunnerMessageType.NodeLogFragment);
-            MessageSink.DetermineMessageType("foo!").ShouldBe(MessageSink.MultiNodeTestRunnerMessageType.Unknown);
+            MessageSink.DetermineMessageType(runnerMessageStr).Should().Be(MessageSink.MultiNodeTestRunnerMessageType.RunnerLogMessage);
+            MessageSink.DetermineMessageType(specPass.ToString()).Should().Be(MessageSink.MultiNodeTestRunnerMessageType.NodePassMessage);
+            MessageSink.DetermineMessageType(specFail.ToString()).Should().Be(MessageSink.MultiNodeTestRunnerMessageType.NodeFailMessage);
+            MessageSink.DetermineMessageType("[Node2][FAIL-EXCEPTION] Type: Xunit.Sdk.TrueException").Should().Be(MessageSink.MultiNodeTestRunnerMessageType.NodeFailureException);
+            MessageSink.DetermineMessageType(nodeMessageFragment).Should().Be(MessageSink.MultiNodeTestRunnerMessageType.NodeLogFragment);
+            MessageSink.DetermineMessageType("foo!").Should().Be(MessageSink.MultiNodeTestRunnerMessageType.Unknown);
         }
     }
 }
