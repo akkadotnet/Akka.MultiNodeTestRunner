@@ -105,7 +105,7 @@ Target "RunTests" (fun _ ->
         let arguments =
             match (isWindows) with
             | true -> (sprintf "test -c Release --no-build --logger:trx --logger:\"console;verbosity=normal\" --results-directory %s" (outputTests))
-            | false -> (sprintf "test -c Release --no-build --logger:trx --logger:\"console;verbosity=normal\" --results-directory %s --framework %s" (outputTests testNetCoreVersion))
+            | false -> (sprintf "test -c Release --no-build --logger:trx --logger:\"console;verbosity=normal\" --results-directory %s --framework %s" outputTests testNetCoreVersion)
 
         let result = ExecProcess(fun info ->
             info.FileName <- "dotnet"
