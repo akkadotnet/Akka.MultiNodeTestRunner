@@ -1,5 +1,5 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-  <Import Project="..\..\common.props" />
+  <Import Project="..\common.props" />
   <PropertyGroup>
     <AssemblyTitle>Akka.MultiNodeTestRunner.Shared</AssemblyTitle>
     <TargetFrameworks>$(NetStandardLibVersion)</TargetFrameworks>
@@ -12,9 +12,8 @@
   </ItemGroup>
   
   <ItemGroup>
-    <ProjectReference Include="..\..\contrib\testkits\Akka.TestKit.Xunit2\Akka.TestKit.Xunit2.csproj" />
-    <ProjectReference Include="..\Akka.Remote.TestKit\Akka.Remote.TestKit.csproj" />
-    <ProjectReference Include="..\Akka\Akka.csproj" />
+    <PackageReference Include="Akka.Remote.TestKit" Version="$(AkkaVersion)" />
+    <PackageReference Include="Akka.Remote.Xunit2" Version="$(AkkaVersion)" />
   </ItemGroup>
 
   <ItemGroup>

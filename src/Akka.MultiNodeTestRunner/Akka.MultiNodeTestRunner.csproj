@@ -1,29 +1,24 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-  <Import Project="..\..\common.props" />
+  <Import Project="..\common.props" />
 
   <PropertyGroup>
     <AssemblyTitle>Akka.MultiNodeTestRunner</AssemblyTitle>
     <Description>Akka.NET Multi-node Test Runner; used for executing tests written with Akka.Remote.TestKit</Description>
     <TargetFrameworks>$(NetFrameworkTestVersion);$(NetCoreTestVersion)</TargetFrameworks>
     <OutputType>Exe</OutputType>
-    <RuntimeIdentifiers>win7-x64</RuntimeIdentifiers>
     <PackageTags>$(AkkaPackageTags)</PackageTags>
     <NuspecFile>Akka.MultiNodeTestRunner.nuspec</NuspecFile>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="TeamCity.ServiceMessages" Version="3.0.13" />
+    <PackageReference Include="Akka.Remote.TestKit" Version="$(AkkaVersion)" />
+    <PackageReference Include="Akka.Remote.Xunit2" Version="$(AkkaVersion)" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Akka.Cluster.TestKit\Akka.Cluster.TestKit.csproj" />
-    <ProjectReference Include="..\Akka\Akka.csproj" />
     <ProjectReference Include="..\Akka.MultiNodeTestRunner.Shared\Akka.MultiNodeTestRunner.Shared.csproj" />
     <ProjectReference Include="..\Akka.NodeTestRunner\Akka.NodeTestRunner.csproj" />
-    <ProjectReference Include="..\Akka.Remote\Akka.Remote.csproj" />
-    <ProjectReference Include="..\Akka.Remote.TestKit\Akka.Remote.TestKit.csproj" />
-    <ProjectReference Include="..\..\contrib\testkits\Akka.TestKit.Xunit2\Akka.TestKit.Xunit2.csproj" />
-    <ProjectReference Include="..\Akka.TestKit\Akka.TestKit.csproj" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == '$(NetCoreTestVersion)'">

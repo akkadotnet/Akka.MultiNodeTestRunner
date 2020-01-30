@@ -1,23 +1,19 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-  <Import Project="..\..\common.props" />
+  <Import Project="..\common.props" />
   <PropertyGroup>
     <AssemblyTitle>Akka.NodeTestRunner</AssemblyTitle>
     <TargetFrameworks>$(NetFrameworkTestVersion);$(NetCoreTestVersion)</TargetFrameworks>
     <OutputType>Exe</OutputType>
-    <RuntimeIdentifiers>win7-x64</RuntimeIdentifiers>
   </PropertyGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Akka.MultiNodeTestRunner.Shared\Akka.MultiNodeTestRunner.Shared.csproj" />
-    <ProjectReference Include="..\Akka\Akka.csproj" />
-    <ProjectReference Include="..\Akka.Remote.TestKit\Akka.Remote.TestKit.csproj" />
-    <ProjectReference Include="..\Akka.Remote\Akka.Remote.csproj" />
-    <ProjectReference Include="..\..\contrib\testkits\Akka.TestKit.Xunit2\Akka.TestKit.Xunit2.csproj" />
-    <ProjectReference Include="..\Akka.TestKit\Akka.TestKit.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="xunit.runner.utility" Version="2.4.1" />
+    <PackageReference Include="Akka.Remote.TestKit" Version="$(AkkaVersion)" />
+    <PackageReference Include="Akka.Remote.Xunit2" Version="$(AkkaVersion)" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == '$(NetCoreTestVersion)'">
