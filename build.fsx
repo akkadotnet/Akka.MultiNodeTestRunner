@@ -12,6 +12,10 @@ open Fake.DocFxHelper
 // Information about the project for Nuget and Assembly info files
 let configuration = "Release"
 
+// Configuration values for tests
+let testNetFrameworkVersion = "net472"
+let testNetCoreVersion = "netcoreapp3.0"
+
 // Metadata used when signing packages and DLLs
 let signingName = "My Library"
 let signingDescription = "My REALLY COOL Library"
@@ -99,9 +103,9 @@ Target "RunTests" (fun _ ->
 
     let runSingleProject project =
         let arguments =
-            match (hasTeamCity) with
-            | true -> (sprintf "test -c Release --no-build --logger:trx --logger:\"console;verbosity=normal\" --results-directory %s -- -parallel none -teamcity" (outputTests))
-            | false -> (sprintf "test -c Release --no-build --logger:trx --logger:\"console;verbosity=normal\" --results-directory %s -- -parallel none" (outputTests))
+            match (isWindows) with
+            | true -> (sprintf "test -c Release --no-build --logger:trx --logger:\"console;verbosity=normal\" --results-directory %s" (outputTests))
+            | false -> (sprintf "test -c Release --no-build --logger:trx --logger:\"console;verbosity=normal\" --results-directory %s --framework %s" outputTests testNetCoreVersion)
 
         let result = ExecProcess(fun info ->
             info.FileName <- "dotnet"
@@ -192,10 +196,14 @@ Target "SignPackages" (fun _ ->
 let overrideVersionSuffix (project:string) =
     match project with
     | _ -> versionSuffix // add additional matches to publish different versions for different projects in solution
+
 Target "CreateNuget" (fun _ ->    
     let projects = !! "src/**/*.csproj" 
                    -- "src/**/*Tests.csproj" // Don't publish unit tests
                    -- "src/**/*Tests*.csproj"
+                   -- "src/**/*.MultiNodeTestRunner.csproj"
+                   -- "src/**/*.MultiNodeTestRunner.Shared.csproj"
+                   -- "src/**/*.NodeTestRunner.csproj"
 
     let runSingleProject project =
         DotNetCli.Pack
@@ -208,6 +216,60 @@ Target "CreateNuget" (fun _ ->
                     OutputPath = outputNuGet })
 
     projects |> Seq.iter (runSingleProject)
+)
+
+Target "PublishMntr" (fun _ ->
+    let executableProjects = !! "./src/**/Akka.MultiNodeTestRunner.csproj"
+
+    executableProjects |> Seq.iter (fun project ->
+        DotNetCli.Restore
+            (fun p -> 
+                { p with
+                    Project = project                  
+                    AdditionalArgs = [sprintf "/p:VersionSuffix=%s" versionSuffix] })
+    )
+
+    executableProjects |> Seq.iter (fun project ->  
+        DotNetCli.Publish
+            (fun p ->
+                { p with
+                    Project = project
+                    Configuration = configuration
+                    Framework = testNetFrameworkVersion
+                    VersionSuffix = versionSuffix }))
+
+    // Windows .NET Core
+    executableProjects |> Seq.iter (fun project ->  
+        DotNetCli.Publish
+            (fun p ->
+                { p with
+                    Project = project
+                    Configuration = configuration
+                    Framework = testNetCoreVersion
+                    VersionSuffix = versionSuffix }))
+)
+
+Target "CreateMntrNuget" (fun _ -> 
+    // uses the template file to create a temporary .nuspec file with the correct version
+    CopyFile "./src/Akka.MultiNodeTestRunner/Akka.MultiNodeTestRunner.nuspec" "./src/Akka.MultiNodeTestRunner/Akka.MultiNodeTestRunner.nuspec.template"
+    let commonPropsVersionPrefix = XMLRead true "./src/common.props" "" "" "//Project/PropertyGroup/VersionPrefix" |> Seq.head
+    let versionReplacement = List.ofSeq [ "@version@", commonPropsVersionPrefix + (if (not (versionSuffix = "")) then ("-" + versionSuffix) else "") ]
+    TemplateHelper.processTemplates versionReplacement [ "./src/Akka.MultiNodeTestRunner/Akka.MultiNodeTestRunner.nuspec" ]
+
+    let executableProjects = !! "./src/**/Akka.MultiNodeTestRunner.csproj"
+
+    executableProjects |> Seq.iter (fun project ->  
+        DotNetCli.Pack
+            (fun p -> 
+                { p with
+                    Project = project
+                    Configuration = configuration
+                    AdditionalArgs = ["--include-symbols"]
+                    VersionSuffix = versionSuffix
+                    OutputPath = "\"" + outputNuGet + "\"" } )
+    )
+
+    DeleteFile "./src/Akka.MultiNodeTestRunner/Akka.MultiNodeTestRunner.nuspec"
 )
 
 Target "PublishNuget" (fun _ ->
@@ -287,13 +349,14 @@ Target "All" DoNothing
 Target "Nuget" DoNothing
 
 // build dependencies
-"Clean" ==> "AssemblyInfo" ==> "Build" ==> "BuildRelease"
+"Clean" ==> "AssemblyInfo" ==> "Build"
+"Build" ==> "PublishMntr" ==> "BuildRelease"
 
 // tests dependencies
 "Build" ==> "RunTests"
 
 // nuget dependencies
-"Clean" ==> "Build" ==> "CreateNuget"
+"Clean" ==> "Build" ==> "CreateMntrNuget" ==> "CreateNuget"
 "CreateNuget" ==> "SignPackages" ==> "PublishNuget" ==> "Nuget"
 
 // docs
