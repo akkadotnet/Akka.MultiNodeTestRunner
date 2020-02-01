@@ -61,7 +61,7 @@ namespace Akka.MultiNodeTestRunner.VisualStudio
             "xunit.execution.universal.dll",
             "xunit.runner.utility.desktop.dll",
             "xunit.runner.utility.dotnet.dll",
-            "Akka.MultiNodeTestRunner.VisualStudio.testadapter.dll",
+            "Akka.MultiNodeTestRunner.VisualStudio.TestAdapter.dll",
             "Akka.MultiNodeTestRunner.VisualStudio.uwp.dll",
             "Akka.MultiNodeTestRunner.VisualStudio.win81.dll",
             "Akka.MultiNodeTestRunner.VisualStudio.wpa81.dll",
@@ -79,7 +79,8 @@ namespace Akka.MultiNodeTestRunner.VisualStudio
 
         void ITestDiscoverer.DiscoverTests(IEnumerable<string> sources, IDiscoveryContext discoveryContext, IMessageLogger logger, ITestCaseDiscoverySink discoverySink)
         {
-
+            throw new Exception("MY failure");
+            FileLogger.Write($"Start discovery");
             Guard.ArgumentNotNull("sources", sources);
             Guard.ArgumentNotNull("logger", logger);
             Guard.ArgumentNotNull("discoverySink", discoverySink);
@@ -303,6 +304,7 @@ namespace Akka.MultiNodeTestRunner.VisualStudio
                                 framework.Find(testPlatformContext.RequireSourceInformation, visitor, discoveryOptions);
 
                                 totalTests = visitor.Finish();
+                                FileLogger.Write($"Total tests: {totalTests}");
 
                                 visitComplete?.Invoke(assemblyFileName, framework, discoveryOptions, visitor);
                             }
