@@ -12,6 +12,7 @@
     </ItemGroup>
 
     <ItemGroup>
+      <ProjectReference Include="..\Akka.MultiNodeTestRunner.Shared\Akka.MultiNodeTestRunner.Shared.csproj" />
       <ProjectReference Include="..\Akka.MultiNodeTestRunner.TestAdapter\Akka.MultiNodeTestRunner.TestAdapter.csproj" />
     </ItemGroup>
 

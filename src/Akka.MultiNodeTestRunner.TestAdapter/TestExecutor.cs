@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel.Adapter;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel.Logging;
@@ -11,7 +13,7 @@ namespace Akka.MultiNodeTestRunner.TestAdapter
     /// <remarks>
     /// See how it works here: https://github.com/Microsoft/vstest-docs/blob/master/RFCs/0004-Adapter-Extensibility.md
     /// </remarks>
-    [ExtensionUri("executor://MultiNodeExecutor")]
+    [ExtensionUri(ExecutorMetadata.ExecutorUri)]
     public class TestExecutor : ITestExecutor
     {
         /// <summary>
@@ -47,9 +49,37 @@ namespace Akka.MultiNodeTestRunner.TestAdapter
         /// <param param name="frameworkHandle">Handle to the framework to record results and to do framework operations.</param>
         public void RunTests(IEnumerable<string> sources, IRunContext runContext, IFrameworkHandle frameworkHandle)
         {
-            frameworkHandle.SendMessage(TestMessageLevel.Informational, $"Sources: {string.Join(", ", sources)}");
+            var testAssemblyPaths = sources.ToList();
+            FileLogger.Write($"Starting tests from {string.Join(", ", testAssemblyPaths)}");
+            frameworkHandle.SendMessage(TestMessageLevel.Informational, $"Loading tests from assemblies: {string.Join(", ", testAssemblyPaths)}");
             var settings = runContext.RunSettings.SettingsXml;
-            frameworkHandle.SendMessage(TestMessageLevel.Error, "RunTests");
+            
+            foreach (var assemblyPath in testAssemblyPaths)
+            {
+                var testCase = new TestCase("All tests in assemby", new Uri(ExecutorMetadata.ExecutorUri), assemblyPath);
+                frameworkHandle.RecordStart(testCase);
+                
+                try
+                {
+                    FileLogger.Write($"Starting tests from {assemblyPath}");
+                    var runner = new MultiNodeTestRunner();
+                    var retCode = runner.Execute(assemblyPath);
+                    frameworkHandle.RecordEnd(testCase, retCode > 0 ? TestOutcome.Failed : TestOutcome.Passed);
+                }
+                catch (Exception ex)
+                {
+                    FileLogger.Write($"Failure: {ex}");
+                    frameworkHandle.SendMessage(TestMessageLevel.Error, $"Failed during test execution: {ex}");
+                    frameworkHandle.RecordEnd(testCase, TestOutcome.Failed);
+                }
+                
+                frameworkHandle.RecordResult(new TestResult(testCase)
+                {
+                    Outcome = TestOutcome.Passed
+                });
+                
+                FileLogger.Write($"Finished tests from {assemblyPath}");
+            }
         }
     }
 }

@@ -23,13 +23,26 @@
 
   <PropertyGroup Condition=" '$(TargetFramework)' == '$(NetCoreTestVersion)' ">
     <AssemblyName>Akka.MultiNodeTestRunner.VisualStudio.DotNetCore.TestAdapter</AssemblyName>
-    <DefineConstants>$(DefineConstants);NETCOREAPP</DefineConstants>
+    <DefineConstants>$(DefineConstants);NETCOREAPP;CORECLR</DefineConstants>
   </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
+    <DefineConstants>$(DefineConstants);RELEASE</DefineConstants>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == '$(NetCoreTestVersion)'">
+    <PackageReference Include="System.Runtime.Loader" Version="4.3.0" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Nerdbank.GitVersioning" Version="3.0.28" PrivateAssets="all" />
     <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All" />
     <PackageReference Include="Microsoft.TestPlatform.ObjectModel" Version="16.4.0" PrivateAssets="All" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Akka.MultiNodeTestRunner.Shared\Akka.MultiNodeTestRunner.Shared.csproj" />
+    <ProjectReference Include="..\Akka.NodeTestRunner\Akka.NodeTestRunner.csproj" />
   </ItemGroup>
 
 </Project>

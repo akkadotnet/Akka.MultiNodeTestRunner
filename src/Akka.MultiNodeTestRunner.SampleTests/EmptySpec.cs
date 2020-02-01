@@ -1,4 +1,5 @@
 using Akka.Cluster.TestKit;
+using Akka.MultiNodeTestRunner.Shared;
 using Akka.Remote.TestKit;
 
 namespace Akka.MultiNodeTestRunner.SampleTests

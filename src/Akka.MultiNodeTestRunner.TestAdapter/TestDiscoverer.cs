@@ -12,7 +12,7 @@ namespace Akka.MultiNodeTestRunner.TestAdapter
     /// See how it works here: https://github.com/Microsoft/vstest-docs/blob/master/RFCs/0004-Adapter-Extensibility.md
     /// </remarks>
     [FileExtension(".dll")]
-    [DefaultExecutorUri("executor://MultiNodeExecutor")]
+    [DefaultExecutorUri(ExecutorMetadata.ExecutorUri)]
     public class TestDiscoverer : ITestDiscoverer
     {
         /// <summary>
