@@ -6,11 +6,8 @@
     </PropertyGroup>
 
     <ItemGroup>
-    </ItemGroup>
-
-    <ItemGroup>
         <PackageReference Include="Akka.Cluster.TestKit" Version="1.4.0-beta4" />
-        <PackageReference Include="Akka.MultiNodeTestRunner.VisualStudio" Version="2.4.2-preview.6.g79ef422d67" />
+        <PackageReference Include="Akka.MultiNodeTestRunner.VisualStudio" Version="2.4.2-preview.7.gcec8bacb49" />
         <PackageReference Include="Microsoft.NET.Test.Sdk" Version="$(TestSdkVersion)" />
         <PackageReference Include="xunit" Version="$(XunitVersion)" />
         <PackageReference Include="FluentAssertions" Version="$(FluentAssertionsVersion)" />
