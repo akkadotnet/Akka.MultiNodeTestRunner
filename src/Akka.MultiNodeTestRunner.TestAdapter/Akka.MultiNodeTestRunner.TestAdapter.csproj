@@ -6,7 +6,6 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <DebugType>embedded</DebugType>
     <LangVersion>latest</LangVersion>
-    <RootNamespace>Akka.MultiNodeTestRunner.VisualStudio</RootNamespace>
     <TargetFrameworks>$(NetFrameworkTestVersion);$(NetCoreTestVersion)</TargetFrameworks>
     <WarningsAsErrors>true</WarningsAsErrors>
     <EmbedUntrackedSources>true</EmbedUntrackedSources>
@@ -30,20 +29,7 @@
   <ItemGroup>
     <PackageReference Include="Nerdbank.GitVersioning" Version="3.0.28" PrivateAssets="all" />
     <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All" />
-    <PackageReference Include="xunit.runner.reporters" Version="$(XunitVersion)" PrivateAssets="All" />
     <PackageReference Include="Microsoft.TestPlatform.ObjectModel" Version="16.4.0" PrivateAssets="All" />
-  </ItemGroup>
-
-  <ItemGroup Label="Package">
-    <None Include="build\Akka.MultiNodeTestRunner.VisualStudio.desktop.props" PackagePath="build\net472\Akka.MultiNodeTestRunner.VisualStudio.props" Pack="true" />
-    <None Include="$(NuGetPackageRoot)xunit.runner.reporters\$(XunitVersion)\lib\net452\*.dll" PackagePath="build\net452" Pack="true" Visible="false" />
-    <None Include="$(NuGetPackageRoot)xunit.runner.utility\$(XunitVersion)\lib\net452\*.dll" PackagePath="build\net452" Pack="true" Visible="false" />
-    <None Include="$(NuGetPackageRoot)xunit.abstractions\2.0.3\lib\netstandard1.0\*.dll" PackagePath="build\net452" Pack="true" Visible="false" />
-
-    <None Include="build\Akka.MultiNodeTestRunner.VisualStudio.dotnetcore.props" PackagePath="build\netcoreapp3.0\Akka.MultiNodeTestRunner.VisualStudio.props" Pack="true" />
-    <None Include="$(NuGetPackageRoot)xunit.runner.reporters\$(XunitVersion)\lib\netcoreapp1.0\*.dll" PackagePath="build\netcoreapp2.1" Pack="true" Visible="false" />
-    <None Include="$(NuGetPackageRoot)xunit.runner.utility\$(XunitVersion)\lib\netcoreapp1.0\*.dll" PackagePath="build\netcoreapp2.1" Pack="true" Visible="false" />
-    <None Include="$(NuGetPackageRoot)xunit.abstractions\2.0.3\lib\netstandard2.0\*.dll" PackagePath="build\netcoreapp2.1" Pack="true" Visible="false" />
   </ItemGroup>
 
 </Project>

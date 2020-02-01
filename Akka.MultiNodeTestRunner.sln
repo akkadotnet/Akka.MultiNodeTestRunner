@@ -19,7 +19,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Akka.NodeTestRunner", "src\
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Akka.MultiNodeTestRunner.Shared.Tests", "src\Akka.MultiNodeTestRunner.Shared.Tests\Akka.MultiNodeTestRunner.Shared.Tests.csproj", "{6E3C7F54-F954-4D4C-B9CA-ACFEF046E036}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Akka.MultiNodeTestRunner.VisualStudio", "src\Akka.MultiNodeTestRunner.VisualStudio\Akka.MultiNodeTestRunner.VisualStudio.csproj", "{F3037C62-E780-4619-89B3-BA21C7168DFA}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Akka.MultiNodeTestRunner.TestAdapter", "src\Akka.MultiNodeTestRunner.TestAdapter\Akka.MultiNodeTestRunner.TestAdapter.csproj", "{F3037C62-E780-4619-89B3-BA21C7168DFA}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Akka.MultiNodeTestRunner.SampleTests", "src\Akka.MultiNodeTestRunner.SampleTests\Akka.MultiNodeTestRunner.SampleTests.csproj", "{89D2C131-718F-4C93-9343-72E5BE6F7317}"
 EndProject
