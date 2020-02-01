@@ -35,12 +35,12 @@
   </ItemGroup>
 
   <ItemGroup Label="Package">
-    <None Include="build\Akka.MultiNodeTestRunner.VisualStudio.desktop.props" PackagePath="build\net452\Akka.MultiNodeTestRunner.VisualStudio.props" Pack="true" />
+    <None Include="build\Akka.MultiNodeTestRunner.VisualStudio.desktop.props" PackagePath="build\net472\Akka.MultiNodeTestRunner.VisualStudio.props" Pack="true" />
     <None Include="$(NuGetPackageRoot)xunit.runner.reporters\$(XunitVersion)\lib\net452\*.dll" PackagePath="build\net452" Pack="true" Visible="false" />
     <None Include="$(NuGetPackageRoot)xunit.runner.utility\$(XunitVersion)\lib\net452\*.dll" PackagePath="build\net452" Pack="true" Visible="false" />
     <None Include="$(NuGetPackageRoot)xunit.abstractions\2.0.3\lib\netstandard1.0\*.dll" PackagePath="build\net452" Pack="true" Visible="false" />
 
-    <None Include="build\Akka.MultiNodeTestRunner.VisualStudio.dotnetcore.props" PackagePath="build\netcoreapp2.1\Akka.MultiNodeTestRunner.VisualStudio.props" Pack="true" />
+    <None Include="build\Akka.MultiNodeTestRunner.VisualStudio.dotnetcore.props" PackagePath="build\netcoreapp3.0\Akka.MultiNodeTestRunner.VisualStudio.props" Pack="true" />
     <None Include="$(NuGetPackageRoot)xunit.runner.reporters\$(XunitVersion)\lib\netcoreapp1.0\*.dll" PackagePath="build\netcoreapp2.1" Pack="true" Visible="false" />
     <None Include="$(NuGetPackageRoot)xunit.runner.utility\$(XunitVersion)\lib\netcoreapp1.0\*.dll" PackagePath="build\netcoreapp2.1" Pack="true" Visible="false" />
     <None Include="$(NuGetPackageRoot)xunit.abstractions\2.0.3\lib\netstandard2.0\*.dll" PackagePath="build\netcoreapp2.1" Pack="true" Visible="false" />
