@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.29230.47
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Akka.MultiNodeTestRunner", "src\Akka.MultiNodeTestRunner\Akka.MultiNodeTestRunner.csproj", "{E945AABA-2779-41E8-9B43-8898FFD64F22}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Akka.MultiNode.TestRunner", "src\Akka.MultiNode.TestRunner\Akka.MultiNode.TestRunner.csproj", "{E945AABA-2779-41E8-9B43-8898FFD64F22}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "build", "build", "{79D71264-186B-4F62-8930-35DD9ECCAF3B}"
 	ProjectSection(SolutionItems) = preProject
@@ -13,15 +13,15 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "build", "build", "{79D71264
 		build.sh = build.sh
 	EndProjectSection
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Akka.MultiNodeTestRunner.Shared", "src\Akka.MultiNodeTestRunner.Shared\Akka.MultiNodeTestRunner.Shared.csproj", "{2F249AFE-6F7E-42CA-9D84-A3914F9DD158}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Akka.MultiNode.Shared", "src\Akka.MultiNode.Shared\Akka.MultiNode.Shared.csproj", "{2F249AFE-6F7E-42CA-9D84-A3914F9DD158}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Akka.NodeTestRunner", "src\Akka.NodeTestRunner\Akka.NodeTestRunner.csproj", "{5150BF37-8247-4A47-AFB6-300DD7426DC4}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Akka.MultiNode.NodeRunner", "src\Akka.MultiNode.NodeRunner\Akka.MultiNode.NodeRunner.csproj", "{5150BF37-8247-4A47-AFB6-300DD7426DC4}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Akka.MultiNodeTestRunner.Shared.Tests", "src\Akka.MultiNodeTestRunner.Shared.Tests\Akka.MultiNodeTestRunner.Shared.Tests.csproj", "{6E3C7F54-F954-4D4C-B9CA-ACFEF046E036}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Akka.MultiNode.Shared.Tests", "src\Akka.MultiNode.Shared.Tests\Akka.MultiNode.Shared.Tests.csproj", "{6E3C7F54-F954-4D4C-B9CA-ACFEF046E036}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Akka.MultiNodeTestRunner.TestAdapter", "src\Akka.MultiNodeTestRunner.TestAdapter\Akka.MultiNodeTestRunner.TestAdapter.csproj", "{F3037C62-E780-4619-89B3-BA21C7168DFA}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Akka.MultiNode.TestAdapter", "src\Akka.MultiNode.TestAdapter\Akka.MultiNode.TestAdapter.csproj", "{F3037C62-E780-4619-89B3-BA21C7168DFA}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Akka.MultiNodeTestRunner.SampleTests", "src\Akka.MultiNodeTestRunner.SampleTests\Akka.MultiNodeTestRunner.SampleTests.csproj", "{89D2C131-718F-4C93-9343-72E5BE6F7317}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Akka.MultiNode.TestAdapter.SampleTests", "src\Akka.MultiNode.TestAdapter.SampleTests\Akka.MultiNode.TestAdapter.SampleTests.csproj", "{89D2C131-718F-4C93-9343-72E5BE6F7317}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
