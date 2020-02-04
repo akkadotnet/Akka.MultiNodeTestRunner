@@ -13,10 +13,8 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using Akka.Actor;
 using Akka.Event;
-using Akka.MultiNodeTestRunner.Shared.Reporting;
-using Akka.Util.Internal;
 
-namespace Akka.MultiNodeTestRunner.Shared.Sinks
+namespace Akka.MultiNode.Shared.Sinks
 {
     public class TimelineLogCollectorActor : ReceiveActor
     {

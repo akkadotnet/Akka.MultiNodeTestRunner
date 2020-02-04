@@ -23,6 +23,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Akka.MultiNode.TestAdapter"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Akka.MultiNode.TestAdapter.SampleTests", "src\Akka.MultiNode.TestAdapter.SampleTests\Akka.MultiNode.TestAdapter.SampleTests.csproj", "{89D2C131-718F-4C93-9343-72E5BE6F7317}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Akka.MultiNode.TestRunner.Shared", "src\Akka.MultiNode.TestRunner.Shared\Akka.MultiNode.TestRunner.Shared.csproj", "{ECAF9A0E-8ED2-460A-8408-4648F2BC3FB5}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -53,6 +55,10 @@ Global
 		{89D2C131-718F-4C93-9343-72E5BE6F7317}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{89D2C131-718F-4C93-9343-72E5BE6F7317}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{89D2C131-718F-4C93-9343-72E5BE6F7317}.Release|Any CPU.Build.0 = Release|Any CPU
+		{ECAF9A0E-8ED2-460A-8408-4648F2BC3FB5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{ECAF9A0E-8ED2-460A-8408-4648F2BC3FB5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{ECAF9A0E-8ED2-460A-8408-4648F2BC3FB5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{ECAF9A0E-8ED2-460A-8408-4648F2BC3FB5}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

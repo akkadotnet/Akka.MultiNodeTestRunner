@@ -5,9 +5,9 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
-using Akka.MultiNodeTestRunner.Shared.Reporting;
+using Akka.MultiNode.Shared.Reporting;
 
-namespace Akka.MultiNodeTestRunner.Shared.Persistence
+namespace Akka.MultiNode.Shared.Persistence
 {
     /// <summary>
     /// Persistent store for retrieving <see cref="TestRunTree" /> instances

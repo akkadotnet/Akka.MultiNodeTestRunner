@@ -7,9 +7,9 @@
 
 using System;
 using Akka.Actor;
-using Akka.MultiNodeTestRunner.Shared.Sinks;
+using Akka.MultiNode.Shared.Sinks;
 
-namespace Akka.MultiNodeTestRunner.Shared.Reporting
+namespace Akka.MultiNode.Shared.Reporting
 {
     /// <summary>
     /// Actor responsible for processing test messages for an individual node within a multi-node test

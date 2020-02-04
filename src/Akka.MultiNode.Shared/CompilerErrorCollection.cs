@@ -8,7 +8,7 @@
 using System.Collections.Generic;
 
 #if CORECLR
-namespace Akka.MultiNodeTestRunner.Shared
+namespace Akka.MultiNode.Shared
 {
     public class CompilerErrorCollection : List<CompilerError>
     {

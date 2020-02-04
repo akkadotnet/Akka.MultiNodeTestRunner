@@ -10,9 +10,8 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Akka.Actor;
 using Akka.Event;
-using Akka.MultiNodeTestRunner.Shared.Reporting;
 
-namespace Akka.MultiNodeTestRunner.Shared.Sinks
+namespace Akka.MultiNode.Shared.Sinks
 {
     /// <summary>
     /// Interface used to define destinations for MultiNodeTest messages

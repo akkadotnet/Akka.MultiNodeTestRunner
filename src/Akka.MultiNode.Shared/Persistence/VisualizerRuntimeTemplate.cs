@@ -16,10 +16,10 @@
 // ------------------------------------------------------------------------------
 
 #if CORECLR
-using Akka.MultiNodeTestRunner.Shared.Extensions;
+using Akka.MultiNode.Shared.Extensions;
 #endif
 
-namespace Akka.MultiNodeTestRunner.Shared.Persistence
+namespace Akka.MultiNode.Shared.Persistence
 {
     using System.Linq;
     using System.Text;

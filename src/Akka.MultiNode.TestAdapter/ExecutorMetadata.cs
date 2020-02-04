@@ -1,4 +1,4 @@
-namespace Akka.MultiNodeTestRunner.TestAdapter
+namespace Akka.MultiNode.TestAdapter
 {
     /// <summary>
     /// ExecutorMetadata

@@ -8,9 +8,8 @@
 using System;
 using System.Collections.Generic;
 using Akka.Event;
-using Akka.MultiNodeTestRunner.Shared.Reporting;
 
-namespace Akka.MultiNodeTestRunner.Shared.Sinks
+namespace Akka.MultiNode.Shared.Sinks
 {
     #region Message types
 

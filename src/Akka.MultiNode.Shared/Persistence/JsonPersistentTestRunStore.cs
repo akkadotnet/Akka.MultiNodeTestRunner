@@ -9,11 +9,11 @@ using System;
 using System.IO;
 using System.Reflection;
 using System.Text;
-using Akka.MultiNodeTestRunner.Shared.Reporting;
+using Akka.MultiNode.Shared.Reporting;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 
-namespace Akka.MultiNodeTestRunner.Shared.Persistence
+namespace Akka.MultiNode.Shared.Persistence
 {
     /// <summary>
     /// JavaScript Object Notation (JSON) implementation of the <see cref="IRetrievableTestRunStore"/>

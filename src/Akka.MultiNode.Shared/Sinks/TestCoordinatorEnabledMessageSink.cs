@@ -8,9 +8,9 @@
 using System;
 using System.Threading.Tasks;
 using Akka.Actor;
-using Akka.MultiNodeTestRunner.Shared.Reporting;
+using Akka.MultiNode.Shared.Reporting;
 
-namespace Akka.MultiNodeTestRunner.Shared.Sinks
+namespace Akka.MultiNode.Shared.Sinks
 {
     /// <summary>
     /// A <see cref="MessageSinkActor"/> implementation that is capable of using a <see cref="TestRunCoordinator"/> for 

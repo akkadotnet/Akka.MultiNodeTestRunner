@@ -8,9 +8,9 @@
 using System;
 using System.Collections.Generic;
 using System.Xml.Linq;
-using static Akka.MultiNodeTestRunner.Shared.TrxReporter.Models.XmlHelper;
+using static Akka.MultiNode.Shared.TrxReporter.Models.XmlHelper;
 
-namespace Akka.MultiNodeTestRunner.Shared.TrxReporter.Models
+namespace Akka.MultiNode.Shared.TrxReporter.Models
 {
     public class UnitTestResult : ITestEntity
     {

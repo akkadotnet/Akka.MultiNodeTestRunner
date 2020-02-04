@@ -5,7 +5,7 @@ using Microsoft.VisualStudio.TestPlatform.ObjectModel;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel.Adapter;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel.Logging;
 
-namespace Akka.MultiNodeTestRunner.TestAdapter
+namespace Akka.MultiNode.TestAdapter
 {
     /// <summary>
     /// TestExecutor
@@ -62,7 +62,7 @@ namespace Akka.MultiNodeTestRunner.TestAdapter
                 try
                 {
                     FileLogger.Write($"Starting tests from {assemblyPath}");
-                    var runner = new MultiNodeTestRunner();
+                    var runner = new MultiNode.TestRunner.Shared.MultiNodeTestRunner();
                     var retCode = runner.Execute(assemblyPath);
                     frameworkHandle.RecordEnd(testCase, retCode > 0 ? TestOutcome.Failed : TestOutcome.Passed);
                 }

@@ -9,7 +9,7 @@ using System;
 using System.IO;
 using Akka.Actor;
 
-namespace Akka.MultiNodeTestRunner.Shared.Sinks
+namespace Akka.MultiNode.Shared.Sinks
 {
     /// <summary>
     /// Actor that just writes dumb messages to the file system - used for capturing

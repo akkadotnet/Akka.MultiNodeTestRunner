@@ -8,14 +8,13 @@
 using System.IO;
 using System.Linq;
 using Akka.Actor;
-using Akka.MultiNodeTestRunner.Shared.Persistence;
-using Akka.MultiNodeTestRunner.Shared.Reporting;
-using Akka.MultiNodeTestRunner.Shared.Sinks;
-using Akka.TestKit;
+using Akka.MultiNode.Shared.Persistence;
+using Akka.MultiNode.Shared.Reporting;
+using Akka.MultiNode.Shared.Sinks;
 using FluentAssertions;
 using Xunit;
 
-namespace Akka.MultiNodeTestRunner.Shared.Tests.Persistence
+namespace Akka.MultiNode.Shared.Tests.Persistence
 {
     public class JsonPersistentTestRunStoreSpec : TestKit.Xunit2.TestKit
     {

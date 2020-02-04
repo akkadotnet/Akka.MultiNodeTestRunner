@@ -5,7 +5,7 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
-namespace Akka.MultiNodeTestRunner.Shared
+namespace Akka.MultiNode.Shared
 {
     public class NodeTest
     {

@@ -6,11 +6,11 @@
 // -----------------------------------------------------------------------
 
 using System.Collections.Generic;
-using Akka.MultiNodeTestRunner.Shared.TrxReporter.Models;
+using Akka.MultiNode.Shared.TrxReporter.Models;
 using FluentAssertions;
 using Xunit;
 
-namespace Akka.MultiNodeTestRunner.Shared.Tests
+namespace Akka.MultiNode.Shared.Tests
 {
     public class ResultSummaryTests
     {

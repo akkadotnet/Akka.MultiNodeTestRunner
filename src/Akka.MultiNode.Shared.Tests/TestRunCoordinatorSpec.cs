@@ -5,16 +5,14 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using Akka.Actor;
-using Akka.MultiNodeTestRunner.Shared.Reporting;
-using Akka.MultiNodeTestRunner.Shared.Sinks;
-using Akka.TestKit;
+using Akka.MultiNode.Shared.Reporting;
+using Akka.MultiNode.Shared.Sinks;
 using Xunit;
 
-namespace Akka.MultiNodeTestRunner.Shared.Tests
+namespace Akka.MultiNode.Shared.Tests
 {
     public class TestRunCoordinatorSpec : TestKit.Xunit2.TestKit
     {

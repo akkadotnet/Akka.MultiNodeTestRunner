@@ -19,11 +19,10 @@ using System.Threading.Tasks;
 using Akka.Actor;
 using Akka.Event;
 using Akka.IO;
-using Akka.MultiNodeTestRunner.Shared;
-using Akka.MultiNodeTestRunner.Shared.Persistence;
-using Akka.MultiNodeTestRunner.Shared.Reporting;
-using Akka.MultiNodeTestRunner.Shared.Sinks;
-using Akka.MultiNodeTestRunner.Shared.TrxReporter;
+using Akka.MultiNode.Shared;
+using Akka.MultiNode.Shared.Persistence;
+using Akka.MultiNode.Shared.Sinks;
+using Akka.MultiNode.Shared.TrxReporter;
 using Akka.Remote.TestKit;
 using Xunit;
 
@@ -31,7 +30,7 @@ using Xunit;
 using System.Runtime.Loader;
 #endif
 
-namespace Akka.MultiNodeTestRunner.TestAdapter
+namespace Akka.MultiNode.TestRunner.Shared
 {
     /// <summary>
     /// Entry point for the MultiNodeTestRunner

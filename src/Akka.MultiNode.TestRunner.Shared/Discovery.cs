@@ -10,12 +10,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
-using Akka.MultiNodeTestRunner.Shared;
+using Akka.MultiNode.Shared;
 using Akka.Remote.TestKit;
 using Xunit.Abstractions;
 using Xunit.Sdk;
 
-namespace Akka.MultiNodeTestRunner.TestAdapter
+namespace Akka.MultiNode.TestRunner.Shared
 {
 #if CORECLR
     public class Discovery : IMessageSink, IDisposable

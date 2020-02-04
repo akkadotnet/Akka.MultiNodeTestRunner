@@ -7,13 +7,11 @@
 
 using System;
 using System.Linq;
-using System.Threading.Tasks;
 using Akka.Actor;
-using Akka.MultiNodeTestRunner.Shared.Sinks;
-using Akka.TestKit;
+using Akka.MultiNode.Shared.Sinks;
 using Xunit;
 
-namespace Akka.MultiNodeTestRunner.Shared.Tests
+namespace Akka.MultiNode.Shared.Tests
 {
     /// <summary>
     /// Used to validate that we can get final reporting on shutdown

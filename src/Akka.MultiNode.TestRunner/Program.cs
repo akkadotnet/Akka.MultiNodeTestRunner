@@ -19,21 +19,18 @@ using System.Threading.Tasks;
 using Akka.Actor;
 using Akka.Event;
 using Akka.IO;
-using Akka.MultiNodeTestRunner.Shared;
-using Akka.MultiNodeTestRunner.Shared.Persistence;
-using Akka.MultiNodeTestRunner.Shared.Reporting;
-using Akka.MultiNodeTestRunner.Shared.Sinks;
-using Akka.MultiNodeTestRunner.Shared.TrxReporter;
+using Akka.MultiNode.Shared;
+using Akka.MultiNode.Shared.Persistence;
+using Akka.MultiNode.Shared.Sinks;
+using Akka.MultiNode.Shared.TrxReporter;
 using Akka.Remote.TestKit;
-using Akka.Util;
-using JetBrains.TeamCity.ServiceMessages.Write.Special;
-using JetBrains.TeamCity.ServiceMessages.Write.Special.Impl;
 using Xunit;
+
 #if CORECLR
 using System.Runtime.Loader;
 #endif
 
-namespace Akka.MultiNodeTestRunner
+namespace Akka.MultiNode.TestRunner
 {
     /// <summary>
     /// Entry point for the MultiNodeTestRunner

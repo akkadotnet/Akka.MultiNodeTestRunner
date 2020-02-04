@@ -6,10 +6,9 @@
 //-----------------------------------------------------------------------
 
 using System.IO;
+using Akka.MultiNode.Shared.Reporting;
 
-using Akka.MultiNodeTestRunner.Shared.Reporting;
-
-namespace Akka.MultiNodeTestRunner.Shared.Persistence
+namespace Akka.MultiNode.Shared.Persistence
 {
     /// <summary>
     /// Stores test run as a html page.

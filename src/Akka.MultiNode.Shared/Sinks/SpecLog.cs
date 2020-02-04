@@ -7,7 +7,7 @@
 
 using System.Collections.Generic;
 
-namespace Akka.MultiNodeTestRunner.Shared.Sinks
+namespace Akka.MultiNode.Shared.Sinks
 {
     /// <summary>
     /// SpecLog

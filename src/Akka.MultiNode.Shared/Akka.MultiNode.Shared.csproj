@@ -1,14 +1,15 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <Import Project="..\common.props" />
   <PropertyGroup>
-    <AssemblyTitle>Akka.MultiNodeTestRunner.Shared</AssemblyTitle>
-    <TargetFrameworks>$(NetStandardLibVersion)</TargetFrameworks>
+    <AssemblyTitle>Akka.MultiNode.Shared</AssemblyTitle>
+    <TargetFramework>$(NetStandardLibVersion)</TargetFramework>
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-    <RootNamespace>Akka.MultiNodeTestRunner.Shared</RootNamespace>
+    <RootNamespace>Akka.MultiNode.Shared</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="System.CodeDom" Version="4.7.0" />
     <PackageReference Include="TeamCity.ServiceMessages" Version="3.0.13" />
   </ItemGroup>
   

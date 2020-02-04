@@ -9,9 +9,9 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Akka.Actor;
-using Akka.MultiNodeTestRunner.Shared.Sinks;
+using Akka.MultiNode.Shared.Sinks;
 
-namespace Akka.MultiNodeTestRunner.Shared.Reporting
+namespace Akka.MultiNode.Shared.Reporting
 {
     /// <summary>
     /// Actor responsible for organizing the results of an individual spec

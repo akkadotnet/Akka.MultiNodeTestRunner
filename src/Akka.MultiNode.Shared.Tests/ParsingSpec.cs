@@ -9,12 +9,11 @@ using System.Reflection;
 using Akka.Actor;
 using Akka.Configuration;
 using Akka.Event;
-using Akka.MultiNodeTestRunner.Shared.Sinks;
-using Akka.TestKit;
+using Akka.MultiNode.Shared.Sinks;
 using FluentAssertions;
 using Xunit;
 
-namespace Akka.MultiNodeTestRunner.Shared.Tests
+namespace Akka.MultiNode.Shared.Tests
 {
     /// <summary>
     /// Used to test the <see cref="MessageSink"/>'s ability to parse 

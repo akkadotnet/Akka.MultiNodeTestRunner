@@ -3,7 +3,7 @@
 
     <PropertyGroup>
         <TargetFrameworks>$(NetFrameworkTestVersion);$(NetCoreTestVersion)</TargetFrameworks>
-        <RootNamespace>Akka.MultiNodeTestRunner.SampleTests</RootNamespace>
+        <RootNamespace>Akka.MultiNode.TestAdapter.SampleTests</RootNamespace>
     </PropertyGroup>
 
     <ItemGroup>

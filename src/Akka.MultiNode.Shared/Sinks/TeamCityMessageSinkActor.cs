@@ -6,22 +6,13 @@
 //-----------------------------------------------------------------------
 
 using System;
-using System.Collections.Generic;
-using System.Globalization;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Akka.Actor;
-using Akka.Event;
-#if CORECLR
-using Akka.MultiNodeTestRunner.Shared.Extensions;
-#endif
-using Akka.MultiNodeTestRunner.Shared.Reporting;
-using JetBrains.TeamCity.ServiceMessages;
+using Akka.MultiNode.Shared.Reporting;
 using JetBrains.TeamCity.ServiceMessages.Write.Special;
-using JetBrains.TeamCity.ServiceMessages.Write.Special.Impl.Writer;
+#if CORECLR
+#endif
 
-namespace Akka.MultiNodeTestRunner.Shared.Sinks
+namespace Akka.MultiNode.Shared.Sinks
 {
     public class TeamCityMessageSinkActor : TestCoordinatorEnabledMessageSink
     {

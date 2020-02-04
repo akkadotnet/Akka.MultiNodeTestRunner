@@ -2,13 +2,13 @@
   <Import Project="..\common.props" />
 
   <PropertyGroup>
-    <AssemblyTitle>Akka.MultiNodeTestRunner</AssemblyTitle>
+    <AssemblyTitle>Akka.MultiNode.TestRunner</AssemblyTitle>
     <Description>Akka.NET Multi-node Test Runner; used for executing tests written with Akka.Remote.TestKit</Description>
     <TargetFrameworks>$(NetFrameworkTestVersion);$(NetCoreTestVersion)</TargetFrameworks>
     <OutputType>Exe</OutputType>
     <PackageTags>$(AkkaPackageTags)</PackageTags>
-    <NuspecFile>Akka.MultiNodeTestRunner.nuspec</NuspecFile>
-    <RootNamespace>Akka.MultiNodeTestRunner</RootNamespace>
+    <NuspecFile>Akka.MultiNode.TestRunner.nuspec</NuspecFile>
+    <RootNamespace>Akka.MultiNode.TestRunner</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>

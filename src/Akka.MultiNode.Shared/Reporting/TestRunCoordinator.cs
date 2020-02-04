@@ -10,9 +10,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Akka.Actor;
-using Akka.MultiNodeTestRunner.Shared.Sinks;
+using Akka.MultiNode.Shared.Sinks;
 
-namespace Akka.MultiNodeTestRunner.Shared.Reporting
+namespace Akka.MultiNode.Shared.Reporting
 {
     /// <summary>
     /// Actor responsible for organizing all of the data for each test run

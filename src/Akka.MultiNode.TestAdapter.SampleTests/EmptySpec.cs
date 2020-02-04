@@ -1,8 +1,7 @@
 using Akka.Cluster.TestKit;
-using Akka.MultiNodeTestRunner.Shared;
 using Akka.Remote.TestKit;
 
-namespace Akka.MultiNodeTestRunner.SampleTests
+namespace Akka.MultiNode.TestAdapter.SampleTests
 {
     public class EmptySpecConfig : MultiNodeConfig
     {

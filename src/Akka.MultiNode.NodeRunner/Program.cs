@@ -10,20 +10,19 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Reflection;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 using Akka.Actor;
 using Akka.IO;
-using Akka.MultiNodeTestRunner.Shared.Sinks;
+using Akka.MultiNode.Shared.Sinks;
 using Akka.Remote.TestKit;
 using Xunit;
+
 #if CORECLR
 using System.Runtime.Loader;
 using Microsoft.Extensions.DependencyModel;
 #endif
 
-namespace Akka.NodeTestRunner
+namespace Akka.MultiNode.NodeRunner
 {
     class Program
     {

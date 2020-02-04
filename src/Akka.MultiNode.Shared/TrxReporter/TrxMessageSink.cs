@@ -7,9 +7,9 @@
 
 using System;
 using Akka.Actor;
-using Akka.MultiNodeTestRunner.Shared.Sinks;
+using Akka.MultiNode.Shared.Sinks;
 
-namespace Akka.MultiNodeTestRunner.Shared.TrxReporter
+namespace Akka.MultiNode.Shared.TrxReporter
 {
     public class TrxMessageSink : MessageSink
     {

@@ -9,11 +9,11 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using Akka.TestKit;
-using Xunit;
+using Akka.MultiNode.TestRunner;
 using FluentAssertions;
+using Xunit;
 
-namespace Akka.MultiNodeTestRunner.Shared.Tests.MultiNodeTestRunnerDiscovery
+namespace Akka.MultiNode.Shared.Tests.MultiNodeTestRunnerDiscovery
 {
     public class DiscoverySpec
     {

@@ -9,12 +9,11 @@ using System;
 using System.Linq;
 using Akka.Actor;
 using Akka.Event;
+using Akka.MultiNode.Shared.Reporting;
 #if CORECLR
-using Akka.MultiNodeTestRunner.Shared.Extensions;
 #endif
-using Akka.MultiNodeTestRunner.Shared.Reporting;
 
-namespace Akka.MultiNodeTestRunner.Shared.Sinks
+namespace Akka.MultiNode.Shared.Sinks
 {
     /// <summary>
     /// <see cref="MessageSinkActor"/> implementation that logs all of its output directly to the <see cref="Console"/>.

@@ -9,10 +9,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Akka.Event;
-using Akka.MultiNodeTestRunner.Shared.Reporting;
-using Akka.Util;
+using Akka.MultiNode.Shared.Reporting;
+using Akka.MultiNode.Shared.Tests.Utils;
 
-namespace Akka.MultiNodeTestRunner.Shared.Tests
+namespace Akka.MultiNode.Shared.Tests
 {
     /// <summary>
     /// Helper class for creating <see cref="MultiNodeMessage"/>

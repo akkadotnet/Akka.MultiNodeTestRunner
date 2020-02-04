@@ -6,16 +6,14 @@
 //-----------------------------------------------------------------------
 
 using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Threading;
 using Akka.Actor;
-using Akka.MultiNodeTestRunner.Shared.Sinks;
+using Akka.MultiNode.Shared.Sinks;
 using Xunit;
 using Xunit.Abstractions;
 using IMessageSink = Xunit.Abstractions.IMessageSink;
 
-namespace Akka.NodeTestRunner
+namespace Akka.MultiNode.NodeRunner
 {
 #if CORECLR
     class Sink : IMessageSink, IDisposable

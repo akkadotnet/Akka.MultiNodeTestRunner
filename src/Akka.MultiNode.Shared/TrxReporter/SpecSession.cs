@@ -7,9 +7,9 @@
 
 using System;
 using System.Collections.Generic;
-using Akka.MultiNodeTestRunner.Shared.Sinks;
+using Akka.MultiNode.Shared.Sinks;
 
-namespace Akka.MultiNodeTestRunner.Shared.TrxReporter
+namespace Akka.MultiNode.Shared.TrxReporter
 {
     public class SpecSession
     {

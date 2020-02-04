@@ -11,9 +11,8 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Akka.Actor;
 using Akka.Event;
-using Akka.MultiNodeTestRunner.Shared.Reporting;
 
-namespace Akka.MultiNodeTestRunner.Shared.Sinks
+namespace Akka.MultiNode.Shared.Sinks
 {
     /// <summary>
     /// Abstract base class for all <see cref="IMessageSink"/> implementations. Includes some methods

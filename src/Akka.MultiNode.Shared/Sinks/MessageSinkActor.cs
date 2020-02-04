@@ -6,9 +6,9 @@
 //-----------------------------------------------------------------------
 
 using Akka.Actor;
-using Akka.MultiNodeTestRunner.Shared.Reporting;
+using Akka.MultiNode.Shared.Reporting;
 
-namespace Akka.MultiNodeTestRunner.Shared.Sinks
+namespace Akka.MultiNode.Shared.Sinks
 {
     /// <summary>
     /// Actor responsible for directing the flow of all messages for each test run.

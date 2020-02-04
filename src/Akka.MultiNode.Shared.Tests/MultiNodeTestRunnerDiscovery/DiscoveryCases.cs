@@ -7,7 +7,7 @@
 
 using Akka.Remote.TestKit;
 
-namespace Akka.MultiNodeTestRunner.Shared.Tests.MultiNodeTestRunnerDiscovery
+namespace Akka.MultiNode.Shared.Tests.MultiNodeTestRunnerDiscovery
 {
     public class DiscoveryCases
     {

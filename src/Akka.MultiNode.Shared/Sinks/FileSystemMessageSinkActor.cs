@@ -8,10 +8,10 @@
 using System;
 using System.IO;
 using Akka.Actor;
-using Akka.MultiNodeTestRunner.Shared.Persistence;
-using Akka.MultiNodeTestRunner.Shared.Reporting;
+using Akka.MultiNode.Shared.Persistence;
+using Akka.MultiNode.Shared.Reporting;
 
-namespace Akka.MultiNodeTestRunner.Shared.Sinks
+namespace Akka.MultiNode.Shared.Sinks
 {
     /// <summary>
     /// A file system <see cref="MessageSink"/> implementation

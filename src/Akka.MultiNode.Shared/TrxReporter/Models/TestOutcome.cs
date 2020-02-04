@@ -5,7 +5,7 @@
 //  </copyright>
 // -----------------------------------------------------------------------
 
-namespace Akka.MultiNodeTestRunner.Shared.TrxReporter.Models
+namespace Akka.MultiNode.Shared.TrxReporter.Models
 {
     public enum TestOutcome
     {

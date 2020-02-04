@@ -11,7 +11,7 @@ using System.Linq;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace Akka.NodeTestRunner
+namespace Akka.MultiNode.NodeRunner
 {
     [Serializable]
     public class Discovery : TestMessageVisitor<IDiscoveryCompleteMessage>

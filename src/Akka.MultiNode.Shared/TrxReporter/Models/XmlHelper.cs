@@ -9,7 +9,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Xml.Linq;
 
-namespace Akka.MultiNodeTestRunner.Shared.TrxReporter.Models
+namespace Akka.MultiNode.Shared.TrxReporter.Models
 {
     internal static class XmlHelper
     {

@@ -8,7 +8,7 @@
 using System;
 using System.IO;
 
-namespace Akka.MultiNodeTestRunner.Shared.Persistence
+namespace Akka.MultiNode.Shared.Persistence
 {
     public class FileNameGenerator
     {

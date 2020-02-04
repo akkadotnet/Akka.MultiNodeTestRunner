@@ -5,9 +5,9 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
-using Akka.MultiNodeTestRunner.Shared.Sinks;
+using Akka.MultiNode.Shared.Sinks;
 
-namespace Akka.MultiNodeTestRunner.Shared
+namespace Akka.MultiNode.Shared
 {
     /// <summary>
     /// Global state for hanging onto the exit code used by the process.

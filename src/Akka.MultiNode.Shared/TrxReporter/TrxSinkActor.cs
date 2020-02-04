@@ -10,11 +10,11 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Xml.Linq;
-using Akka.MultiNodeTestRunner.Shared.Reporting;
-using Akka.MultiNodeTestRunner.Shared.Sinks;
-using Akka.MultiNodeTestRunner.Shared.TrxReporter.Models;
+using Akka.MultiNode.Shared.Reporting;
+using Akka.MultiNode.Shared.Sinks;
+using Akka.MultiNode.Shared.TrxReporter.Models;
 
-namespace Akka.MultiNodeTestRunner.Shared.TrxReporter
+namespace Akka.MultiNode.Shared.TrxReporter
 {
     public class TrxSinkActor : TestCoordinatorEnabledMessageSink
     {

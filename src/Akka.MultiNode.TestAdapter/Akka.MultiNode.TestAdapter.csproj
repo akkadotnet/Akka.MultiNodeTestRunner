@@ -2,7 +2,7 @@
   <Import Project="..\common.props" />
 
   <PropertyGroup>
-    <AssemblyTitle>Akka.MultiNodeTestRunner.VisualStudio</AssemblyTitle>
+    <AssemblyTitle>Akka.MultiNode.TestAdapter</AssemblyTitle>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <DebugType>embedded</DebugType>
     <LangVersion>latest</LangVersion>
@@ -14,16 +14,16 @@
     <XunitVersion>2.4.1</XunitVersion>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <NoWarn>$(NoWarn)1701;1702;NU5105</NoWarn>
-    <RootNamespace>Akka.MultiNodeTestRunner.TestAdapter</RootNamespace>
+    <RootNamespace>Akka.MultiNode.TestAdapter</RootNamespace>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(TargetFramework)' == '$(NetFrameworkTestVersion)'">
-    <AssemblyName>Akka.MultiNodeTestRunner.VisualStudio.TestAdapter</AssemblyName>
+    <AssemblyName>Akka.MultiNode.TestAdapter</AssemblyName>
     <DefineConstants>$(DefineConstants);NETFRAMEWORK</DefineConstants>
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(TargetFramework)' == '$(NetCoreTestVersion)' ">
-    <AssemblyName>Akka.MultiNodeTestRunner.VisualStudio.DotNetCore.TestAdapter</AssemblyName>
+    <AssemblyName>Akka.MultiNode.DotNetCore.TestAdapter</AssemblyName>
     <DefineConstants>$(DefineConstants);NETCOREAPP;CORECLR</DefineConstants>
   </PropertyGroup>
 
@@ -42,6 +42,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Akka.MultiNode.TestRunner.Shared\Akka.MultiNode.TestRunner.Shared.csproj" />
     <ProjectReference Include="..\Akka.MultiNode.NodeRunner\Akka.MultiNode.NodeRunner.csproj" />
     <ProjectReference Include="..\Akka.MultiNode.Shared\Akka.MultiNode.Shared.csproj" />
   </ItemGroup>

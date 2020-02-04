@@ -10,7 +10,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Newtonsoft.Json;
 
-namespace Akka.MultiNodeTestRunner.Shared.Reporting
+namespace Akka.MultiNode.Shared.Reporting
 {
     /// <summary>
     /// The top of the tree - represents an entire test run.

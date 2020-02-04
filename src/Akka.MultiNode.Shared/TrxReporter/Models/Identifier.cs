@@ -7,7 +7,7 @@
 
 using System;
 
-namespace Akka.MultiNodeTestRunner.Shared.TrxReporter.Models
+namespace Akka.MultiNode.Shared.TrxReporter.Models
 {
     public struct Identifier
     {

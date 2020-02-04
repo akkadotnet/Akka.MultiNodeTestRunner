@@ -1,10 +1,10 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <Import Project="..\common.props" />
   <PropertyGroup>
-    <AssemblyTitle>Akka.NodeTestRunner</AssemblyTitle>
+    <AssemblyTitle>Akka.MultiNode.NodeRunner</AssemblyTitle>
     <TargetFrameworks>$(NetFrameworkTestVersion);$(NetCoreTestVersion)</TargetFrameworks>
     <OutputType>Exe</OutputType>
-    <RootNamespace>Akka.NodeTestRunner</RootNamespace>
+    <RootNamespace>Akka.MultiNode.NodeRunner</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>

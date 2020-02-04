@@ -7,7 +7,7 @@
 
 using System.Xml.Linq;
 
-namespace Akka.MultiNodeTestRunner.Shared.TrxReporter.Models
+namespace Akka.MultiNode.Shared.TrxReporter.Models
 {
     public interface ITestEntity
     {

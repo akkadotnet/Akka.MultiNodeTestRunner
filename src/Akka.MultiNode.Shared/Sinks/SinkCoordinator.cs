@@ -11,9 +11,8 @@ using System.Reflection;
 using System.Threading.Tasks;
 using Akka.Actor;
 using Akka.Event;
-using Akka.MultiNodeTestRunner.Shared.Reporting;
 
-namespace Akka.MultiNodeTestRunner.Shared.Sinks
+namespace Akka.MultiNode.Shared.Sinks
 {
     /// <summary>
     /// Top-level actor responsible for managing all <see cref="MessageSink"/> instances.

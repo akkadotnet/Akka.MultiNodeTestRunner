@@ -7,7 +7,7 @@
 
 using System;
 
-namespace Akka.MultiNodeTestRunner.Shared.TrxReporter
+namespace Akka.MultiNode.Shared.TrxReporter
 {
     public class SpecEvent<T>
     {

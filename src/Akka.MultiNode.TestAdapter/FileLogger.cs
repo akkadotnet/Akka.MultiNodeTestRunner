@@ -12,7 +12,7 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 
-namespace Akka.MultiNodeTestRunner.TestAdapter
+namespace Akka.MultiNode.TestAdapter
 {
     public static class FileLogger
     {

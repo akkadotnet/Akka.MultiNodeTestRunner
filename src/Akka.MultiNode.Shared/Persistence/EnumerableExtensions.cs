@@ -7,7 +7,7 @@
 
 using System.Collections.Generic;
 
-namespace Akka.MultiNodeTestRunner.Shared.Persistence
+namespace Akka.MultiNode.Shared.Persistence
 {
     public static class EnumerableExtensions
     {

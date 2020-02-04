@@ -8,9 +8,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Akka.MultiNodeTestRunner.Shared.Reporting;
+using Akka.MultiNode.Shared.Reporting;
 
-namespace Akka.MultiNodeTestRunner.Shared.Persistence
+namespace Akka.MultiNode.Shared.Persistence
 {
     partial class VisualizerRuntimeTemplate
     {

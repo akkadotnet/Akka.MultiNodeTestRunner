@@ -8,7 +8,7 @@
 using System;
 using Akka.Event;
 
-namespace Akka.MultiNodeTestRunner.Shared.Reporting
+namespace Akka.MultiNode.Shared.Reporting
 {
     /// <summary>
     /// Message from an individual node
