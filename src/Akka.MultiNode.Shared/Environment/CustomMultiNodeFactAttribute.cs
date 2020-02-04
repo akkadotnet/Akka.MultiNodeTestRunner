@@ -3,7 +3,7 @@ using Xunit;
 
 namespace Akka.MultiNode.Shared.Environment
 {
-    // TODO: Remove this after Akka.Cluster.TestKit.MultiNodeFactAttribute will be updated
+    // TODO: Remove this after Akka.Cluster.TestKit.MultiNodeFactAttribute will be updated (https://github.com/akkadotnet/akka.net/issues/4188)
     public class CustomMultiNodeFactAttribute : FactAttribute
     {
         /// <summary>
