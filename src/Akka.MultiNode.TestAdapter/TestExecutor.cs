@@ -51,7 +51,6 @@ namespace Akka.MultiNode.TestAdapter
         public void RunTests(IEnumerable<string> sources, IRunContext runContext, IFrameworkHandle frameworkHandle)
         {
             var testAssemblyPaths = sources.ToList();
-            FileLogger.Write($"Starting tests from {string.Join(", ", testAssemblyPaths)}");
             frameworkHandle.SendMessage(TestMessageLevel.Informational, $"Loading tests from assemblies: {string.Join(", ", testAssemblyPaths)}");
             var settings = runContext.RunSettings.SettingsXml;
             
@@ -62,24 +61,38 @@ namespace Akka.MultiNode.TestAdapter
                 
                 try
                 {
-                    FileLogger.Write($"Starting tests from {assemblyPath}");
                     var runner = new MultiNodeTestRunner();
-                    var retCode = runner.Execute(assemblyPath, new MultiNodeTestRunnerOptions());
-                    frameworkHandle.RecordEnd(testCase, retCode > 0 ? TestOutcome.Failed : TestOutcome.Passed);
+                    var results = runner.Execute(assemblyPath, new MultiNodeTestRunnerOptions());
+                    foreach (var testResult in results)
+                    {
+                        frameworkHandle.RecordResult(new TestResult(testCase)
+                        {
+                            // TODO: Set more properties here
+                            Outcome = TestOutcome.Passed,
+                        });
+                        frameworkHandle.RecordEnd(testCase, MapToOutcome(testResult.Status));
+                    }
+                    
                 }
                 catch (Exception ex)
                 {
-                    FileLogger.Write($"Failure: {ex}");
                     frameworkHandle.SendMessage(TestMessageLevel.Error, $"Failed during test execution: {ex}");
-                    frameworkHandle.RecordEnd(testCase, TestOutcome.Failed);
                 }
-                
-                frameworkHandle.RecordResult(new TestResult(testCase)
-                {
-                    Outcome = TestOutcome.Passed
-                });
-                
-                FileLogger.Write($"Finished tests from {assemblyPath}");
+            }
+        }
+
+        private TestOutcome MapToOutcome(MultiNodeTestResult.TestStatus status)
+        {
+            switch (status)
+            {
+                case MultiNodeTestResult.TestStatus.Passed:
+                    return TestOutcome.Passed;
+                case MultiNodeTestResult.TestStatus.Skipped:
+                    return TestOutcome.Skipped;
+                case MultiNodeTestResult.TestStatus.Failed:
+                    return TestOutcome.Failed;
+                default:
+                    return TestOutcome.None; // Unknown result
             }
         }
     }

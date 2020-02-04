@@ -48,7 +48,7 @@ namespace Akka.MultiNode.TestRunner.Shared
         /// <summary>
         /// Executes multi-node tests from given assembly
         /// </summary>
-        public int Execute(string assemblyPath, MultiNodeTestRunnerOptions options)
+        public List<MultiNodeTestResult> Execute(string assemblyPath, MultiNodeTestRunnerOptions options)
         {
             ValidatePlatform(options);
             
@@ -87,7 +87,10 @@ namespace Akka.MultiNode.TestRunner.Shared
                 Console.ReadLine(); //block when debugging
 
             // Return the proper exit code
-            return ExitCodeContainer.ExitCode;
+            return new List<MultiNodeTestResult>()
+            {
+                new MultiNodeTestResult("Some test", MultiNodeTestResult.TestStatus.Passed)
+            };
         }
 
         private static void DiscoverAndRunTests(string assemblyPath, MultiNodeTestRunnerOptions options)
@@ -249,7 +252,16 @@ namespace Akka.MultiNode.TestRunner.Shared
                 }
             };
 
-            process.Start();
+            FileLogger.Write($"Running process: {process.StartInfo.FileName} with args '{process.StartInfo.Arguments}'");
+            try
+            {
+                process.Start();
+            }
+            catch (Exception ex)
+            {
+                FileLogger.Write($"Failed to start node process: {ex}");
+                throw;
+            }
             process.BeginOutputReadLine();
             PublishRunnerMessage($"Started node {nodeIndex} : {nodeRole} on pid {process.Id}");
         }
@@ -287,12 +299,14 @@ namespace Akka.MultiNode.TestRunner.Shared
                 }
             };
 #else
+            var testAssemblyLocation = Assembly.GetExecutingAssembly().Location;
+            var ntrNetPath = Path.Combine(Path.GetDirectoryName(testAssemblyLocation), "Akka.MultiNode.NodeRunner.exe");
             sbArguments.Insert(0, $@"-Dmultinode.test-assembly=""{assemblyPath}"" ");
             return new Process
             {
                 StartInfo = new ProcessStartInfo
                 {
-                    FileName = "Akka.MultiNode.NodeRunner.exe",
+                    FileName = ntrNetPath,
                     UseShellExecute = false,
                     RedirectStandardOutput = true,
                     Arguments = sbArguments.ToString()

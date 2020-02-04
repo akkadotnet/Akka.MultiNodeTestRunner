@@ -12,7 +12,7 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 
-namespace Akka.MultiNode.TestAdapter
+namespace Akka
 {
     public static class FileLogger
     {
@@ -21,7 +21,7 @@ namespace Akka.MultiNode.TestAdapter
         private static volatile object _lockObj = new object();
         private static readonly Random Random = new Random();
         private static readonly ConcurrentQueue<(DateTime Time, long Ticks, string Message)> PendingMessages = new ConcurrentQueue<(DateTime Time, long Ticks, string Message)>();
-        private static readonly Stopwatch Stopwatch = Stopwatch.StartNew();
+        private static readonly Stopwatch MonotonicClock = Stopwatch.StartNew();
         
         [Obsolete("Better to use async version to reduce performance influence")]
         public static void Write(string message)
@@ -53,7 +53,7 @@ namespace Akka.MultiNode.TestAdapter
                 return;
             
             var now = DateTime.UtcNow;
-            var ticks = Stopwatch.ElapsedTicks;
+            var ticks = MonotonicClock.ElapsedTicks;
             PendingMessages.Enqueue((now, ticks, message));
         }
 

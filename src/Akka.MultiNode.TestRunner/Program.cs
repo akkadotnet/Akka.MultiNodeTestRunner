@@ -113,7 +113,7 @@ namespace Akka.MultiNode.TestRunner
                 throw new ArgumentException("Invalid argument provided for -Dteamcity");
 
             var runner = new MultiNodeTestRunner();
-            var retCode = runner.Execute(assemblyPath, new MultiNodeTestRunnerOptions()
+            var results = runner.Execute(assemblyPath, new MultiNodeTestRunnerOptions()
             {
                 OutputDirectory = outputDirectory,
                 FailedSpecsDirectory = failedSpecsDirectory,
@@ -130,6 +130,7 @@ namespace Akka.MultiNode.TestRunner
                 Console.ReadLine(); // block when debugging
 
             // Return the proper exit code
+            var retCode = results.Any(r => r.Status == MultiNodeTestResult.TestStatus.Failed) ? 1 : 0;
             Environment.Exit(retCode);
         }
     }

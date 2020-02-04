@@ -1,3 +1,5 @@
+using System.IO;
+
 namespace Akka.MultiNode.TestRunner.Shared
 {
     /// <summary>
@@ -12,7 +14,7 @@ namespace Akka.MultiNode.TestRunner.Shared
         /// <summary>
         /// File output directory
         /// </summary>
-        public string OutputDirectory { get; set; } = string.Empty;
+        public string OutputDirectory { get; set; } = "TestResults";
         /// <summary>
         /// Subdirectory to store failed specs logs
         /// </summary>
