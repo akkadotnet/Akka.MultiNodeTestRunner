@@ -8,6 +8,7 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <PackageReference Include="TeamCity.ServiceMessages" Version="3.0.13" />
         <PackageReference Include="xunit.runner.utility" Version="2.4.1" />
         <PackageReference Include="Akka.Remote.TestKit" Version="$(AkkaVersion)" />
         <PackageReference Include="Akka.TestKit.Xunit2" Version="$(AkkaVersion)" />
@@ -19,6 +20,7 @@
     </ItemGroup>
 
     <ItemGroup>
+        <ProjectReference Include="..\Akka.MultiNode.NodeRunner\Akka.MultiNode.NodeRunner.csproj" />
         <ProjectReference Include="..\Akka.MultiNode.Shared\Akka.MultiNode.Shared.csproj" />
     </ItemGroup>
 

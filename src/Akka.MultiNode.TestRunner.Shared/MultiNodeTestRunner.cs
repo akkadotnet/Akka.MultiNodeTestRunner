@@ -45,17 +45,11 @@ namespace Akka.MultiNode.TestRunner.Shared
         
         protected static ActorSystem TestRunSystem;
         protected static IActorRef SinkCoordinator;
-
-        /// <summary>
-        /// file output directory
-        /// </summary>
-        protected static string OutputDirectory;
         /// <summary>
         /// Subdirectory to store failed specs logs
         /// </summary>
         protected static string FailedSpecsDirectory;
 
-        protected static bool TeamCityFormattingOn;
         protected static bool MultiPlatform;
 
         /// <summary>
@@ -117,30 +111,18 @@ namespace Akka.MultiNode.TestRunner.Shared
         /// </item>
         /// </list>
         /// </summary>
-        public int Execute(string assemblyPath, string outputDirectory = null,  string failedSpecsDirectory = null)
+        public int Execute(string assemblyPath, MultiNodeTestRunnerOptions options)
         {
-            OutputDirectory = outputDirectory ?? "multinode";
-            FailedSpecsDirectory = failedSpecsDirectory ?? "FAILED_SPECS_LOGS";
+            var suiteName = Path.GetFileNameWithoutExtension(Path.GetFullPath(assemblyPath));
+            var listenEndpoint = new IPEndPoint(IPAddress.Parse(options.ListenAddress), options.ListenPort);
+            
+            if (options.ClearOutputDirectory && Directory.Exists(options.OutputDirectory))
+                Directory.Delete(options.OutputDirectory, true);
+            
             TestRunSystem = ActorSystem.Create("TestRunnerLogging");
 
-            var suiteName = Path.GetFileNameWithoutExtension(Path.GetFullPath(assemblyPath));
-            var teamCityFormattingOn = CommandLine.GetPropertyOrDefault("multinode.teamcity", "false");
-            if (!Boolean.TryParse(teamCityFormattingOn, out TeamCityFormattingOn))
-                throw new ArgumentException("Invalid argument provided for -Dteamcity");
-
-            var listenAddress = IPAddress.Parse(CommandLine.GetPropertyOrDefault("multinode.listen-address", "127.0.0.1"));
-            var listenPort = CommandLine.GetInt32OrDefault("multinode.listen-port", 6577);
-            var listenEndpoint = new IPEndPoint(listenAddress, listenPort);
-            var specName = CommandLine.GetPropertyOrDefault("multinode.spec", "");
-            var platform = CommandLine.GetPropertyOrDefault("multinode.platform", "net");
-            var reporter = CommandLine.GetPropertyOrDefault("multinode.reporter", "console");
-            
-            var clearOutputDirectory = CommandLine.GetInt32OrDefault("multinode.clear-output", 0);
-            if (clearOutputDirectory > 0 && Directory.Exists(OutputDirectory))
-                Directory.Delete(OutputDirectory, true);
-
             Props coordinatorProps;
-            switch (reporter.ToLowerInvariant())
+            switch (options.Reporter.ToLowerInvariant())
             {
                 case "trx":
                     coordinatorProps = Props.Create(() => new SinkCoordinator(new[] { new TrxMessageSink(suiteName) }));
@@ -155,27 +137,27 @@ namespace Akka.MultiNode.TestRunner.Shared
                     break;
 
                 default:
-                    throw new ArgumentException($"Given reporter name '{reporter}' is not understood, valid reporters are: trx and teamcity");
+                    throw new ArgumentException($"Given reporter name '{options.Reporter}' is not understood, valid reporters are: trx and teamcity");
             }
 
             SinkCoordinator = TestRunSystem.ActorOf(coordinatorProps, "sinkCoordinator");
 
 #if CORECLR
-            if (!_validNetCorePlatform.Contains(platform))
+            if (!_validNetCorePlatform.Contains(options.Platform))
             {
-                throw new Exception($"Target platform not supported: {platform}. Supported platforms are net and netcore");
+                throw new Exception($"Target platform not supported: {options.Platform}. Supported platforms are net and netcore");
             }
 #else
-            if (platform != "net")
+            if (options.Platform != "net")
             {
-                throw new Exception($"Target platform not supported: {platform}. Supported platforms are net");
+                throw new Exception($"Target platform not supported: {options.Platform}. Supported platforms are net");
             }
 #endif
 
             var tcpLogger = TestRunSystem.ActorOf(Props.Create(() => new TcpLoggingServer(SinkCoordinator)), "TcpLogger");
             TestRunSystem.Tcp().Tell(new Tcp.Bind(tcpLogger, listenEndpoint), sender: tcpLogger);
 
-            EnableAllSinks(assemblyPath, platform);
+            EnableAllSinks(assemblyPath, options.Platform, options);
             PublishRunnerMessage($"Running MultiNodeTests for {assemblyPath}");
 #if CORECLR
             // In NetCore, if the assembly file hasn't been touched, 
@@ -221,9 +203,9 @@ namespace Akka.MultiNode.TestRunner.Shared
                                 continue;
                             }
 
-                            if (!string.IsNullOrWhiteSpace(specName) &&
+                            if (!string.IsNullOrWhiteSpace(options.SpecName) &&
                                 CultureInfo.InvariantCulture.CompareInfo.IndexOf(test.Value.First().TestName,
-                                    specName,
+                                    options.SpecName,
                                     CompareOptions.IgnoreCase) < 0)
                             {
                                 PublishRunnerMessage($"Skipping [{test.Value.First().MethodName}] (Filtering)");
@@ -257,12 +239,12 @@ namespace Akka.MultiNode.TestRunner.Shared
                                     .Append($@"-Dmultinode.host=""{"localhost"}"" ")
                                     .Append($@"-Dmultinode.index={nodeTest.Node - 1} ")
                                     .Append($@"-Dmultinode.role=""{nodeTest.Role}"" ")
-                                    .Append($@"-Dmultinode.listen-address={listenAddress} ")
-                                    .Append($@"-Dmultinode.listen-port={listenPort} ");
+                                    .Append($@"-Dmultinode.listen-address={options.ListenAddress} ")
+                                    .Append($@"-Dmultinode.listen-port={options.ListenPort} ");
 
 #if CORECLR
                                 string fileName = null;
-                                switch (platform)
+                                switch (options.Platform)
                                 {
                                     case "net":
                                         fileName = ntrNetPath;
@@ -304,7 +286,7 @@ namespace Akka.MultiNode.TestRunner.Shared
                                 var nodeRole = nodeTest.Role;
 
 #if CORECLR
-                            if (platform == "netcore")
+                            if (options.Platform == "netcore")
                             {
                                 process.StartInfo.FileName = "dotnet";
                                 process.StartInfo.Arguments = ntrNetCorePath + " " + process.StartInfo.Arguments;
@@ -313,11 +295,11 @@ namespace Akka.MultiNode.TestRunner.Shared
 #endif
 
                                 //TODO: might need to do some validation here to avoid the 260 character max path error on Windows
-                                var folder = Directory.CreateDirectory(Path.Combine(OutputDirectory, nodeTest.TestName));
+                                var folder = Directory.CreateDirectory(Path.Combine(options.OutputDirectory, nodeTest.TestName));
                                 testOutputDir = testOutputDir ?? folder.FullName;
-                                var logFilePath = Path.Combine(folder.FullName, $"node{nodeIndex}__{nodeRole}__{platform}.txt");
+                                var logFilePath = Path.Combine(folder.FullName, $"node{nodeIndex}__{nodeRole}__{options.Platform}.txt");
                                 runningSpecName = nodeTest.TestName;
-                                var nodeInfo = new TimelineLogCollectorActor.NodeInfo(nodeIndex, nodeRole, platform, nodeTest.TestName);
+                                var nodeInfo = new TimelineLogCollectorActor.NodeInfo(nodeIndex, nodeRole, options.Platform, nodeTest.TestName);
                                 var fileActor = TestRunSystem.ActorOf(Props.Create(() => new FileSystemAppenderActor(logFilePath)));
                                 process.OutputDataReceived += (sender, eventArgs) =>
                                 {
@@ -325,7 +307,7 @@ namespace Akka.MultiNode.TestRunner.Shared
                                     {
                                         fileActor.Tell(eventArgs.Data);
                                         timelineCollector.Tell(new TimelineLogCollectorActor.LogMessage(nodeInfo, eventArgs.Data));
-                                        if (TeamCityFormattingOn)
+                                        if (options.TeamCityFormattingOn)
                                         {
                                             // teamCityTest.WriteStdOutput(eventArgs.Data); TODO: open flood gates
                                         }
@@ -369,7 +351,7 @@ namespace Akka.MultiNode.TestRunner.Shared
                                 if (specFailed)
                                 {
                                     var dumpFailureArtifactTask = timelineCollector.Ask<Done>(
-                                        new TimelineLogCollectorActor.DumpToFile(Path.Combine(Path.GetFullPath(OutputDirectory), FailedSpecsDirectory, $"{runningSpecName}.txt")));
+                                        new TimelineLogCollectorActor.DumpToFile(Path.Combine(Path.GetFullPath(options.OutputDirectory), FailedSpecsDirectory, $"{runningSpecName}.txt")));
                                     dumpTasks.Add(dumpFailureArtifactTask);
                                 }
                                 Task.WaitAll(dumpTasks.ToArray());
@@ -418,25 +400,25 @@ namespace Akka.MultiNode.TestRunner.Shared
             return Path.GetFullPath(Path.Combine(Path.GetDirectoryName(path), "..", targetPlatform, Path.GetFileName(path)));
         }
 
-        static void EnableAllSinks(string assemblyName, string platform)
+        static void EnableAllSinks(string assemblyName, string platform, MultiNodeTestRunnerOptions options)
         {
             var now = DateTime.UtcNow;
 
             // if multinode.output-directory wasn't specified, the results files will be written
             // to the same directory as the test assembly.
-            var outputDirectory = OutputDirectory;
+            var outputDirectory = options.OutputDirectory;
 
             MessageSink CreateJsonFileSink()
             {
                 var fileName = FileNameGenerator.GenerateFileName(outputDirectory, assemblyName, platform, ".json", now);
-                var jsonStoreProps = Props.Create(() => new FileSystemMessageSinkActor(new JsonPersistentTestRunStore(), fileName, !TeamCityFormattingOn, true));
+                var jsonStoreProps = Props.Create(() => new FileSystemMessageSinkActor(new JsonPersistentTestRunStore(), fileName, !options.TeamCityFormattingOn, true));
                 return new FileSystemMessageSink(jsonStoreProps);
             }
 
             MessageSink CreateVisualizerFileSink()
             {
                 var fileName = FileNameGenerator.GenerateFileName(outputDirectory, assemblyName, platform, ".html", now);
-                var visualizerProps = Props.Create(() => new FileSystemMessageSinkActor(new VisualizerPersistentTestRunStore(), fileName, !TeamCityFormattingOn, true));
+                var visualizerProps = Props.Create(() => new FileSystemMessageSinkActor(new VisualizerPersistentTestRunStore(), fileName, !options.TeamCityFormattingOn, true));
                 return new FileSystemMessageSink(visualizerProps);
             }
 
