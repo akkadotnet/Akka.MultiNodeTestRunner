@@ -252,16 +252,7 @@ namespace Akka.MultiNode.TestRunner.Shared
                 }
             };
 
-            FileLogger.Write($"Running process: {process.StartInfo.FileName} with args '{process.StartInfo.Arguments}'");
-            try
-            {
-                process.Start();
-            }
-            catch (Exception ex)
-            {
-                FileLogger.Write($"Failed to start node process: {ex}");
-                throw;
-            }
+            process.Start();
             process.BeginOutputReadLine();
             PublishRunnerMessage($"Started node {nodeIndex} : {nodeRole} on pid {process.Id}");
         }
