@@ -25,7 +25,7 @@ namespace Akka.MultiNode.Shared.TrxReporter.Models
         {
             XElement TextElem(string element, List<string> lines) =>
                 lines.Count > 0
-                    ? Elem(element, Text(string.Join(Environment.NewLine, lines)))
+                    ? Elem(element, Text(string.Join(System.Environment.NewLine, lines)))
                     : null;
 
             return Elem("Output",

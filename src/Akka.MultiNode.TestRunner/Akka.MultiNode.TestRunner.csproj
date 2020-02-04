@@ -12,8 +12,11 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Akka.MultiNode.Shared\Akka.MultiNode.Shared.csproj" />
     <ProjectReference Include="..\Akka.MultiNode.TestRunner.Shared\Akka.MultiNode.TestRunner.Shared.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Properties" />
   </ItemGroup>
 
   <PropertyGroup Condition=" '$(TargetFramework)' == '$(NetCoreTestVersion)' ">

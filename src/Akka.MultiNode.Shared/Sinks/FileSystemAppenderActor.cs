@@ -25,7 +25,7 @@ namespace Akka.MultiNode.Shared.Sinks
 
             ReceiveAny(o =>
             {
-                File.AppendAllText(_fullFilePath, o.ToString() + Environment.NewLine);
+                File.AppendAllText(_fullFilePath, o + System.Environment.NewLine);
             });
         }
     }

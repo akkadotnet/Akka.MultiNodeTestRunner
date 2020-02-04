@@ -44,6 +44,7 @@ namespace Akka.MultiNode.NodeRunner
                 _logger.Tell(resultMessage.Output);
                 Console.WriteLine(resultMessage.Output);
             }
+            
             var testPassed = message as ITestPassed;
             if (testPassed != null)
             {

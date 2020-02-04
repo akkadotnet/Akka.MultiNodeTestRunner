@@ -14,6 +14,7 @@ using System.Threading;
 using Akka.Actor;
 using Akka.IO;
 using Akka.MultiNode.Shared.Sinks;
+using Akka.MultiNode.TestRunner.Shared;
 using Akka.Remote.TestKit;
 using Xunit;
 
@@ -49,6 +50,8 @@ namespace Akka.MultiNode.NodeRunner
             var system = ActorSystem.Create("NoteTestRunner-" + nodeIndex);
             var tcpClient = _logger = system.ActorOf<RunnerTcpClient>();
             system.Tcp().Tell(new Tcp.Connect(listenEndpoint), tcpClient);
+            
+            MultiNodeEnvironment.Initialize();
 
 #if CORECLR
             // In NetCore, if the assembly file hasn't been touched, 
@@ -71,7 +74,7 @@ namespace Akka.MultiNode.NodeRunner
                  * the Discovery class to actually not find any individual specs to run
                  */
                 var assemblyName = Path.GetFileName(assemblyFileName);
-                Console.WriteLine("Running specs for {0} [{1}]", assemblyName, assemblyFileName);
+                Console.WriteLine("Running specs for {0} [{1}] ", assemblyName, assemblyFileName);
                 using (var discovery = new Discovery(assemblyName, typeName))
                 {
                     using (var sink = new Sink(nodeIndex, nodeRole, tcpClient))
@@ -139,7 +142,7 @@ namespace Akka.MultiNode.NodeRunner
                         system.Terminate().Wait();
 
                         Environment.Exit(sink.Passed && !timedOut ? 0 : 1);
-                        return sink.Passed ? 0 : 1;
+                         return sink.Passed ? 0 : 1;
                     }
                 }
             }

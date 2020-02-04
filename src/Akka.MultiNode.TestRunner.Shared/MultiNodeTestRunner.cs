@@ -37,7 +37,7 @@ namespace Akka.MultiNode.TestRunner.Shared
     /// </summary>
     public class MultiNodeTestRunner
     {
-        private static HashSet<string> _validNetCorePlatform = new HashSet<string>
+        private static readonly HashSet<string> ValidNetCorePlatform = new HashSet<string>
         {
             "net",
             "netcore"
@@ -45,71 +45,10 @@ namespace Akka.MultiNode.TestRunner.Shared
         
         protected static ActorSystem TestRunSystem;
         protected static IActorRef SinkCoordinator;
-        /// <summary>
-        /// Subdirectory to store failed specs logs
-        /// </summary>
-        protected static string FailedSpecsDirectory;
 
-        protected static bool MultiPlatform;
-
+       
         /// <summary>
-        /// MultiNodeTestRunner takes the following <see cref="args"/>:
-        /// 
-        /// C:\> Akka.MultiNode.TestRunner.exe [assembly name] [-Dmultinode.enable-filesink=on] [-Dmultinode.output-directory={dir path}] [-Dmultinode.spec={spec name}]
-        /// 
-        /// <list type="number">
-        /// <listheader>
-        ///     <term>Argument</term>
-        ///     <description>The name and possible value of a given Akka.MultiNode.TestRunner.exe argument.</description>
-        /// </listheader>
-        /// <item>
-        ///     <term>AssemblyName</term>
-        ///     <description>
-        ///         The full path or name of an assembly containing as least one MultiNodeSpec in the current working directory.
-        /// 
-        ///         i.e. "Akka.Cluster.Tests.MultiNode.dll"
-        ///              "C:\akka.net\src\Akka.Cluster.Tests\bin\Debug\Akka.Cluster.Tests.MultiNode.dll"
-        ///     </description>
-        /// </item>
-        /// <item>
-        ///     <term>-Dmultinode.enable-filesink</term>
-        ///     <description>Having this flag set means that the contents of this test run will be saved in the
-        ///                 current working directory as a .JSON file.
-        ///     </description>
-        /// </item>
-        /// <item>
-        ///     <term>-Dmultinode.multinode.output-directory</term>
-        ///     <description>Setting this flag means that any persistent multi-node test runner output files
-        ///                  will be written to this directory instead of the default, which is the same folder
-        ///                  as the test binary.
-        ///     </description>
-        /// </item>
-        /// <item>
-        ///     <term>-Dmultinode.listen-address={ip}</term>
-        ///     <description>
-        ///             Determines the address that this multi-node test runner will use to listen for log messages from
-        ///             individual NodeTestRunner.exe processes.
-        /// 
-        ///             Defaults to 127.0.0.1
-        ///     </description>
-        /// </item>
-        /// <item>
-        ///     <term>-Dmultinode.listen-port={port}</term>
-        ///     <description>
-        ///             Determines the port number that this multi-node test runner will use to listen for log messages from
-        ///             individual NodeTestRunner.exe processes.
-        /// 
-        ///             Defaults to 6577
-        ///     </description>
-        /// </item>
-        /// <item>
-        ///     <term>-Dmultinode.spec={spec name}</term>
-        ///     <description>
-        ///             Setting this flag means that only tests which contains the spec name will be executed
-        ///             otherwise all tests will be executed
-        ///     </description>
-        /// </item>
-        /// </list>
+        /// Executes multi-node tests from given assembly
         /// </summary>
         public int Execute(string assemblyPath, MultiNodeTestRunnerOptions options)
         {
@@ -143,7 +82,7 @@ namespace Akka.MultiNode.TestRunner.Shared
             SinkCoordinator = TestRunSystem.ActorOf(coordinatorProps, "sinkCoordinator");
 
 #if CORECLR
-            if (!_validNetCorePlatform.Contains(options.Platform))
+            if (!ValidNetCorePlatform.Contains(options.Platform))
             {
                 throw new Exception($"Target platform not supported: {options.Platform}. Supported platforms are net and netcore");
             }
@@ -159,6 +98,9 @@ namespace Akka.MultiNode.TestRunner.Shared
 
             EnableAllSinks(assemblyPath, options.Platform, options);
             PublishRunnerMessage($"Running MultiNodeTests for {assemblyPath}");
+            
+            MultiNodeEnvironment.Initialize();
+            
 #if CORECLR
             // In NetCore, if the assembly file hasn't been touched, 
             // XunitFrontController would fail loading external assemblies and its dependencies.
@@ -351,7 +293,7 @@ namespace Akka.MultiNode.TestRunner.Shared
                                 if (specFailed)
                                 {
                                     var dumpFailureArtifactTask = timelineCollector.Ask<Done>(
-                                        new TimelineLogCollectorActor.DumpToFile(Path.Combine(Path.GetFullPath(options.OutputDirectory), FailedSpecsDirectory, $"{runningSpecName}.txt")));
+                                        new TimelineLogCollectorActor.DumpToFile(Path.Combine(Path.GetFullPath(options.OutputDirectory), options.FailedSpecsDirectory, $"{runningSpecName}.txt")));
                                     dumpTasks.Add(dumpFailureArtifactTask);
                                 }
                                 Task.WaitAll(dumpTasks.ToArray());

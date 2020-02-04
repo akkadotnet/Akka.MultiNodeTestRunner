@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using Akka.MultiNode.TestRunner;
+using Akka.MultiNode.TestRunner.Shared;
 using FluentAssertions;
 using Xunit;
 

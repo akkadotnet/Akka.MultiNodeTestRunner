@@ -1,4 +1,7 @@
 using Akka.Cluster.TestKit;
+using Akka.MultiNode.NodeRunner;
+using Akka.MultiNode.Shared.Environment;
+using Akka.MultiNode.TestRunner.Shared;
 using Akka.Remote.TestKit;
 
 namespace Akka.MultiNode.TestAdapter.SampleTests
@@ -12,12 +15,15 @@ namespace Akka.MultiNode.TestAdapter.SampleTests
         {
             First = Role("first");
             Second = Role("second");
+            
+            CommonConfig = DebugConfig(true)
+                .WithFallback(MultiNodeClusterSpec.ClusterConfig());
         }
     }
 
     public class EmptySpec : MultiNodeClusterSpec
     {
-        readonly EmptySpecConfig _config;
+        private readonly EmptySpecConfig _config;
 
         public EmptySpec() : this(new EmptySpecConfig())
         {
@@ -28,7 +34,8 @@ namespace Akka.MultiNode.TestAdapter.SampleTests
             _config = config;
         }
 
-        [MultiNodeFact]
+        // [MultiNodeFact]
+        [CustomMultiNodeFact]
         public void Should_start_and_join_cluster()
         {
             RunOn(StartClusterNode, _config.First);

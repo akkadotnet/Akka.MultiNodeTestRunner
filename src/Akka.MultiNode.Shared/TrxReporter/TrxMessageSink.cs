@@ -14,7 +14,7 @@ namespace Akka.MultiNode.Shared.TrxReporter
     public class TrxMessageSink : MessageSink
     {
         public TrxMessageSink(string suiteName)
-            : base(Props.Create(() => new TrxSinkActor(suiteName, Environment.UserName, Environment.MachineName, true)))
+            : base(Props.Create(() => new TrxSinkActor(suiteName, System.Environment.UserName, System.Environment.MachineName, true)))
         {
         }
 
