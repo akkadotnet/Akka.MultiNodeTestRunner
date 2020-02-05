@@ -9,7 +9,7 @@
 
     <ItemGroup>
         <PackageReference Include="TeamCity.ServiceMessages" Version="3.0.13" />
-        <PackageReference Include="xunit.runner.utility" Version="2.4.1" />
+        <PackageReference Include="xunit.runner.utility" Version="$(XunitVersion)" />
         <PackageReference Include="Akka.Remote.TestKit" Version="$(AkkaVersion)" />
         <PackageReference Include="Akka.TestKit.Xunit2" Version="$(AkkaVersion)" />
     </ItemGroup>

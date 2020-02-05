@@ -120,7 +120,7 @@ namespace Akka.MultiNode.TestRunner
                 TeamCityFormattingOn = teamCityFormattingOn,
                 ListenAddress = listenAddress,
                 ListenPort = listenPort,
-                SpecName = specName,
+                SpecNames = !string.IsNullOrEmpty(specName) ? new List<string>() { specName } : null,
                 Platform = platform,
                 Reporter = reporter,
                 ClearOutputDirectory = clearOutputDirectory

@@ -2,7 +2,6 @@ using System.IO;
 using Akka.MultiNode.TestAdapter.SampleTests;
 using Akka.MultiNode.TestAdapter.Tests.Helpers;
 using FluentAssertions;
-using Microsoft.VisualStudio.TestPlatform.Common.Filtering;
 using Xunit;
 
 namespace Akka.MultiNode.TestAdapter.Tests

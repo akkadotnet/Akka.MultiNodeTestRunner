@@ -1,4 +1,7 @@
+using System;
 using System.Collections.Generic;
+using System.Linq;
+using Akka.MultiNode.TestRunner.Shared;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel.Adapter;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel.Logging;
@@ -24,8 +27,20 @@ namespace Akka.MultiNode.TestAdapter
         /// <param name="discoverySink">Used to send testcases and discovery related events back to Discoverer manager.</param>
         public void DiscoverTests(IEnumerable<string> sources, IDiscoveryContext discoveryContext, IMessageLogger logger, ITestCaseDiscoverySink discoverySink)
         {
-            logger.SendMessage(TestMessageLevel.Informational, $"Sources: {string.Join(", ", sources)}");
-            logger.SendMessage(TestMessageLevel.Error, "DiscoverTests");
+            foreach (var assemblyPath in sources)
+            {
+                var (specs, errors) = MultiNodeTestRunner.DiscoverSpecs(assemblyPath);
+
+                foreach (var discoveryErrorMessage in errors.SelectMany(e => e.Messages))
+                {
+                    logger.SendMessage(TestMessageLevel.Error, discoveryErrorMessage);
+                }
+
+                foreach (var discoveredSpec in specs)
+                {
+                    discoverySink.SendTestCase(new TestCase(discoveredSpec.SpecName, new Uri(ExecutorMetadata.ExecutorUri), assemblyPath));
+                }
+            }
         }
     }
 }

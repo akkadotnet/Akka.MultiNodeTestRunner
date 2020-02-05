@@ -23,6 +23,7 @@ namespace Akka.MultiNode.TestAdapter
         /// </summary>
         public void Cancel()
         {
+            // TODO: Implement proper cancellation
         }
 
         /// <summary>
@@ -39,8 +40,14 @@ namespace Akka.MultiNode.TestAdapter
         /// <param name="frameworkHandle">Handle to the framework to record results and to do framework operations.</param>
         public void RunTests(IEnumerable<TestCase> tests, IRunContext runContext, IFrameworkHandle frameworkHandle)
         {
-            var settings = runContext.RunSettings.SettingsXml;
-            frameworkHandle.SendMessage(TestMessageLevel.Error, "RunTests");
+            throw new NotImplementedException("Running from VS is not implemented yet");
+            
+            // This is called from VS "Run Selected tests" command.
+            // Need to get assembly paths and perform specs filtering by name
+            List<string> assemblyPaths;
+            
+            var filteredSpecNames = tests.Select(t => t.FullyQualifiedName).ToList();
+            RunTestsWithOptions(assemblyPaths, frameworkHandle, MultiNodeTestRunnerOptions.Default.WithSpecNames(filteredSpecNames));
         }
 
         /// <summary>
@@ -51,9 +58,14 @@ namespace Akka.MultiNode.TestAdapter
         /// <param param name="frameworkHandle">Handle to the framework to record results and to do framework operations.</param>
         public void RunTests(IEnumerable<string> sources, IRunContext runContext, IFrameworkHandle frameworkHandle)
         {
+            RunTestsWithOptions(sources, frameworkHandle, MultiNodeTestRunnerOptions.Default);
+        }
+
+        private void RunTestsWithOptions(IEnumerable<string> sources, IFrameworkHandle frameworkHandle, MultiNodeTestRunnerOptions options)
+        {
             var testAssemblyPaths = sources.ToList();
             frameworkHandle.SendMessage(TestMessageLevel.Informational, $"Loading tests from assemblies: {string.Join(", ", testAssemblyPaths)}");
-            
+
             foreach (var assemblyPath in testAssemblyPaths)
             {
                 TestCase BuildTestCase(string name) => new TestCase(name, new Uri(ExecutorMetadata.ExecutorUri), assemblyPath);
@@ -79,7 +91,8 @@ namespace Akka.MultiNode.TestAdapter
                         });
                         frameworkHandle.RecordEnd(testCase, MapToOutcome(testResult.Status));
                     };
-                    runner.Execute(assemblyPath, MultiNodeTestRunnerOptions.Default);
+                    
+                    runner.Execute(assemblyPath, options);
                 }
                 catch (Exception ex)
                 {
@@ -87,7 +100,7 @@ namespace Akka.MultiNode.TestAdapter
                 }
             }
         }
-        
+
         private TestOutcome MapToOutcome(MultiNodeTestResult.TestStatus status)
         {
             switch (status)

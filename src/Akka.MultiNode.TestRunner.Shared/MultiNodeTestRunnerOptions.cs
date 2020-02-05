@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.IO;
 
 namespace Akka.MultiNode.TestRunner.Shared
@@ -33,9 +34,9 @@ namespace Akka.MultiNode.TestRunner.Shared
         /// </summary>
         public int ListenPort { get; set; } = 6577;
         /// <summary>
-        /// Spec name
+        /// List of spec names to be executed. Other specs are skipped 
         /// </summary>
-        public string SpecName { get; set; } = string.Empty;
+        public List<string> SpecNames { get; set; }
         /// <summary>
         /// Current platform. "net" or "netcore"
         /// </summary>
@@ -48,5 +49,14 @@ namespace Akka.MultiNode.TestRunner.Shared
         /// If set, performs output directory cleanup before running tests
         /// </summary>
         public bool ClearOutputDirectory { get; set; }
+
+        /// <summary>
+        /// Sets <see cref="SpecNames"/>
+        /// </summary>
+        public MultiNodeTestRunnerOptions WithSpecNames(List<string> specNames)
+        {
+            SpecNames = specNames;
+            return this;
+        }
     }
 }

@@ -24,6 +24,7 @@ using Akka.MultiNode.Shared.Sinks;
 using Akka.MultiNode.Shared.TrxReporter;
 using Akka.Remote.TestKit;
 using Xunit;
+using ErrorMessage = Xunit.Sdk.ErrorMessage;
 
 #if CORECLR
 using System.Runtime.Loader;
@@ -78,7 +79,7 @@ namespace Akka.MultiNode.TestRunner.Shared
             PreLoadTestAssembly_WhenNetCore(assemblyPath);
 
             // Here is where main action goes
-            var results = DiscoverAndRunTests(assemblyPath, options);
+            var results = DiscoverAndRunSpecs(assemblyPath, options);
             
             AbortTcpLoggingServer(tcpLogger);
             CloseAllSinks();
@@ -90,11 +91,11 @@ namespace Akka.MultiNode.TestRunner.Shared
             return results;
         }
 
-        private List<MultiNodeTestResult> DiscoverAndRunTests(string assemblyPath, MultiNodeTestRunnerOptions options)
+        /// <summary>
+        /// Discovers all tests in given assembly
+        /// </summary>
+        public static (List<MultiNodeSpec> Specs, List<ErrorMessage> Errors) DiscoverSpecs(string assemblyPath)
         {
-            var testResults = new List<MultiNodeTestResult>();
-            PublishRunnerMessage($"Running MultiNodeTests for {assemblyPath}");
-            
             using (var controller = new XunitFrontController(AppDomainSupport.IfAvailable, assemblyPath))
             {
                 using (var discovery = new Discovery())
@@ -103,70 +104,78 @@ namespace Akka.MultiNode.TestRunner.Shared
                     discovery.Finished.WaitOne();
 
                     if (!discovery.WasSuccessful)
-                    {
-                        ReportDiscoveryErrors(discovery);
-                        return testResults;
-                    }
+                        return (Specs: new List<MultiNodeSpec>(), Errors: discovery.Errors);
 
-                    foreach (var spec in discovery.Tests.Reverse())
-                    {
-                        var specName = spec.Key;
-                        var testName = spec.Value.First().MethodName;
-                        TestStarted?.Invoke(specName);
-                        
-                        if (!string.IsNullOrEmpty(spec.Value.First().SkipReason))
-                        {
-                            PublishRunnerMessage($"Skipping test {testName}. Reason - {spec.Value.First().SkipReason}");
-                            var skippedResult = new MultiNodeTestResult(testName, MultiNodeTestResult.TestStatus.Skipped);
-                            testResults.Add(skippedResult);
-                            TestFinished?.Invoke(skippedResult);
-                            continue;
-                        }
-
-                        if (!string.IsNullOrWhiteSpace(options.SpecName) &&
-                            CultureInfo.InvariantCulture.CompareInfo.IndexOf(spec.Value.First().TestName, options.SpecName, CompareOptions.IgnoreCase) < 0)
-                        {
-                            PublishRunnerMessage($"Skipping [{spec.Value.First().MethodName}] (Filtering)");
-                            var skippedResult = new MultiNodeTestResult(testName, MultiNodeTestResult.TestStatus.Skipped);
-                            testResults.Add(skippedResult);
-                            TestFinished?.Invoke(skippedResult);
-                            continue;
-                        }
-
-                        // Run test on several nodes and report results
-                        var result = RunSpec(assemblyPath, options, spec);
-                        TestFinished?.Invoke(result);
-                        testResults.Add(result);
-                    }
-
-                    Console.WriteLine("Complete");
-                    PublishRunnerMessage("Waiting 5 seconds for all messages from all processes to be collected.");
-                    Thread.Sleep(TimeSpan.FromSeconds(5));
+                    var specs = discovery.Tests.Reverse().Select(pair => new MultiNodeSpec(pair.Key, pair.Value)).ToList();
+                    return (specs, new List<ErrorMessage>());
                 }
+            }
+        }
+
+        private List<MultiNodeTestResult> DiscoverAndRunSpecs(string assemblyPath, MultiNodeTestRunnerOptions options)
+        {
+            var testResults = new List<MultiNodeTestResult>();
+            PublishRunnerMessage($"Running MultiNodeTests for {assemblyPath}");
+
+            var (discoveredSpecs, errors) = DiscoverSpecs(assemblyPath);
+            if (errors.Any())
+            {
+                ReportDiscoveryErrors(errors);
+                return testResults;
+            }
+            
+            foreach (var spec in discoveredSpecs)
+            {
+                var testName = spec.Tests.First().MethodName;
+                TestStarted?.Invoke(spec.SpecName);
+                    
+                if (!string.IsNullOrEmpty(spec.FirstTest.SkipReason))
+                {
+                    PublishRunnerMessage($"Skipping test {testName}. Reason - {spec.FirstTest.SkipReason}");
+                    var skippedResult = new MultiNodeTestResult(testName, MultiNodeTestResult.TestStatus.Skipped);
+                    testResults.Add(skippedResult);
+                    TestFinished?.Invoke(skippedResult);
+                    continue;
+                }
+
+                if (options.SpecNames != null &&
+                    !options.SpecNames.All(name => spec.FirstTest.TestName.IndexOf(name, StringComparison.InvariantCultureIgnoreCase) < 0))
+                {
+                    PublishRunnerMessage($"Skipping [{spec.FirstTest.MethodName}] (Filtering)");
+                    var skippedResult = new MultiNodeTestResult(testName, MultiNodeTestResult.TestStatus.Skipped);
+                    testResults.Add(skippedResult);
+                    TestFinished?.Invoke(skippedResult);
+                    continue;
+                }
+
+                // Run test on several nodes and report results
+                var result = RunSpec(assemblyPath, options, spec);
+                TestFinished?.Invoke(result);
+                testResults.Add(result);
             }
 
             return testResults;
         }
 
-        private MultiNodeTestResult RunSpec(string assemblyPath, MultiNodeTestRunnerOptions options, KeyValuePair<string, List<NodeTest>> spec)
+        private MultiNodeTestResult RunSpec(string assemblyPath, MultiNodeTestRunnerOptions options, MultiNodeSpec spec)
         {
-            PublishRunnerMessage($"Starting test {spec.Value.First().MethodName}");
-            Console.Out.WriteLine($"Starting test {spec.Value.First().MethodName}");
+            PublishRunnerMessage($"Starting test {spec.FirstTest.MethodName}");
+            Console.Out.WriteLine($"Starting test {spec.FirstTest.MethodName}");
 
-            StartNewSpec(spec.Value);
+            StartNewSpec(spec.Tests);
 
             var timelineCollector = TestRunSystem.ActorOf(Props.Create(() => new TimelineLogCollectorActor()));
             string testOutputDir = null;
             string runningSpecName = null;
 
             var processes = new List<Process>();
-            foreach (var nodeTest in spec.Value)
+            foreach (var nodeTest in spec.Tests)
             {
                 //Loop through each test, work out number of nodes to run on and kick off process
                 var sbArguments = new StringBuilder()
                     .Append($@"-Dmultinode.test-class=""{nodeTest.TypeName}"" ")
                     .Append($@"-Dmultinode.test-method=""{nodeTest.MethodName}"" ")
-                    .Append($@"-Dmultinode.max-nodes={spec.Value.Count} ")
+                    .Append($@"-Dmultinode.max-nodes={spec.Tests.Count} ")
                     .Append($@"-Dmultinode.server-host=""{"localhost"}"" ")
                     .Append($@"-Dmultinode.host=""{"localhost"}"" ")
                     .Append($@"-Dmultinode.index={nodeTest.Node - 1} ")
@@ -197,7 +206,7 @@ namespace Akka.MultiNode.TestRunner.Shared
             // Save timelined logs to file system
             DumpAggregatedSpecLogs(options, testOutputDir, timelineCollector, specFailed, runningSpecName);
 
-            FinishSpec(spec.Value, timelineCollector);
+            FinishSpec(spec.Tests, timelineCollector);
             
             return new MultiNodeTestResult(runningSpecName, specFailed ? MultiNodeTestResult.TestStatus.Failed : MultiNodeTestResult.TestStatus.Passed);
         }
@@ -320,11 +329,11 @@ namespace Akka.MultiNode.TestRunner.Shared
 #endif
         }
 
-        private void ReportDiscoveryErrors(Discovery discovery)
+        private void ReportDiscoveryErrors(List<ErrorMessage> errors)
         {
             var sb = new StringBuilder();
             sb.AppendLine("One or more exception was thrown while discovering test cases. Test Aborted.");
-            foreach (var err in discovery.Errors)
+            foreach (var err in errors)
             {
                 for (int i = 0; i < err.ExceptionTypes.Length; ++i)
                 {
