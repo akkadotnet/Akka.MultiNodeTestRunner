@@ -6,12 +6,12 @@ using Akka.Remote.TestKit;
 
 namespace Akka.MultiNode.TestAdapter.SampleTests
 {
-    public class EmptySpecConfig : MultiNodeConfig
+    public class SampleMultiNodeSpecConfig : MultiNodeConfig
     {
         public RoleName First { get; }
         public RoleName Second { get; }
 
-        public EmptySpecConfig()
+        public SampleMultiNodeSpecConfig()
         {
             First = Role("first");
             Second = Role("second");
@@ -21,15 +21,15 @@ namespace Akka.MultiNode.TestAdapter.SampleTests
         }
     }
 
-    public class EmptySpec : MultiNodeClusterSpec
+    public class SampleMultiNodeSpec : MultiNodeClusterSpec
     {
-        private readonly EmptySpecConfig _config;
+        private readonly SampleMultiNodeSpecConfig _config;
 
-        public EmptySpec() : this(new EmptySpecConfig())
+        public SampleMultiNodeSpec() : this(new SampleMultiNodeSpecConfig())
         {
         }
 
-        private EmptySpec(EmptySpecConfig config) : base(config, typeof(EmptySpec))
+        private SampleMultiNodeSpec(SampleMultiNodeSpecConfig config) : base(config, typeof(SampleMultiNodeSpec))
         {
             _config = config;
         }

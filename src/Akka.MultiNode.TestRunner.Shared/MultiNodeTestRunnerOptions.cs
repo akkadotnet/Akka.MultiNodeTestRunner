@@ -8,6 +8,11 @@ namespace Akka.MultiNode.TestRunner.Shared
     public class MultiNodeTestRunnerOptions
     {
         /// <summary>
+        /// Default options
+        /// </summary>
+        public static readonly MultiNodeTestRunnerOptions Default = new MultiNodeTestRunnerOptions();
+        
+        /// <summary>
         /// TeamCity formatting on/off
         /// </summary>
         public bool TeamCityFormattingOn { get; set; }

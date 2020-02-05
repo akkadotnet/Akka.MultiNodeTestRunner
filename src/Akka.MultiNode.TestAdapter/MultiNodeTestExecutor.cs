@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using Akka.MultiNode.TestRunner.Shared;
@@ -15,7 +16,7 @@ namespace Akka.MultiNode.TestAdapter
     /// See how it works here: https://github.com/Microsoft/vstest-docs/blob/master/RFCs/0004-Adapter-Extensibility.md
     /// </remarks>
     [ExtensionUri(ExecutorMetadata.ExecutorUri)]
-    public class TestExecutor : ITestExecutor
+    public class MultiNodeTestExecutor : ITestExecutor
     {
         /// <summary>
         /// Cancel the execution of the tests.
@@ -52,27 +53,33 @@ namespace Akka.MultiNode.TestAdapter
         {
             var testAssemblyPaths = sources.ToList();
             frameworkHandle.SendMessage(TestMessageLevel.Informational, $"Loading tests from assemblies: {string.Join(", ", testAssemblyPaths)}");
-            var settings = runContext.RunSettings.SettingsXml;
             
             foreach (var assemblyPath in testAssemblyPaths)
             {
-                var testCase = new TestCase("All tests in assemby", new Uri(ExecutorMetadata.ExecutorUri), assemblyPath);
-                frameworkHandle.RecordStart(testCase);
-                
+                TestCase BuildTestCase(string name) => new TestCase(name, new Uri(ExecutorMetadata.ExecutorUri), assemblyPath);
+
+                var testCases = new ConcurrentDictionary<string, TestCase>();
                 try
                 {
                     var runner = new MultiNodeTestRunner();
-                    var results = runner.Execute(assemblyPath, new MultiNodeTestRunnerOptions());
-                    foreach (var testResult in results)
+                    runner.TestStarted += testName =>
                     {
+                        var testCase = BuildTestCase(testName);
+                        testCases.AddOrUpdate(testName, name => testCase, (name, existingCase) => testCase);
+                        frameworkHandle.RecordStart(testCase);
+                    };
+
+                    runner.TestFinished += testResult =>
+                    {
+                        var testCase = testCases[testResult.TestName];
                         frameworkHandle.RecordResult(new TestResult(testCase)
                         {
-                            // TODO: Set more properties here
-                            Outcome = TestOutcome.Passed,
+                            // TODO: Set other props
+                            Outcome = MapToOutcome(testResult.Status)
                         });
                         frameworkHandle.RecordEnd(testCase, MapToOutcome(testResult.Status));
-                    }
-                    
+                    };
+                    runner.Execute(assemblyPath, MultiNodeTestRunnerOptions.Default);
                 }
                 catch (Exception ex)
                 {
@@ -80,7 +87,7 @@ namespace Akka.MultiNode.TestAdapter
                 }
             }
         }
-
+        
         private TestOutcome MapToOutcome(MultiNodeTestResult.TestStatus status)
         {
             switch (status)
