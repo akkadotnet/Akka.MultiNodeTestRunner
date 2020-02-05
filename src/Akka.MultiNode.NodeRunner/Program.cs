@@ -58,10 +58,18 @@ namespace Akka.MultiNode.NodeRunner
             // XunitFrontController would fail loading external assemblies and its dependencies.
             AssemblyLoadContext.Default.Resolving += (assemblyLoadContext, assemblyName) => DefaultOnResolving(assemblyLoadContext, assemblyName, assemblyFileName);
             var assembly = AssemblyLoadContext.Default.LoadFromAssemblyPath(assemblyFileName);
-            DependencyContext.Load(assembly)
+            var dependencyContext = DependencyContext.Load(assembly);
+            if (dependencyContext == null)
+            {
+                Console.WriteLine($"Failed to load assembly under .NET Core from {assemblyFileName}. " +
+                                  $"Possible reason is that assembly is compiled under .NET Full Framework.");
+                Environment.Exit(1);
+                return 1;
+            }
+            
+            dependencyContext
                 .CompileLibraries
-                .Where(dep => dep.Name.ToLower()
-                    .Contains(assembly.FullName.Split(new[] { ',' })[0].ToLower()))
+                .Where(dep => dep.Name.ToLower().Contains(assembly.FullName.Split(new[] {','})[0].ToLower()))
                 .Select(dependency => AssemblyLoadContext.Default.LoadFromAssemblyName(new AssemblyName(dependency.Name)));
 #endif
 
@@ -141,8 +149,9 @@ namespace Akka.MultiNode.NodeRunner
                         FlushLogMessages();
                         system.Terminate().Wait();
 
-                        Environment.Exit(sink.Passed && !timedOut ? 0 : 1);
-                         return sink.Passed ? 0 : 1;
+                        var retCode = sink.Passed && !timedOut ? 0 : 1;
+                        Environment.Exit(retCode);
+                        return retCode;
                     }
                 }
             }
