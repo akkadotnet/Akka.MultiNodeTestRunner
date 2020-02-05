@@ -6,6 +6,7 @@ using Xunit;
 
 namespace Akka.MultiNode.TestAdapter.Tests
 {
+    [Collection(TestCollections.MultiNode)]
     public class MultiNodeTestExecutorSpec
     {
         [Fact]

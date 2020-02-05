@@ -1,12 +1,13 @@
-using System;
 using System.IO;
 using Akka.MultiNode.TestAdapter.SampleTests;
+using Akka.MultiNode.TestAdapter.Tests.Helpers;
 using Akka.MultiNode.TestRunner.Shared;
 using FluentAssertions;
 using Xunit;
 
-namespace Akka.MultiNode.TestRunner.Tests
+namespace Akka.MultiNode.TestAdapter.Tests
 {
+    [Collection(TestCollections.MultiNode)]
     public class TestRunnerSpec
     {
         [Fact]
