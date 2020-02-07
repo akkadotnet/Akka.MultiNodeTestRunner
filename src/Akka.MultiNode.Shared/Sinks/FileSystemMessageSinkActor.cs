@@ -64,8 +64,15 @@ namespace Akka.MultiNode.Shared.Sinks
 
         protected override void HandleTestRunTree(TestRunTree tree)
         {
+            var filePath = Path.GetFullPath(FileName);
+            
+            // Create output dir if not exists
+            var dir = new DirectoryInfo(Path.GetDirectoryName(filePath));
+            if (!dir.Exists)
+                dir.Create();
+            
             if (_reportStatus)
-                Console.WriteLine("Writing test state to: {0}", Path.GetFullPath(FileName));
+                Console.WriteLine("Writing test state to: {0}", filePath);
             try
             {
                 FileStore.SaveTestRun(FileName, tree);
@@ -73,7 +80,7 @@ namespace Akka.MultiNode.Shared.Sinks
             catch (Exception ex) //avoid throwing exception back to parent - just continue
             {
                 if (_reportStatus)
-                    Console.WriteLine("Failed to write test state to {0}. Cause: {1}", Path.GetFullPath(FileName), ex);                
+                    Console.WriteLine("Failed to write test state to {0}. Cause: {1}", filePath, ex);                
             }
             if (_reportStatus)
                 Console.WriteLine("Finished.");           
