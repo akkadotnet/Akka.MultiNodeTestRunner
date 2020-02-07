@@ -139,10 +139,13 @@ namespace Akka.MultiNode.TestRunner.Shared
                         FileLogger.Write($"Finish test discovery from {assemblyPath}");
 
                         if (!discovery.WasSuccessful)
+                        {
+                            FileLogger.Write($"Found discovery errors from {assemblyPath}: {string.Join("\n", discovery.Errors.SelectMany(m => m.Messages))}");
                             return (Specs: new List<MultiNodeSpec>(), Errors: discovery.Errors);
+                        }
 
-                        var specs = discovery.Tests.Reverse().Select(pair => new MultiNodeSpec(pair.Key, pair.Value))
-                            .ToList();
+                        var specs = discovery.Tests.Reverse().Select(pair => new MultiNodeSpec(pair.Key, pair.Value)).ToList();
+                        FileLogger.Write($"Discovery found {specs.Count} specs  from {assemblyPath}: {string.Join(", ", specs.Select(s => s.SpecName))}");
                         return (specs, new List<ErrorMessage>());
                     }
                 }
