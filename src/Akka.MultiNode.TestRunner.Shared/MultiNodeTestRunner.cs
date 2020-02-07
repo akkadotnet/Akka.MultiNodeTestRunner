@@ -19,10 +19,13 @@ using System.Threading.Tasks;
 using Akka.Actor;
 using Akka.IO;
 using Akka.MultiNode.Shared;
+using Akka.MultiNode.Shared.Environment;
 using Akka.MultiNode.Shared.Persistence;
 using Akka.MultiNode.Shared.Sinks;
 using Akka.MultiNode.Shared.TrxReporter;
+using Akka.MultiNode.TestRunner.Shared.Helpers;
 using Akka.Remote.TestKit;
+using Newtonsoft.Json;
 using Xunit;
 using ErrorMessage = Xunit.Sdk.ErrorMessage;
 
@@ -54,41 +57,66 @@ namespace Akka.MultiNode.TestRunner.Shared
         /// </summary>
         public List<MultiNodeTestResult> Execute(string assemblyPath, MultiNodeTestRunnerOptions options)
         {
-            ValidatePlatform(options);
+#if CORECLR
+           string env = "netcoreapp3.0"; 
+#else
+            string env = "net472"; 
+#endif
             
-            // Perform output cleanup before anything is logged
-            if (options.ClearOutputDirectory && Directory.Exists(options.OutputDirectory))
-                Directory.Delete(options.OutputDirectory, true);
-            
-            TestRunSystem = ActorSystem.Create("TestRunnerLogging");
-            
-            var suiteName = Path.GetFileNameWithoutExtension(Path.GetFullPath(assemblyPath));
-            SinkCoordinator = CreateSinkCoordinator(options, suiteName);
+            try
+            {
+                FileLogger.Write($"Start test execution setup from {assemblyPath} under {env} with options {JsonConvert.SerializeObject(options)}");
 
-            var tcpLogger = TestRunSystem.ActorOf(Props.Create(() => new TcpLoggingServer(SinkCoordinator)), "TcpLogger");
-            var listenEndpoint = new IPEndPoint(IPAddress.Parse(options.ListenAddress), options.ListenPort);
-            TestRunSystem.Tcp().Tell(new Tcp.Bind(tcpLogger, listenEndpoint), sender: tcpLogger);
+                ValidatePlatform(options);
 
-            EnableAllSinks(assemblyPath, options);
-            
-            // Set MNTR environment for correct tests discovert
-            MultiNodeEnvironment.Initialize();
-            
-            // In NetCore, if the assembly file hasn't been touched, 
-            // XunitFrontController would fail loading external assemblies and its dependencies.
-            PreLoadTestAssembly_WhenNetCore(assemblyPath);
+                // Perform output cleanup before anything is logged
+                if (options.ClearOutputDirectory && Directory.Exists(options.OutputDirectory))
+                    Directory.Delete(options.OutputDirectory, true);
 
-            // Here is where main action goes
-            var results = DiscoverAndRunSpecs(assemblyPath, options);
-            
-            AbortTcpLoggingServer(tcpLogger);
-            CloseAllSinks();
+                TestRunSystem = ActorSystem.Create("TestRunnerLogging");
 
-            // Block until all Sinks have been terminated.
-            TestRunSystem.WhenTerminated.Wait(TimeSpan.FromMinutes(1));
+                var suiteName = Path.GetFileNameWithoutExtension(Path.GetFullPath(assemblyPath));
+                SinkCoordinator = CreateSinkCoordinator(options, suiteName);
 
-            // Return the proper exit code
-            return results;
+                options.ListenPort = options.ListenPort > 0 ? options.ListenPort : TcpHelper.GetFreeTcpPort();
+                var tcpLogger = TestRunSystem.ActorOf(Props.Create(() => new TcpLoggingServer(SinkCoordinator)), "TcpLogger");
+                var listenEndpoint = new IPEndPoint(IPAddress.Parse(options.ListenAddress), options.ListenPort);
+                TestRunSystem.Tcp().Tell(new Tcp.Bind(tcpLogger, listenEndpoint), sender: tcpLogger);
+
+                EnableAllSinks(assemblyPath, options);
+
+                // Set MNTR environment for correct tests discovert
+                MultiNodeEnvironment.Initialize();
+
+                // In NetCore, if the assembly file hasn't been touched, 
+                // XunitFrontController would fail loading external assemblies and its dependencies.
+                PreLoadTestAssembly_WhenNetCore(assemblyPath);
+
+                FileLogger.Write($"Start test discovery and run from {assemblyPath} under {env}");
+
+                // Here is where main action goes
+                var results = DiscoverAndRunSpecs(assemblyPath, options);
+
+                FileLogger.Write($"Finish test discovery and run from {assemblyPath} under {env}");
+
+                AbortTcpLoggingServer(tcpLogger);
+                CloseAllSinks();
+
+                FileLogger.Write($"Waiting for TestRunSystem to terminate from {assemblyPath} under {env}...");
+
+                // Block until all Sinks have been terminated.
+                TestRunSystem.WhenTerminated.Wait(TimeSpan.FromMinutes(1));
+
+                FileLogger.Write($"TestRunSystem is terminated successfully from {assemblyPath} under {env}");
+
+                // Return the proper exit code
+                return results;
+            }
+            catch (Exception ex)
+            {
+                FileLogger.Write($"Failed MNTR test execution from {assemblyPath} under {env}: {ex}");
+                throw;
+            }
         }
 
         /// <summary>
@@ -96,19 +124,33 @@ namespace Akka.MultiNode.TestRunner.Shared
         /// </summary>
         public static (List<MultiNodeSpec> Specs, List<ErrorMessage> Errors) DiscoverSpecs(string assemblyPath)
         {
-            using (var controller = new XunitFrontController(AppDomainSupport.IfAvailable, assemblyPath))
+            try
             {
-                using (var discovery = new Discovery())
+                FileLogger.Write($"Start test discovery from {assemblyPath}");
+                MultiNodeEnvironment.Initialize();
+
+                using (var controller = new XunitFrontController(AppDomainSupport.IfAvailable, assemblyPath))
                 {
-                    controller.Find(false, discovery, TestFrameworkOptions.ForDiscovery());
-                    discovery.Finished.WaitOne();
+                    using (var discovery = new Discovery())
+                    {
+                        controller.Find(false, discovery, TestFrameworkOptions.ForDiscovery());
+                        discovery.Finished.WaitOne();
 
-                    if (!discovery.WasSuccessful)
-                        return (Specs: new List<MultiNodeSpec>(), Errors: discovery.Errors);
+                        FileLogger.Write($"Finish test discovery from {assemblyPath}");
 
-                    var specs = discovery.Tests.Reverse().Select(pair => new MultiNodeSpec(pair.Key, pair.Value)).ToList();
-                    return (specs, new List<ErrorMessage>());
+                        if (!discovery.WasSuccessful)
+                            return (Specs: new List<MultiNodeSpec>(), Errors: discovery.Errors);
+
+                        var specs = discovery.Tests.Reverse().Select(pair => new MultiNodeSpec(pair.Key, pair.Value))
+                            .ToList();
+                        return (specs, new List<ErrorMessage>());
+                    }
                 }
+            }
+            catch (Exception ex)
+            {
+                FileLogger.Write($"Tests discovery from {assemblyPath} failed: {ex}");
+                throw;
             }
         }
 

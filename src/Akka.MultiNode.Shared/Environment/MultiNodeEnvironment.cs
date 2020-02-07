@@ -1,7 +1,4 @@
-using System;
-using Akka.MultiNode.Shared.Environment;
-
-namespace Akka.MultiNode.TestRunner.Shared
+namespace Akka.MultiNode.Shared.Environment
 {
     /// <summary>
     /// MultiNodeEnvironment
@@ -13,7 +10,7 @@ namespace Akka.MultiNode.TestRunner.Shared
         /// </summary>
         public static void Initialize()
         {
-            Environment.SetEnvironmentVariable(CustomMultiNodeFactAttribute.MultiNodeTestEnvironmentName, "1");
+            System.Environment.SetEnvironmentVariable(CustomMultiNodeFactAttribute.MultiNodeTestEnvironmentName, "1");
         }
     }
 }

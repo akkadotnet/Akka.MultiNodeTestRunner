@@ -13,8 +13,8 @@ using System.Reflection;
 using System.Threading;
 using Akka.Actor;
 using Akka.IO;
+using Akka.MultiNode.Shared.Environment;
 using Akka.MultiNode.Shared.Sinks;
-using Akka.MultiNode.TestRunner.Shared;
 using Akka.Remote.TestKit;
 using Xunit;
 

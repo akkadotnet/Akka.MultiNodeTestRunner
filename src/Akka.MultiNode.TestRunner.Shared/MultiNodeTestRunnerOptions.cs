@@ -30,9 +30,9 @@ namespace Akka.MultiNode.TestRunner.Shared
         /// </summary>
         public string ListenAddress { get; set; } = "127.0.0.1";
         /// <summary>
-        /// MNTR controller listener port
+        /// MNTR controller listener port. Set -1 to use random available port
         /// </summary>
-        public int ListenPort { get; set; } = 6577;
+        public int ListenPort { get; set; } = -1;
         /// <summary>
         /// List of spec names to be executed. Other specs are skipped 
         /// </summary>
