@@ -1,0 +1,40 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+    <Import Project="..\common.props" />
+    
+    <PropertyGroup>
+        <AssemblyTitle>Akka.MultiNode.TestRunner.Shared</AssemblyTitle>
+        <TargetFrameworks>$(NetFrameworkTestVersion);$(NetCoreTestVersion)</TargetFrameworks>
+        <RootNamespace>Akka.MultiNode.TestRunner.Shared</RootNamespace>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="TeamCity.ServiceMessages" Version="3.0.13" />
+        <PackageReference Include="xunit.runner.utility" Version="$(XunitVersion)" />
+        <PackageReference Include="Akka.Remote.TestKit" Version="$(AkkaVersion)" />
+        <PackageReference Include="Akka.TestKit.Xunit2" Version="$(AkkaVersion)" />
+    </ItemGroup>
+
+    <ItemGroup Condition="'$(TargetFramework)' == '$(NetCoreTestVersion)'">
+        <PackageReference Include="System.Runtime.Loader" Version="4.3.0" />
+        <PackageReference Include="Microsoft.Extensions.DependencyModel" Version="3.1.1" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Akka.MultiNode.NodeRunner\Akka.MultiNode.NodeRunner.csproj" />
+        <ProjectReference Include="..\Akka.MultiNode.Shared\Akka.MultiNode.Shared.csproj" />
+    </ItemGroup>
+
+    <!-- Under .NET Core we need *.runtimeconfig.* files for NodeRunner to make it runnable as console app -->
+    <ItemGroup Condition="'$(TargetFramework)' == '$(NetCoreTestVersion)'">
+        <None Include="$(SolutionDir)src\Akka.MultiNode.NodeRunner\bin\Debug\$(NetCoreTestVersion)\*.runtimeconfig.*" CopyToOutputDirectory="PreserveNewest" />
+    </ItemGroup>
+
+    <PropertyGroup Condition=" '$(TargetFramework)' == '$(NetCoreTestVersion)' ">
+        <DefineConstants>$(DefineConstants);CORECLR</DefineConstants>
+    </PropertyGroup>
+
+    <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
+        <DefineConstants>$(DefineConstants);RELEASE</DefineConstants>
+    </PropertyGroup>
+
+</Project>

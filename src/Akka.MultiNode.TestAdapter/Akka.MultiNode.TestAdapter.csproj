@@ -1,0 +1,50 @@
+﻿<Project Sdk="MSBuild.Sdk.Extras">
+  <Import Project="..\common.props" />
+
+  <PropertyGroup>
+    <AssemblyTitle>Akka.MultiNode.TestAdapter</AssemblyTitle>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <DebugType>embedded</DebugType>
+    <LangVersion>latest</LangVersion>
+    <TargetFrameworks>$(NetFrameworkTestVersion);$(NetCoreTestVersion)</TargetFrameworks>
+    <WarningsAsErrors>true</WarningsAsErrors>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <Description>Visual Studio 2017 15.9+ Test Explorer runner for the Akka.NET MultiNode tests</Description>
+    <BuildOutputTargetFolder>build</BuildOutputTargetFolder>
+    <XunitVersion>2.4.1</XunitVersion>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <NoWarn>$(NoWarn)1701;1702;NU5105</NoWarn>
+    <RootNamespace>Akka.MultiNode.TestAdapter</RootNamespace>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(TargetFramework)' == '$(NetFrameworkTestVersion)'">
+    <AssemblyName>Akka.MultiNode.TestAdapter</AssemblyName>
+    <DefineConstants>$(DefineConstants);NETFRAMEWORK</DefineConstants>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(TargetFramework)' == '$(NetCoreTestVersion)' ">
+    <AssemblyName>Akka.MultiNode.DotNetCore.TestAdapter</AssemblyName>
+    <DefineConstants>$(DefineConstants);NETCOREAPP;CORECLR</DefineConstants>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
+    <DefineConstants>$(DefineConstants);RELEASE</DefineConstants>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == '$(NetCoreTestVersion)'">
+    <PackageReference Include="System.Runtime.Loader" Version="4.3.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Nerdbank.GitVersioning" Version="3.0.28" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All" />
+    <PackageReference Include="Microsoft.TestPlatform.ObjectModel" Version="16.4.0" PrivateAssets="All" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Akka.MultiNode.TestRunner.Shared\Akka.MultiNode.TestRunner.Shared.csproj" />
+    <ProjectReference Include="..\Akka.MultiNode.NodeRunner\Akka.MultiNode.NodeRunner.csproj" />
+    <ProjectReference Include="..\Akka.MultiNode.Shared\Akka.MultiNode.Shared.csproj" />
+  </ItemGroup>
+
+</Project>
