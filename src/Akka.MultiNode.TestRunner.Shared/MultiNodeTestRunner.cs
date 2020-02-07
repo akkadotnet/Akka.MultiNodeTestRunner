@@ -25,6 +25,7 @@ using Akka.MultiNode.Shared.Sinks;
 using Akka.MultiNode.Shared.TrxReporter;
 using Akka.MultiNode.TestRunner.Shared.Helpers;
 using Akka.Remote.TestKit;
+using Akka.Util;
 using Newtonsoft.Json;
 using Xunit;
 using ErrorMessage = Xunit.Sdk.ErrorMessage;
@@ -57,66 +58,42 @@ namespace Akka.MultiNode.TestRunner.Shared
         /// </summary>
         public List<MultiNodeTestResult> Execute(string assemblyPath, MultiNodeTestRunnerOptions options)
         {
-#if CORECLR
-           string env = "netcoreapp3.0"; 
-#else
-            string env = "net472"; 
-#endif
-            
-            try
-            {
-                FileLogger.Write($"Start test execution setup from {assemblyPath} under {env} with options {JsonConvert.SerializeObject(options)}");
+            ValidatePlatform(options);
 
-                ValidatePlatform(options);
+            // Perform output cleanup before anything is logged
+            if (options.ClearOutputDirectory && Directory.Exists(options.OutputDirectory))
+                Directory.Delete(options.OutputDirectory, true);
 
-                // Perform output cleanup before anything is logged
-                if (options.ClearOutputDirectory && Directory.Exists(options.OutputDirectory))
-                    Directory.Delete(options.OutputDirectory, true);
+            TestRunSystem = ActorSystem.Create("TestRunnerLogging");
 
-                TestRunSystem = ActorSystem.Create("TestRunnerLogging");
+            var suiteName = Path.GetFileNameWithoutExtension(Path.GetFullPath(assemblyPath));
+            SinkCoordinator = CreateSinkCoordinator(options, suiteName);
 
-                var suiteName = Path.GetFileNameWithoutExtension(Path.GetFullPath(assemblyPath));
-                SinkCoordinator = CreateSinkCoordinator(options, suiteName);
+            options.ListenPort = options.ListenPort > 0 ? options.ListenPort : TcpHelper.GetFreeTcpPort();
+            var tcpLogger = TestRunSystem.ActorOf(Props.Create(() => new TcpLoggingServer(SinkCoordinator)), "TcpLogger");
+            var listenEndpoint = new IPEndPoint(IPAddress.Parse(options.ListenAddress), options.ListenPort);
+            TestRunSystem.Tcp().Tell(new Tcp.Bind(tcpLogger, listenEndpoint), sender: tcpLogger);
 
-                options.ListenPort = options.ListenPort > 0 ? options.ListenPort : TcpHelper.GetFreeTcpPort();
-                var tcpLogger = TestRunSystem.ActorOf(Props.Create(() => new TcpLoggingServer(SinkCoordinator)), "TcpLogger");
-                var listenEndpoint = new IPEndPoint(IPAddress.Parse(options.ListenAddress), options.ListenPort);
-                TestRunSystem.Tcp().Tell(new Tcp.Bind(tcpLogger, listenEndpoint), sender: tcpLogger);
+            EnableAllSinks(assemblyPath, options);
 
-                EnableAllSinks(assemblyPath, options);
+            // Set MNTR environment for correct tests discovert
+            MultiNodeEnvironment.Initialize();
 
-                // Set MNTR environment for correct tests discovert
-                MultiNodeEnvironment.Initialize();
+            // In NetCore, if the assembly file hasn't been touched, 
+            // XunitFrontController would fail loading external assemblies and its dependencies.
+            PreLoadTestAssembly_WhenNetCore(assemblyPath);
 
-                // In NetCore, if the assembly file hasn't been touched, 
-                // XunitFrontController would fail loading external assemblies and its dependencies.
-                PreLoadTestAssembly_WhenNetCore(assemblyPath);
+            // Here is where main action goes
+            var results = DiscoverAndRunSpecs(assemblyPath, options);
 
-                FileLogger.Write($"Start test discovery and run from {assemblyPath} under {env}");
+            AbortTcpLoggingServer(tcpLogger);
+            CloseAllSinks();
 
-                // Here is where main action goes
-                var results = DiscoverAndRunSpecs(assemblyPath, options);
+            // Block until all Sinks have been terminated.
+            TestRunSystem.WhenTerminated.Wait(TimeSpan.FromMinutes(1));
 
-                FileLogger.Write($"Finish test discovery and run from {assemblyPath} under {env}");
-
-                AbortTcpLoggingServer(tcpLogger);
-                CloseAllSinks();
-
-                FileLogger.Write($"Waiting for TestRunSystem to terminate from {assemblyPath} under {env}...");
-
-                // Block until all Sinks have been terminated.
-                TestRunSystem.WhenTerminated.Wait(TimeSpan.FromMinutes(1));
-
-                FileLogger.Write($"TestRunSystem is terminated successfully from {assemblyPath} under {env}");
-
-                // Return the proper exit code
-                return results;
-            }
-            catch (Exception ex)
-            {
-                FileLogger.Write($"Failed MNTR test execution from {assemblyPath} under {env}: {ex}");
-                throw;
-            }
+            // Return the proper exit code
+            return results;
         }
 
         /// <summary>
@@ -124,36 +101,23 @@ namespace Akka.MultiNode.TestRunner.Shared
         /// </summary>
         public static (List<MultiNodeSpec> Specs, List<ErrorMessage> Errors) DiscoverSpecs(string assemblyPath)
         {
-            try
-            {
-                FileLogger.Write($"Start test discovery from {assemblyPath}");
-                MultiNodeEnvironment.Initialize();
+            MultiNodeEnvironment.Initialize();
 
-                using (var controller = new XunitFrontController(AppDomainSupport.IfAvailable, assemblyPath))
+            using (var controller = new XunitFrontController(AppDomainSupport.IfAvailable, assemblyPath))
+            {
+                using (var discovery = new Discovery(discoverOnlyMultiNodeTests: true))
                 {
-                    using (var discovery = new Discovery())
+                    controller.Find(false, discovery, TestFrameworkOptions.ForDiscovery());
+                    discovery.Finished.WaitOne();
+
+                    if (!discovery.WasSuccessful)
                     {
-                        controller.Find(false, discovery, TestFrameworkOptions.ForDiscovery());
-                        discovery.Finished.WaitOne();
-
-                        FileLogger.Write($"Finish test discovery from {assemblyPath}");
-
-                        if (!discovery.WasSuccessful)
-                        {
-                            FileLogger.Write($"Found discovery errors from {assemblyPath}: {string.Join("\n", discovery.Errors.SelectMany(m => m.Messages))}");
-                            return (Specs: new List<MultiNodeSpec>(), Errors: discovery.Errors);
-                        }
-
-                        var specs = discovery.Tests.Reverse().Select(pair => new MultiNodeSpec(pair.Key, pair.Value)).ToList();
-                        FileLogger.Write($"Discovery found {specs.Count} specs  from {assemblyPath}: {string.Join(", ", specs.Select(s => s.SpecName))}");
-                        return (specs, new List<ErrorMessage>());
+                        return (Specs: new List<MultiNodeSpec>(), Errors: discovery.Errors);
                     }
+
+                    var specs = discovery.Tests.Reverse().Select(pair => new MultiNodeSpec(pair.Key, pair.Value)).ToList();
+                    return (specs, new List<ErrorMessage>());
                 }
-            }
-            catch (Exception ex)
-            {
-                FileLogger.Write($"Tests discovery from {assemblyPath} failed: {ex}");
-                throw;
             }
         }
 
@@ -243,7 +207,7 @@ namespace Akka.MultiNode.TestRunner.Shared
             }
 
             // Wait for all nodes to finish and collect results
-            var specFailed = WaitForAllNodesExit(processes);
+            var specFailed = WaitForNodeExit(processes);
 
             PublishRunnerMessage("Waiting 3 seconds for all messages from all processes to be collected.");
             Thread.Sleep(TimeSpan.FromSeconds(3));
@@ -278,7 +242,7 @@ namespace Akka.MultiNode.TestRunner.Shared
             Task.WaitAll(dumpTasks.ToArray());
         }
 
-        private bool WaitForAllNodesExit(List<Process> processes)
+        private bool WaitForNodeExit(List<Process> processes)
         {
             var specFailed = false;
             foreach (var process in processes)
@@ -320,7 +284,6 @@ namespace Akka.MultiNode.TestRunner.Shared
                 }
             };
 
-            FileLogger.Write($"Starting node process: {process.StartInfo.FileName} {process.StartInfo.Arguments}");
             process.Start();
             process.BeginOutputReadLine();
             PublishRunnerMessage($"Started node {nodeIndex} : {nodeRole} on pid {process.Id}");
@@ -359,13 +322,25 @@ namespace Akka.MultiNode.TestRunner.Shared
                 }
             };
 #else
-            var ntrNetPath = Path.GetFullPath("Akka.MultiNode.NodeRunner.exe");
+            const string nodeRunnerFileName = "Akka.MultiNode.NodeRunner.exe";
+            var searchPaths = new []
+            {
+                AppContext.BaseDirectory,
+                Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)
+            };
+            
+            // Under 'dotnet test' or as standalone util location of node runner is different.
+            // The most robust way is to just scan possible locations and find it
+            var ntrNetPath = FileToolInPaths(nodeRunnerFileName, dirPaths: searchPaths);
+            if (!ntrNetPath.HasValue)
+                throw new Exception($"Failed to find node runner '{nodeRunnerFileName}' at paths: {string.Join(", ", searchPaths)}");
+            
             sbArguments.Insert(0, $@"-Dmultinode.test-assembly=""{assemblyPath}"" ");
             return new Process
             {
                 StartInfo = new ProcessStartInfo
                 {
-                    FileName = ntrNetPath,
+                    FileName = ntrNetPath.Value,
                     UseShellExecute = false,
                     RedirectStandardOutput = true,
                     Arguments = sbArguments.ToString()
@@ -526,6 +501,21 @@ namespace Akka.MultiNode.TestRunner.Shared
         private void PublishRunnerMessage(string message)
         {
             SinkCoordinator.Tell(new SinkCoordinator.RunnerMessage(message));
+        }
+
+        /// <summary>
+        /// Finds given tool in specified paths
+        /// </summary>
+        private Option<string> FileToolInPaths(string toolFileName, params string[] dirPaths)
+        {
+            foreach (var dir in dirPaths)
+            {
+                var path = Path.Combine(dir, toolFileName);
+                if (File.Exists(path))
+                    return path;
+            }
+            
+            return Option<string>.None;
         }
     }
 }
