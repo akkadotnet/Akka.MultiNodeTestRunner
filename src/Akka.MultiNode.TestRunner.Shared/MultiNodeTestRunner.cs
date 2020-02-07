@@ -68,9 +68,9 @@ namespace Akka.MultiNode.TestRunner.Shared
             var suiteName = Path.GetFileNameWithoutExtension(Path.GetFullPath(assemblyPath));
             SinkCoordinator = CreateSinkCoordinator(options, suiteName);
 
-            options.ListenPort = Math.Max(0, options.ListenPort);
             var tcpLogger = TestRunSystem.ActorOf(Props.Create(() => new TcpLoggingServer(SinkCoordinator)), "TcpLogger");
             var listenEndpoint = new IPEndPoint(IPAddress.Parse(options.ListenAddress), options.ListenPort);
+            Console.WriteLine($"Binding MNTR to [{listenEndpoint}]");
             TestRunSystem.Tcp().Tell(new Tcp.Bind(tcpLogger, listenEndpoint), sender: tcpLogger);
 
             EnableAllSinks(assemblyPath, options);
