@@ -13,8 +13,6 @@ namespace Akka.MultiNode.TestAdapter.Tests
         [Fact]
         public void Should_discover_sample_tests_and_run_them()
         {
-            FileLogger.Write($"START TEST: {nameof(Should_discover_sample_tests_and_run_them)}");
-            
             var sampleTestAssemblyPath = Path.GetFullPath(SampleTestsMetadata.AssemblyFileName);
             File.Exists(sampleTestAssemblyPath).Should().BeTrue($"Assemblies with samples should exist at {sampleTestAssemblyPath}");
             
