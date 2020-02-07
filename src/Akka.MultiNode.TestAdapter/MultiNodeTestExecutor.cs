@@ -58,7 +58,12 @@ namespace Akka.MultiNode.TestAdapter
         /// <param param name="frameworkHandle">Handle to the framework to record results and to do framework operations.</param>
         public void RunTests(IEnumerable<string> sources, IRunContext runContext, IFrameworkHandle frameworkHandle)
         {
-            RunTestsWithOptions(sources, frameworkHandle, MultiNodeTestRunnerOptions.Default);
+#if CORECLR
+            var options = new MultiNodeTestRunnerOptions(platform: "netcore");
+#else
+            var options = new MultiNodeTestRunnerOptions(platform: "net");
+#endif
+            RunTestsWithOptions(sources, frameworkHandle, options);
         }
 
         private void RunTestsWithOptions(IEnumerable<string> sources, IFrameworkHandle frameworkHandle, MultiNodeTestRunnerOptions options)
