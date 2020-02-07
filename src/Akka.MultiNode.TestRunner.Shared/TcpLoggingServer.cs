@@ -23,6 +23,8 @@ namespace Akka.MultiNode.TestRunner.Shared
         {
             Receive<Tcp.Bound>(bound =>
             {
+                Console.WriteLine($"Received Bound message: {bound} with address of type {bound.LocalAddress.GetType()}");
+                
                 // When bound, save port and notify requestors if any
                 if (!(bound.LocalAddress is IPEndPoint ipEndPoint))
                 {
