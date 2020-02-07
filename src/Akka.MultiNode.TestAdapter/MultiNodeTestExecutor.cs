@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using Akka.MultiNode.TestRunner.Shared;
+using Akka.Util;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel.Adapter;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel.Logging;
@@ -59,7 +60,7 @@ namespace Akka.MultiNode.TestAdapter
         public void RunTests(IEnumerable<string> sources, IRunContext runContext, IFrameworkHandle frameworkHandle)
         {
 #if CORECLR
-            var options = new MultiNodeTestRunnerOptions(platform: "netcore");
+            var options = new MultiNodeTestRunnerOptions(platform: RuntimeDetector.IsWindows ? "net" : "netcore");
 #else
             var options = new MultiNodeTestRunnerOptions(platform: "net");
 #endif
