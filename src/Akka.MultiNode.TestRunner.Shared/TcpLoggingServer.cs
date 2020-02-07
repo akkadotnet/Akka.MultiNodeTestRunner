@@ -27,7 +27,7 @@ namespace Akka.MultiNode.TestRunner.Shared
                 if (!(bound.LocalAddress is IPEndPoint ipEndPoint))
                 {
                     _log.Error($"Expected local address to be IPEndpoint, but got type {bound.LocalAddress.GetType().FullName}");
-                    Sender.Tell(new Failure());
+                    throw new Exception($"Expected local address to be IPEndpoint, but got type {bound.LocalAddress.GetType().FullName}");
                 }
                 else
                 {
