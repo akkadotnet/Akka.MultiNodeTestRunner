@@ -44,10 +44,10 @@ namespace Akka.MultiNode.TestAdapter
             
             // This is called from VS "Run Selected tests" command.
             // Need to get assembly paths and perform specs filtering by name
-            List<string> assemblyPaths;
+            List<string> assemblyPaths = null;
             
             var filteredSpecNames = tests.Select(t => t.FullyQualifiedName).ToList();
-            RunTestsWithOptions(assemblyPaths, frameworkHandle, MultiNodeTestRunnerOptions.Default.WithSpecNames(filteredSpecNames));
+            RunTestsWithOptions(assemblyPaths, frameworkHandle, new MultiNodeTestRunnerOptions(specNames: filteredSpecNames));
         }
 
         /// <summary>

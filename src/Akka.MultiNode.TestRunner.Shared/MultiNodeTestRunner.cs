@@ -133,7 +133,7 @@ namespace Akka.MultiNode.TestRunner.Shared
             }
             
             // If port was set random, request the actual port from TcpLoggingServer
-            options.ListenPort = options.ListenPort > 0 
+            var listenPort = options.ListenPort > 0 
                 ? options.ListenPort 
                 : tcpLogger.Ask<int>(TcpLoggingServer.GetBoundPort.Instance).Result;
             
@@ -162,7 +162,7 @@ namespace Akka.MultiNode.TestRunner.Shared
                 }
 
                 // Run test on several nodes and report results
-                var result = RunSpec(assemblyPath, options, spec);
+                var result = RunSpec(assemblyPath, options, spec, listenPort);
                 TestFinished?.Invoke(result);
                 testResults.Add(result);
             }
@@ -170,7 +170,7 @@ namespace Akka.MultiNode.TestRunner.Shared
             return testResults;
         }
 
-        private MultiNodeTestResult RunSpec(string assemblyPath, MultiNodeTestRunnerOptions options, MultiNodeSpec spec)
+        private MultiNodeTestResult RunSpec(string assemblyPath, MultiNodeTestRunnerOptions options, MultiNodeSpec spec, int listenPort)
         {
             PublishRunnerMessage($"Starting test {spec.FirstTest.MethodName}");
             Console.Out.WriteLine($"Starting test {spec.FirstTest.MethodName}");
@@ -194,7 +194,7 @@ namespace Akka.MultiNode.TestRunner.Shared
                     .Append($@"-Dmultinode.index={nodeTest.Node - 1} ")
                     .Append($@"-Dmultinode.role=""{nodeTest.Role}"" ")
                     .Append($@"-Dmultinode.listen-address={options.ListenAddress} ")
-                    .Append($@"-Dmultinode.listen-port={options.ListenPort} ");
+                    .Append($@"-Dmultinode.listen-port={listenPort} ");
 
                 // Configure process for node
                 var process = BuildNodeProcess(assemblyPath, options, sbArguments);

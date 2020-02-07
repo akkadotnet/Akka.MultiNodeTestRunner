@@ -113,18 +113,17 @@ namespace Akka.MultiNode.TestRunner
                 throw new ArgumentException("Invalid argument provided for -Dteamcity");
 
             var runner = new MultiNodeTestRunner();
-            var results = runner.Execute(assemblyPath, new MultiNodeTestRunnerOptions()
-            {
-                OutputDirectory = outputDirectory,
-                FailedSpecsDirectory = failedSpecsDirectory,
-                TeamCityFormattingOn = teamCityFormattingOn,
-                ListenAddress = listenAddress,
-                ListenPort = listenPort,
-                SpecNames = !string.IsNullOrEmpty(specName) ? new List<string>() { specName } : null,
-                Platform = platform,
-                Reporter = reporter,
-                ClearOutputDirectory = clearOutputDirectory
-            });
+            var results = runner.Execute(assemblyPath, new MultiNodeTestRunnerOptions(
+                outputDirectory: outputDirectory,
+                failedSpecsDirectory: failedSpecsDirectory,
+                teamCityFormattingOn: teamCityFormattingOn,
+                listenAddress: listenAddress,
+                listenPort: listenPort,
+                specNames: !string.IsNullOrEmpty(specName) ? new List<string>() { specName } : null,
+                platform: platform,
+                reporter: reporter,
+                clearOutputDirectory: clearOutputDirectory
+            ));
 
             if (Debugger.IsAttached)
                 Console.ReadLine(); // block when debugging
