@@ -243,7 +243,7 @@ namespace Akka.MultiNode.TestRunner.Shared
             }
 
             // Wait for all nodes to finish and collect results
-            var specFailed = WaitForNodeExit(processes);
+            var specFailed = WaitForAllNodesExit(processes);
 
             PublishRunnerMessage("Waiting 3 seconds for all messages from all processes to be collected.");
             Thread.Sleep(TimeSpan.FromSeconds(3));
@@ -278,7 +278,7 @@ namespace Akka.MultiNode.TestRunner.Shared
             Task.WaitAll(dumpTasks.ToArray());
         }
 
-        private bool WaitForNodeExit(List<Process> processes)
+        private bool WaitForAllNodesExit(List<Process> processes)
         {
             var specFailed = false;
             foreach (var process in processes)
@@ -320,6 +320,7 @@ namespace Akka.MultiNode.TestRunner.Shared
                 }
             };
 
+            FileLogger.Write($"Starting node process: {process.StartInfo.FileName} {process.StartInfo.Arguments}");
             process.Start();
             process.BeginOutputReadLine();
             PublishRunnerMessage($"Started node {nodeIndex} : {nodeRole} on pid {process.Id}");
@@ -358,8 +359,7 @@ namespace Akka.MultiNode.TestRunner.Shared
                 }
             };
 #else
-            var testAssemblyLocation = Assembly.GetExecutingAssembly().Location;
-            var ntrNetPath = Path.Combine(Path.GetDirectoryName(testAssemblyLocation), "Akka.MultiNode.NodeRunner.exe");
+            var ntrNetPath = Path.GetFullPath("Akka.MultiNode.NodeRunner.exe");
             sbArguments.Insert(0, $@"-Dmultinode.test-assembly=""{assemblyPath}"" ");
             return new Process
             {
