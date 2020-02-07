@@ -105,7 +105,7 @@ namespace Akka.MultiNode.TestRunner.Shared
 
             using (var controller = new XunitFrontController(AppDomainSupport.IfAvailable, assemblyPath))
             {
-                using (var discovery = new Discovery(discoverOnlyMultiNodeTests: true))
+                using (var discovery = new Discovery())
                 {
                     controller.Find(false, discovery, TestFrameworkOptions.ForDiscovery());
                     discovery.Finished.WaitOne();

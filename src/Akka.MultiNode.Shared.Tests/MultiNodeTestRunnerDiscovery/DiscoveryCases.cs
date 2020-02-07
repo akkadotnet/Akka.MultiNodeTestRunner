@@ -43,9 +43,9 @@ namespace Akka.MultiNode.Shared.Tests.MultiNodeTestRunnerDiscovery
             }
         }
 
-        public abstract class DeeplyInheritedBaseSpec
+        public abstract class DeeplyInheritedBaseSpec : MultiNodeSpec
         {
-            public DeeplyInheritedBaseSpec(DeeplyInheritedConfig config)
+            public DeeplyInheritedBaseSpec(DeeplyInheritedConfig config) : base(config, typeof(DeeplyInheritedBaseSpec))
             {
             }
 
@@ -53,6 +53,9 @@ namespace Akka.MultiNode.Shared.Tests.MultiNodeTestRunnerDiscovery
             public void Dummy()
             {
             }
+
+            /// <inheritdoc />
+            protected override int InitialParticipantsValueFactory { get; }
         }
 
         public abstract class DeeplyInheritedMediumSpec : DeeplyInheritedBaseSpec
@@ -99,10 +102,10 @@ namespace Akka.MultiNode.Shared.Tests.MultiNodeTestRunnerDiscovery
             }
         }
 
-        public abstract class FloodyBaseSpec
+        public abstract class FloodyBaseSpec : MultiNodeSpec
         {
 
-            public FloodyBaseSpec(FloodyConfig config)
+            public FloodyBaseSpec(FloodyConfig config) : base(config, typeof(FloodyBaseSpec))
             {
             }
 
@@ -110,6 +113,9 @@ namespace Akka.MultiNode.Shared.Tests.MultiNodeTestRunnerDiscovery
             public void Dummy()
             {
             }
+
+            /// <inheritdoc />
+            protected override int InitialParticipantsValueFactory { get; }
         }
 
         public class FloodyChildSpec1 : FloodyBaseSpec
@@ -149,9 +155,9 @@ namespace Akka.MultiNode.Shared.Tests.MultiNodeTestRunnerDiscovery
             }
         }
 
-        public class DiverseSpec
+        public class DiverseSpec : MultiNodeSpec
         {
-            public DiverseSpec(DiverseConfig config)
+            public DiverseSpec(DiverseConfig config) : base(config, typeof(DiverseSpec))
             {
             }
 
@@ -159,6 +165,9 @@ namespace Akka.MultiNode.Shared.Tests.MultiNodeTestRunnerDiscovery
             public void Dummy()
             {
             }
+
+            /// <inheritdoc />
+            protected override int InitialParticipantsValueFactory { get; }
         }
     }
 }

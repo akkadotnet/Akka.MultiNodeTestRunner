@@ -26,15 +26,12 @@ namespace Akka.MultiNode.TestRunner.Shared
         public Dictionary<string, List<NodeTest>> Tests { get; set; }
         public List<ErrorMessage> Errors { get; } = new List<ErrorMessage>();
         public bool WasSuccessful => Errors.Count == 0;
-        public bool DiscoverOnlyMultiNodeTests { get; }
         
         /// <summary>
         /// Initializes a new instance of the <see cref="Discovery"/> class.
         /// </summary>
-        public Discovery(bool discoverOnlyMultiNodeTests = false)
+        public Discovery()
         {
-            DiscoverOnlyMultiNodeTests = discoverOnlyMultiNodeTests;
-            
             Tests = new Dictionary<string, List<NodeTest>>();
             Finished = new ManualResetEvent(false);
         }
@@ -81,7 +78,7 @@ namespace Akka.MultiNode.TestRunner.Shared
                 var testAssembly = Assembly.LoadFrom(testCaseDiscoveryMessage.TestAssembly.Assembly.AssemblyPath);
                 var specType = testAssembly.GetType(testClass.Name);
 #endif
-                if (DiscoverOnlyMultiNodeTests && !typeof(Remote.TestKit.MultiNodeSpec).IsAssignableFrom(specType))
+                if (!typeof(Remote.TestKit.MultiNodeSpec).IsAssignableFrom(specType))
                 {
                     Console.WriteLine($"Ignoring {testClass.Name} test class - MNTR spec should inherit from {typeof(Remote.TestKit.MultiNodeSpec).FullName}");
                     return new List<NodeTest>();
