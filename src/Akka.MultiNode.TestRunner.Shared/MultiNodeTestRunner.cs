@@ -23,7 +23,6 @@ using Akka.MultiNode.Shared.Environment;
 using Akka.MultiNode.Shared.Persistence;
 using Akka.MultiNode.Shared.Sinks;
 using Akka.MultiNode.Shared.TrxReporter;
-using Akka.MultiNode.TestRunner.Shared.Helpers;
 using Akka.Remote.TestKit;
 using Akka.Util;
 using Newtonsoft.Json;
@@ -69,7 +68,7 @@ namespace Akka.MultiNode.TestRunner.Shared
             var suiteName = Path.GetFileNameWithoutExtension(Path.GetFullPath(assemblyPath));
             SinkCoordinator = CreateSinkCoordinator(options, suiteName);
 
-            options.ListenPort = options.ListenPort > 0 ? options.ListenPort : TcpHelper.GetFreeTcpPort();
+            options.ListenPort = Math.Max(0, options.ListenPort);
             var tcpLogger = TestRunSystem.ActorOf(Props.Create(() => new TcpLoggingServer(SinkCoordinator)), "TcpLogger");
             var listenEndpoint = new IPEndPoint(IPAddress.Parse(options.ListenAddress), options.ListenPort);
             TestRunSystem.Tcp().Tell(new Tcp.Bind(tcpLogger, listenEndpoint), sender: tcpLogger);
@@ -84,7 +83,7 @@ namespace Akka.MultiNode.TestRunner.Shared
             PreLoadTestAssembly_WhenNetCore(assemblyPath);
 
             // Here is where main action goes
-            var results = DiscoverAndRunSpecs(assemblyPath, options);
+            var results = DiscoverAndRunSpecs(assemblyPath, options, tcpLogger);
 
             AbortTcpLoggingServer(tcpLogger);
             CloseAllSinks();
@@ -121,7 +120,7 @@ namespace Akka.MultiNode.TestRunner.Shared
             }
         }
 
-        private List<MultiNodeTestResult> DiscoverAndRunSpecs(string assemblyPath, MultiNodeTestRunnerOptions options)
+        private List<MultiNodeTestResult> DiscoverAndRunSpecs(string assemblyPath, MultiNodeTestRunnerOptions options, IActorRef tcpLogger)
         {
             var testResults = new List<MultiNodeTestResult>();
             PublishRunnerMessage($"Running MultiNodeTests for {assemblyPath}");
@@ -132,6 +131,11 @@ namespace Akka.MultiNode.TestRunner.Shared
                 ReportDiscoveryErrors(errors);
                 return testResults;
             }
+            
+            // If port was set random, request the actual port from TcpLoggingServer
+            options.ListenPort = options.ListenPort > 0 
+                ? options.ListenPort 
+                : tcpLogger.Ask<int>(TcpLoggingServer.GetBoundPort.Instance).Result;
             
             foreach (var spec in discoveredSpecs)
             {
