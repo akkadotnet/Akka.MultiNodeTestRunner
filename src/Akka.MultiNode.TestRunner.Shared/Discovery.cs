@@ -78,6 +78,12 @@ namespace Akka.MultiNode.TestRunner.Shared
                 var testAssembly = Assembly.LoadFrom(testCaseDiscoveryMessage.TestAssembly.Assembly.AssemblyPath);
                 var specType = testAssembly.GetType(testClass.Name);
 #endif
+                if (!typeof(Remote.TestKit.MultiNodeSpec).IsAssignableFrom(specType))
+                {
+                    Console.WriteLine($"Ignoring {testClass.Name} test class - MNTR spec should inherit from {typeof(Remote.TestKit.MultiNodeSpec).FullName}");
+                    return new List<NodeTest>();
+                }
+                
                 var roles = RoleNames(specType);
 
                 var details = roles.Select((r, i) => new NodeTest
