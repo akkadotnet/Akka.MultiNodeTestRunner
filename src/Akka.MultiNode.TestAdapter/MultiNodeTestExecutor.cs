@@ -60,8 +60,10 @@ namespace Akka.MultiNode.TestAdapter
         public void RunTests(IEnumerable<string> sources, IRunContext runContext, IFrameworkHandle frameworkHandle)
         {
 #if CORECLR
+            Console.WriteLine($"Platform is windows: {RuntimeDetector.IsWindows}, CORECLR");
             var options = new MultiNodeTestRunnerOptions(platform: RuntimeDetector.IsWindows ? "net" : "netcore");
 #else
+            Console.WriteLine($"Platform is windows: {RuntimeDetector.IsWindows}, NET472");
             var options = new MultiNodeTestRunnerOptions(platform: "net");
 #endif
             RunTestsWithOptions(sources, frameworkHandle, options);
