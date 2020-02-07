@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.IO;
+using Akka.Util;
 
 namespace Akka.MultiNode.TestRunner.Shared
 {
@@ -23,7 +24,7 @@ namespace Akka.MultiNode.TestRunner.Shared
             ClearOutputDirectory = clearOutputDirectory;
             TeamCityFormattingOn = teamCityFormattingOn;
             Reporter = reporter ?? "console";
-            Platform = platform ?? "net";
+            Platform = platform ?? (RuntimeDetector.IsWindows ? "net" : "netcore");
             FailedSpecsDirectory = failedSpecsDirectory ?? "FAILED_SPECS_LOGS";
             ListenAddress = listenAddress ?? "127.0.0.1";
             OutputDirectory = outputDirectory ?? "TestResults";
