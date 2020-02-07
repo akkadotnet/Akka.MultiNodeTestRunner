@@ -70,7 +70,6 @@ namespace Akka.MultiNode.TestRunner.Shared
 
             var tcpLogger = TestRunSystem.ActorOf(Props.Create(() => new TcpLoggingServer(SinkCoordinator)), "TcpLogger");
             var listenEndpoint = new IPEndPoint(IPAddress.Parse(options.ListenAddress), options.ListenPort);
-            Console.WriteLine($"Binding MNTR to [{listenEndpoint}]");
             TestRunSystem.Tcp().Tell(new Tcp.Bind(tcpLogger, listenEndpoint), sender: tcpLogger);
 
             EnableAllSinks(assemblyPath, options);
@@ -288,8 +287,6 @@ namespace Akka.MultiNode.TestRunner.Shared
                 }
             };
 
-            Console.WriteLine($"Starting process: {process.StartInfo.FileName} {process.StartInfo.Arguments}. " +
-                              $"Process file name exists: {File.Exists(process.StartInfo.FileName)}");
             process.Start();
             process.BeginOutputReadLine();
             PublishRunnerMessage($"Started node {nodeIndex} : {nodeRole} on pid {process.Id}");
