@@ -23,19 +23,9 @@ namespace Akka.MultiNode.TestRunner.Shared
         {
             Receive<Tcp.Bound>(bound =>
             {
-                Console.WriteLine($"Received Bound message: {bound} with address of type {bound.LocalAddress.GetType()}");
-                
                 // When bound, save port and notify requestors if any
-                if (!(bound.LocalAddress is IPEndPoint ipEndPoint))
-                {
-                    _log.Error($"Expected local address to be IPEndpoint, but got type {bound.LocalAddress.GetType().FullName}");
-                    throw new Exception($"Expected local address to be IPEndpoint, but got type {bound.LocalAddress.GetType().FullName}");
-                }
-                else
-                {
-                    _boundPort = ipEndPoint.Port;
-                    _boundPortSubscribers.ForEach(s => s.Tell(_boundPort.Value));
-                }
+                _boundPort = (bound.LocalAddress as IPEndPoint).Port;
+                _boundPortSubscribers.ForEach(s => s.Tell(_boundPort.Value));
                 
                 _tcpManager = Sender;
             });

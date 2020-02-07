@@ -288,7 +288,8 @@ namespace Akka.MultiNode.TestRunner.Shared
                 }
             };
 
-            Console.WriteLine($"Starting process: {process.StartInfo.FileName} {process.StartInfo.Arguments}");
+            Console.WriteLine($"Starting process: {process.StartInfo.FileName} {process.StartInfo.Arguments}. " +
+                              $"Process file name exists: {File.Exists(process.StartInfo.FileName)}");
             process.Start();
             process.BeginOutputReadLine();
             PublishRunnerMessage($"Started node {nodeIndex} : {nodeRole} on pid {process.Id}");
