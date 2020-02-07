@@ -298,20 +298,35 @@ namespace Akka.MultiNode.TestRunner.Shared
         private Process BuildNodeProcess(string assemblyPath, MultiNodeTestRunnerOptions options, StringBuilder sbArguments)
         {
 #if CORECLR
-            var ntrNetPath = Path.Combine(AppContext.BaseDirectory, "Akka.MultiNode.NodeRunner.exe");
-            var ntrNetCorePath = Path.Combine(AppContext.BaseDirectory, "Akka.MultiNode.NodeRunner.dll");
+            const string nrNetFileName = "Akka.MultiNode.NodeRunner.exe";
+            const string nrNetCodeFileName = "Akka.MultiNode.NodeRunner.dll";
+            var searchPaths = new []
+            {
+                AppContext.BaseDirectory,
+                Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)
+            };
+            
+            // Try to find node runner location (may be different under `dotnet test` on different platforms)
+            var ntrNetPath = FileToolInPaths(nrNetFileName, searchPaths);
+            var ntrNetCorePath = FileToolInPaths(nrNetCodeFileName, searchPaths);
 
             string fileName;
             switch (options.Platform)
             {
                 case "net":
-                    fileName = ntrNetPath;
+                    if (!ntrNetPath.HasValue)
+                        throw new Exception($"No {nrNetFileName} file is found at paths: {string.Join(", ", searchPaths)}");
+                    
+                    fileName = ntrNetPath.Value;
                     sbArguments.Insert(0, $@" -Dmultinode.test-assembly=""{assemblyPath}"" ");
                     break;
                 case "netcore":
+                    if (!ntrNetCorePath.HasValue)
+                        throw new Exception($"No {nrNetCodeFileName} file is found at paths: {string.Join(", ", searchPaths)}");
+                    
                     fileName = "dotnet";
                     sbArguments.Insert(0, $@" -Dmultinode.test-assembly=""{assemblyPath}"" ");
-                    sbArguments.Insert(0, ntrNetCorePath);
+                    sbArguments.Insert(0, ntrNetCorePath.Value);
                     break;
                 default: throw new ArgumentOutOfRangeException();
             }
