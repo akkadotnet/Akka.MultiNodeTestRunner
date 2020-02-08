@@ -14,7 +14,11 @@
 
     <ItemGroup>
       <ProjectReference Include="..\Akka.MultiNode.Shared\Akka.MultiNode.Shared.csproj" />
-      <ProjectReference Include="..\Akka.MultiNode.TestAdapter\Akka.MultiNode.TestAdapter.csproj" />
+    </ItemGroup>
+
+    <!-- Include test adapter only for local debugging here. Some specs should fail, and CI should not run them -->
+    <ItemGroup Condition=" '$(Configuration)' == 'Debug' ">
+        <ProjectReference Include="..\Akka.MultiNode.TestAdapter\Akka.MultiNode.TestAdapter.csproj" />
     </ItemGroup>
 
     <ItemGroup>

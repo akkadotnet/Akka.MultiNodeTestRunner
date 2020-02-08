@@ -5,6 +5,7 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -79,8 +80,8 @@ namespace Akka.MultiNode.Shared.Sinks
 
         #endregion
 
-        protected List<MessageSink> DefaultSinks;
-        protected List<MessageSink> Sinks = new List<MessageSink>();
+        protected readonly List<MessageSink> DefaultSinks;
+        protected readonly List<MessageSink> Sinks = new List<MessageSink>();
 
         protected int TotalReceiveClosedConfirmations = 0;
         protected int ReceivedSinkCloseConfirmations = 0;
@@ -184,13 +185,10 @@ namespace Akka.MultiNode.Shared.Sinks
 
         private void PublishToChildren(RunnerMessage message)
         {
+            var assembly = Assembly.GetEntryAssembly() ?? Assembly.GetExecutingAssembly();
             foreach (var sink in Sinks)
             {
-#if CORECLR
-                sink.LogRunnerMessage(message.Message, Assembly.GetEntryAssembly().GetName().Name, LogLevel.InfoLevel);
-#else
-                sink.LogRunnerMessage(message.Message, Assembly.GetExecutingAssembly().GetName().Name, LogLevel.InfoLevel);
-#endif
+                sink.LogRunnerMessage(message.Message, assembly.GetName().Name, LogLevel.InfoLevel);
             }
         }
 

@@ -1,7 +1,5 @@
 using Akka.Cluster.TestKit;
-using Akka.MultiNode.NodeRunner;
 using Akka.MultiNode.Shared.Environment;
-using Akka.MultiNode.TestRunner.Shared;
 using Akka.Remote.TestKit;
 
 namespace Akka.MultiNode.TestAdapter.SampleTests
