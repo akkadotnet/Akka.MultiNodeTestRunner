@@ -259,7 +259,7 @@ namespace Akka.MultiNode.TestRunner.Shared
             {
                 process.WaitForExit();
                 Console.WriteLine($"Process for test {test.MethodName}_node{test.Node}{test.Role} finished with code {process.ExitCode}");
-                results.Add((test, IsFailed: process.ExitCode > 0));
+                results.Add((test, IsFailed: process.ExitCode != 0));
                 process.Dispose();
             }
 
