@@ -49,8 +49,8 @@ namespace Akka.MultiNode.TestRunner.Shared
         protected ActorSystem TestRunSystem;
         protected IActorRef SinkCoordinator;
 
-        public Action<string> TestStarted;
-        public Action<MultiNodeTestResult> TestFinished;
+        public event Action<MultiNodeSpec, NodeTest> TestStarted;
+        public event Action<MultiNodeTestResult> TestFinished;
 
         /// <summary>
         /// Executes multi-node tests from given assembly
@@ -138,14 +138,12 @@ namespace Akka.MultiNode.TestRunner.Shared
             
             foreach (var spec in discoveredSpecs)
             {
-                var testName = spec.Tests.First().MethodName;
-                TestStarted?.Invoke(spec.SpecName);
-                    
                 if (!string.IsNullOrEmpty(spec.FirstTest.SkipReason))
                 {
-                    PublishRunnerMessage($"Skipping test {testName}. Reason - {spec.FirstTest.SkipReason}");
-                    var skippedResult = new MultiNodeTestResult(testName, MultiNodeTestResult.TestStatus.Skipped);
+                    PublishRunnerMessage($"Skipping test {spec.FirstTest.MethodName}. Reason - {spec.FirstTest.SkipReason}");
+                    var skippedResult = new MultiNodeTestResult(spec, spec.FirstTest, MultiNodeTestResult.TestStatus.Skipped);
                     testResults.Add(skippedResult);
+                    TestStarted?.Invoke(spec, spec.FirstTest);
                     TestFinished?.Invoke(skippedResult);
                     continue;
                 }
@@ -154,22 +152,22 @@ namespace Akka.MultiNode.TestRunner.Shared
                     !options.SpecNames.All(name => spec.FirstTest.TestName.IndexOf(name, StringComparison.InvariantCultureIgnoreCase) < 0))
                 {
                     PublishRunnerMessage($"Skipping [{spec.FirstTest.MethodName}] (Filtering)");
-                    var skippedResult = new MultiNodeTestResult(testName, MultiNodeTestResult.TestStatus.Skipped);
+                    var skippedResult = new MultiNodeTestResult(spec, spec.FirstTest, MultiNodeTestResult.TestStatus.Skipped);
                     testResults.Add(skippedResult);
+                    TestStarted?.Invoke(spec, spec.FirstTest);
                     TestFinished?.Invoke(skippedResult);
                     continue;
                 }
 
                 // Run test on several nodes and report results
-                var result = RunSpec(assemblyPath, options, spec, listenPort);
-                TestFinished?.Invoke(result);
-                testResults.Add(result);
+                var results = RunSpec(assemblyPath, options, spec, listenPort);
+                testResults.AddRange(results);
             }
 
             return testResults;
         }
 
-        private MultiNodeTestResult RunSpec(string assemblyPath, MultiNodeTestRunnerOptions options, MultiNodeSpec spec, int listenPort)
+        private List<MultiNodeTestResult> RunSpec(string assemblyPath, MultiNodeTestRunnerOptions options, MultiNodeSpec spec, int listenPort)
         {
             PublishRunnerMessage($"Starting test {spec.FirstTest.MethodName}");
             Console.Out.WriteLine($"Starting test {spec.FirstTest.MethodName}");
@@ -178,9 +176,9 @@ namespace Akka.MultiNode.TestRunner.Shared
 
             var timelineCollector = TestRunSystem.ActorOf(Props.Create(() => new TimelineLogCollectorActor()));
             string testOutputDir = null;
-            string runningSpecName = null;
+            string runningTestName = null;
 
-            var processes = new List<Process>();
+            var nodeProcesses = new List<(NodeTest, Process)>();
             foreach (var nodeTest in spec.Tests)
             {
                 //Loop through each test, work out number of nodes to run on and kick off process
@@ -197,30 +195,38 @@ namespace Akka.MultiNode.TestRunner.Shared
 
                 // Configure process for node
                 var process = BuildNodeProcess(assemblyPath, options, sbArguments);
-                processes.Add(process);
+                nodeProcesses.Add((nodeTest, process));
 
-                runningSpecName = nodeTest.TestName;
+                runningTestName = nodeTest.TestName;
 
                 //TODO: might need to do some validation here to avoid the 260 character max path error on Windows
                 var folder = Directory.CreateDirectory(Path.Combine(options.OutputDirectory, nodeTest.TestName));
                 testOutputDir = testOutputDir ?? folder.FullName;
 
+                TestStarted?.Invoke(spec, nodeTest);
                 // Start process for node
                 StartNodeProcess(process, nodeTest, options, folder, timelineCollector);
             }
 
             // Wait for all nodes to finish and collect results
-            var specFailed = WaitForNodeExit(processes);
+            var testResults = WaitForNodeExit(nodeProcesses);
 
             PublishRunnerMessage("Waiting 3 seconds for all messages from all processes to be collected.");
             Thread.Sleep(TimeSpan.FromSeconds(3));
 
             // Save timelined logs to file system
-            DumpAggregatedSpecLogs(options, testOutputDir, timelineCollector, specFailed, runningSpecName);
+            var specFailed = testResults.Any(r => r.IsFailed);
+            DumpAggregatedSpecLogs(options, testOutputDir, timelineCollector, specFailed, runningTestName);
 
             FinishSpec(spec.Tests, timelineCollector);
-            
-            return new MultiNodeTestResult(runningSpecName, specFailed ? MultiNodeTestResult.TestStatus.Failed : MultiNodeTestResult.TestStatus.Passed);
+
+            return testResults.Select(testResult =>
+            {
+                var status = testResult.IsFailed ? MultiNodeTestResult.TestStatus.Failed : MultiNodeTestResult.TestStatus.Passed;
+                var result = new MultiNodeTestResult(spec, testResult.Test, status);
+                TestFinished?.Invoke(result);
+                return result;
+            }).ToList();
         }
 
         private void DumpAggregatedSpecLogs(MultiNodeTestRunnerOptions options, string testOutputDir,
@@ -245,17 +251,17 @@ namespace Akka.MultiNode.TestRunner.Shared
             Task.WaitAll(dumpTasks.ToArray());
         }
 
-        private bool WaitForNodeExit(List<Process> processes)
+        private List<(NodeTest Test, bool IsFailed)> WaitForNodeExit(List<(NodeTest Test, Process Process)> nodeProcesses)
         {
-            var specFailed = false;
-            foreach (var process in processes)
+            var results = new List<(NodeTest Test, bool IsFailed)>();
+            foreach (var (test, process) in nodeProcesses)
             {
                 process.WaitForExit();
-                specFailed = specFailed || process.ExitCode > 0;
+                results.Add((test, IsFailed: process.ExitCode > 0));
                 process.Dispose();
             }
 
-            return specFailed;
+            return results;
         }
 
         private void StartNodeProcess(Process process, NodeTest nodeTest, MultiNodeTestRunnerOptions options, 

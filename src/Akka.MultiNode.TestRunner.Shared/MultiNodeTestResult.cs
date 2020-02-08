@@ -1,3 +1,5 @@
+using Akka.MultiNode.Shared;
+
 namespace Akka.MultiNode.TestRunner.Shared
 {
     /// <summary>
@@ -8,16 +10,21 @@ namespace Akka.MultiNode.TestRunner.Shared
         /// <summary>
         /// MultiNodeTestResult
         /// </summary>
-        public MultiNodeTestResult(string testName, TestStatus status)
+        public MultiNodeTestResult(MultiNodeSpec spec, NodeTest test, TestStatus status)
         {
-            TestName = testName;
+            Spec = spec;
+            Test = test;
             Status = status;
         }
 
         /// <summary>
+        /// Spec name
+        /// </summary>
+        public MultiNodeSpec Spec { get; }
+        /// <summary>
         /// Full name of executed test
         /// </summary>
-        public string TestName { get; }
+        public NodeTest Test { get; }
         /// <summary>
         /// Test result
         /// </summary>

@@ -1,7 +1,4 @@
-using System.IO;
-using System.Reflection;
-
-namespace Akka.MultiNode.TestAdapter.SampleTests
+namespace Akka.MultiNode.TestAdapter.SampleTests.Metadata
 {
     /// <summary>
     /// SampleTestsMetadata

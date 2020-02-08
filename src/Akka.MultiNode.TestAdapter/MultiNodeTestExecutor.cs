@@ -75,16 +75,18 @@ namespace Akka.MultiNode.TestAdapter
                 try
                 {
                     var runner = new MultiNodeTestRunner();
-                    runner.TestStarted += testName =>
+                    runner.TestStarted += (spec, test) =>
                     {
-                        var testCase = BuildTestCase(testName);
-                        testCases.AddOrUpdate(testName, name => testCase, (name, existingCase) => testCase);
+                        var fullName = spec.GetFullTestName(test);
+                        var testCase = BuildTestCase(fullName);
+                        testCases.AddOrUpdate(fullName, name => testCase, (name, existingCase) => testCase);
                         frameworkHandle.RecordStart(testCase);
                     };
 
                     runner.TestFinished += testResult =>
                     {
-                        var testCase = testCases[testResult.TestName];
+                        var fullName = testResult.Spec.GetFullTestName(testResult.Test);
+                        var testCase = testCases[fullName];
                         frameworkHandle.RecordResult(new TestResult(testCase)
                         {
                             // TODO: Set other props
