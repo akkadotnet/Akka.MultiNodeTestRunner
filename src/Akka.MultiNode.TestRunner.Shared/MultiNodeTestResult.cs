@@ -29,7 +29,13 @@ namespace Akka.MultiNode.TestRunner.Shared
         /// Test result
         /// </summary>
         public TestStatus Status { get; }
-        
+
+        /// <inheritdoc />
+        public override string ToString()
+        {
+            return $"Spec {Spec.SpecName} result for {Test.MethodName}: {Status}";
+        }
+
         public enum TestStatus
         {
             /// <summary>

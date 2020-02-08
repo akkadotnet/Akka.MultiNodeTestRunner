@@ -224,6 +224,7 @@ namespace Akka.MultiNode.TestRunner.Shared
             {
                 var status = testResult.IsFailed ? MultiNodeTestResult.TestStatus.Failed : MultiNodeTestResult.TestStatus.Passed;
                 var result = new MultiNodeTestResult(spec, testResult.Test, status);
+                Console.WriteLine($"Reporting result: {result}");
                 TestFinished?.Invoke(result);
                 return result;
             }).ToList();
@@ -257,6 +258,7 @@ namespace Akka.MultiNode.TestRunner.Shared
             foreach (var (test, process) in nodeProcesses)
             {
                 process.WaitForExit();
+                Console.WriteLine($"Process for test {test.MethodName}_node{test.Node}{test.Role} finished with code {process.ExitCode}");
                 results.Add((test, IsFailed: process.ExitCode > 0));
                 process.Dispose();
             }
