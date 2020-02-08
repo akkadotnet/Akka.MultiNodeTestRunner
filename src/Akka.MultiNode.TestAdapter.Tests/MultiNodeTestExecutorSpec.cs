@@ -4,6 +4,7 @@ using Akka.MultiNode.TestAdapter.SampleTests.Metadata;
 using Akka.MultiNode.TestAdapter.Tests.Helpers;
 using FluentAssertions;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel;
+using Microsoft.VisualStudio.TestPlatform.ObjectModel.Adapter;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel.Logging;
 using Xunit;
 
@@ -25,27 +26,25 @@ namespace Akka.MultiNode.TestAdapter.Tests
         {
             var executor = new MultiNodeTestExecutor();
             var frameworkHandler = new FakeFrameworkHandler();
-            executor.RunTests(new []{ SampleTestsAssemblyPath }, new FakeRunContext(), frameworkHandler);
+            executor.RunTests(new[] {SampleTestsAssemblyPath}, new FakeRunContext(), frameworkHandler);
+            
             frameworkHandler.TestResults.Should().NotBeEmpty();
+            
+            Should_report_failures(frameworkHandler);
+            Should_report_failures_for_one_node(frameworkHandler);
+            Should_report_skipped_specs(frameworkHandler);
+            Should_ignore_specs_with_bad_config(frameworkHandler);
         }
-        
-        [Fact]
-        public void Should_report_failures()
+
+        private void Should_report_failures(FakeFrameworkHandler frameworkHandler)
         {
-            var executor = new MultiNodeTestExecutor();
-            var frameworkHandler = new FakeFrameworkHandler();
-            executor.RunTests(new []{ SampleTestsAssemblyPath }, new FakeRunContext(), frameworkHandler);
             frameworkHandler.TestResults.Should().Contain(r => r.TestCase.FullyQualifiedName.Contains(nameof(FailedMultiNodeSpec)) && r.Outcome == TestOutcome.Failed,
                                                           "Should report failed spec result");
             frameworkHandler.TestResults.Should().Contain(r => r.Outcome != TestOutcome.Failed, "Should still contain not-failed results");
         }
         
-        [Fact]
-        public void Should_report_failures_for_one_node()
+        private void Should_report_failures_for_one_node(FakeFrameworkHandler frameworkHandler)
         {
-            var executor = new MultiNodeTestExecutor();
-            var frameworkHandler = new FakeFrameworkHandler();
-            executor.RunTests(new []{ SampleTestsAssemblyPath }, new FakeRunContext(), frameworkHandler);
             frameworkHandler.TestResults
                 .Should()
                 .Contain(r => r.TestCase.FullyQualifiedName.Contains(nameof(OneNodeFailedMultiNodeSpec)) && r.Outcome == TestOutcome.Failed,
@@ -53,12 +52,8 @@ namespace Akka.MultiNode.TestAdapter.Tests
             frameworkHandler.TestResults.Should().Contain(r => r.Outcome != TestOutcome.Failed, "Should still contain not-failed results");
         }
         
-        [Fact]
-        public void Should_report_skipped_specs()
+        private void Should_report_skipped_specs(FakeFrameworkHandler frameworkHandler)
         {
-            var executor = new MultiNodeTestExecutor();
-            var frameworkHandler = new FakeFrameworkHandler();
-            executor.RunTests(new []{ SampleTestsAssemblyPath }, new FakeRunContext(), frameworkHandler);
             frameworkHandler.TestResults
                 .Should()
                 .Contain(r => r.TestCase.FullyQualifiedName.Contains(nameof(SkippedMultiNodeSpec)) && r.Outcome == TestOutcome.Skipped,
@@ -67,13 +62,8 @@ namespace Akka.MultiNode.TestAdapter.Tests
             frameworkHandler.TestResults.Should().Contain(r => r.Outcome != TestOutcome.Skipped, "Should still contain not-failed results");
         }
         
-        [Fact]
-        public void Should_ignore_specs_with_bad_config()
+        private void Should_ignore_specs_with_bad_config(FakeFrameworkHandler frameworkHandler)
         {
-            var executor = new MultiNodeTestExecutor();
-            var frameworkHandler = new FakeFrameworkHandler();
-            executor.RunTests(new []{ SampleTestsAssemblyPath }, new FakeRunContext(), frameworkHandler);
-            
             frameworkHandler.TestResults
                 .Should()
                 .NotContain(r => r.TestCase.FullyQualifiedName.Contains(nameof(BadConfigMultiNodeSpec)),
