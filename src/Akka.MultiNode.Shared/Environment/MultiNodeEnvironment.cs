@@ -1,3 +1,5 @@
+using Akka.Remote.TestKit;
+
 namespace Akka.MultiNode.Shared.Environment
 {
     /// <summary>
@@ -10,7 +12,7 @@ namespace Akka.MultiNode.Shared.Environment
         /// </summary>
         public static void Initialize()
         {
-            System.Environment.SetEnvironmentVariable(CustomMultiNodeFactAttribute.MultiNodeTestEnvironmentName, "1");
+            System.Environment.SetEnvironmentVariable(MultiNodeFactAttribute.MultiNodeTestEnvironmentName, "1");
         }
     }
 }

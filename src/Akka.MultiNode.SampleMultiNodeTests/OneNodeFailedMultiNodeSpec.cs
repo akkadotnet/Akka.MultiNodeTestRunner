@@ -33,8 +33,7 @@ namespace Akka.MultiNode.TestAdapter.SampleTests
             _config = config;
         }
 
-        // [MultiNodeFact]
-        [CustomMultiNodeFact]
+        [MultiNodeFact]
         public void Should_fail()
         {
             RunOn(() => throw new Exception("Spec should fail"), _config.First);
