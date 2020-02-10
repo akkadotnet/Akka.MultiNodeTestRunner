@@ -4,8 +4,6 @@ using Akka.MultiNode.TestAdapter.SampleTests.Metadata;
 using Akka.MultiNode.TestAdapter.Tests.Helpers;
 using FluentAssertions;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel;
-using Microsoft.VisualStudio.TestPlatform.ObjectModel.Adapter;
-using Microsoft.VisualStudio.TestPlatform.ObjectModel.Logging;
 using Xunit;
 
 namespace Akka.MultiNode.TestAdapter.Tests

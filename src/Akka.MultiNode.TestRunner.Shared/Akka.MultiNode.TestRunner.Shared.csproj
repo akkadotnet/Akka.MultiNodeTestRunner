@@ -8,15 +8,15 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="TeamCity.ServiceMessages" Version="3.0.13" />
+        <PackageReference Include="TeamCity.ServiceMessages" Version="$(TeamCityVersion)" />
         <PackageReference Include="xunit.runner.utility" Version="$(XunitVersion)" />
         <PackageReference Include="Akka.Remote.TestKit" Version="$(AkkaVersion)" />
         <PackageReference Include="Akka.TestKit.Xunit2" Version="$(AkkaVersion)" />
     </ItemGroup>
 
     <ItemGroup Condition="'$(TargetFramework)' == '$(NetCoreTestVersion)'">
-        <PackageReference Include="System.Runtime.Loader" Version="4.3.0" />
-        <PackageReference Include="Microsoft.Extensions.DependencyModel" Version="3.1.1" />
+        <PackageReference Include="System.Runtime.Loader" Version="$(SystemRuntimeLoaderVersion)" />
+        <PackageReference Include="Microsoft.Extensions.DependencyModel" Version="$(DependencyModelVersion)" />
     </ItemGroup>
 
     <ItemGroup>
