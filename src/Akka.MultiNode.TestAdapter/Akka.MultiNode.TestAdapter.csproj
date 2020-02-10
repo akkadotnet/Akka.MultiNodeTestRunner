@@ -24,13 +24,13 @@
   </PropertyGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == '$(NetCoreTestVersion)'">
-    <PackageReference Include="System.Runtime.Loader" Version="4.3.0" />
+    <PackageReference Include="System.Runtime.Loader" Version="$(SystemRuntimeLoaderVersion)" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Nerdbank.GitVersioning" Version="3.0.28" PrivateAssets="all" />
     <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All" />
-    <PackageReference Include="Microsoft.TestPlatform.ObjectModel" Version="16.4.0" PrivateAssets="All" />
+    <PackageReference Include="Microsoft.TestPlatform.ObjectModel" Version="$(TestSdkVersion)" PrivateAssets="All" />
   </ItemGroup>
 
   <ItemGroup>
