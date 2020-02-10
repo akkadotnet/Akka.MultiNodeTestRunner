@@ -201,9 +201,11 @@ Target "CreateNuget" (fun _ ->
     let projects = !! "src/**/*.csproj" 
                    -- "src/**/*Tests.csproj" // Don't publish unit tests
                    -- "src/**/*Tests*.csproj"
-                   -- "src/**/*.MultiNode.TestRunner.csproj"
-                   -- "src/**/*.MultiNode.TestRunner.Shared.csproj"
+                   -- "src/**/*.MultiNode.TestRunner.csproj" // Do not publish MNTR nuget packages
+                   -- "src/**/*.MultiNode.TestAdapter.csproj"
                    -- "src/**/*.MultiNode.NodeRunner.csproj"
+                   -- "src/**/*.MultiNode.Shared.csproj"
+                   -- "src/**/*.MultiNode.TestRunner.Shared.csproj"
 
     let runSingleProject project =
         DotNetCli.Pack
@@ -219,7 +221,7 @@ Target "CreateNuget" (fun _ ->
 )
 
 Target "PublishMntr" (fun _ ->
-    let executableProjects = !! "./src/**/Akka.MultiNode.TestRunner.csproj"
+    let executableProjects = !! "./src/**/Akka.MultiNode.TestRunner.csproj" ++ "./src/**/Akka.MultiNode.TestAdapter.csproj"
 
     executableProjects |> Seq.iter (fun project ->
         DotNetCli.Restore
@@ -250,13 +252,25 @@ Target "PublishMntr" (fun _ ->
 )
 
 Target "CreateMntrNuget" (fun _ -> 
-    // uses the template file to create a temporary .nuspec file with the correct version
-    CopyFile "./src/Akka.MultiNode.TestRunner/Akka.MultiNode.TestRunner.nuspec" "./src/Akka.MultiNode.TestRunner/Akka.MultiNode.TestRunner.nuspec.template"
+
     let commonPropsVersionPrefix = XMLRead true "./src/common.props" "" "" "//Project/PropertyGroup/VersionPrefix" |> Seq.head
     let versionReplacement = List.ofSeq [ "@version@", commonPropsVersionPrefix + (if (not (versionSuffix = "")) then ("-" + versionSuffix) else "") ]
-    TemplateHelper.processTemplates versionReplacement [ "./src/Akka.MultiNode.TestRunner/Akka.MultiNode.TestRunner.nuspec" ]
 
+    // uses the template file to create a temporary .nuspec file with the correct version
+    let generateNuspec (nuspecTemplatePath : string) =
+        let nuspecPath = nuspecTemplatePath.Replace(".template", "")
+        CopyFile nuspecPath nuspecTemplatePath
+        TemplateHelper.processTemplates versionReplacement [ nuspecPath ]
+        nuspecPath
+        
+    let nuspecTemplates = [ 
+        "./src/Akka.MultiNode.TestRunner/Akka.MultiNode.TestRunner.nuspec.template";
+        "./src/Akka.MultiNode.TestAdapter/Akka.MultiNode.TestAdapter.nuspec.template"
+    ]
+    let nuspecFiles = List.map (generateNuspec) nuspecTemplates
+    
     let executableProjects = !! "./src/**/Akka.MultiNode.TestRunner.csproj"
+                             ++ "./src/**/Akka.MultiNode.TestAdapter.csproj"
 
     executableProjects |> Seq.iter (fun project ->  
         DotNetCli.Pack
@@ -269,7 +283,7 @@ Target "CreateMntrNuget" (fun _ ->
                     OutputPath = "\"" + outputNuGet + "\"" } )
     )
 
-    DeleteFile "./src/Akka.MultiNode.TestRunner/Akka.MultiNode.TestRunner.nuspec"
+    nuspecFiles |> Seq.iter (DeleteFile)
 )
 
 Target "PublishNuget" (fun _ ->

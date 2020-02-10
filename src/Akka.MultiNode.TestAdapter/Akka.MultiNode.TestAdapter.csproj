@@ -3,17 +3,9 @@
 
   <PropertyGroup>
     <AssemblyTitle>Akka.MultiNode.TestAdapter</AssemblyTitle>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <DebugType>embedded</DebugType>
-    <LangVersion>latest</LangVersion>
-    <TargetFrameworks>$(NetFrameworkTestVersion);$(NetCoreTestVersion)</TargetFrameworks>
-    <WarningsAsErrors>true</WarningsAsErrors>
-    <EmbedUntrackedSources>true</EmbedUntrackedSources>
     <Description>Visual Studio 2017 15.9+ Test Explorer runner for the Akka.NET MultiNode tests</Description>
-    <BuildOutputTargetFolder>build</BuildOutputTargetFolder>
-    <XunitVersion>2.4.1</XunitVersion>
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <NoWarn>$(NoWarn)1701;1702;NU5105</NoWarn>
+    <TargetFrameworks>$(NetFrameworkTestVersion);$(NetCoreTestVersion)</TargetFrameworks>
+    <NuspecFile>Akka.MultiNode.TestAdapter.nuspec</NuspecFile>
     <RootNamespace>Akka.MultiNode.TestAdapter</RootNamespace>
   </PropertyGroup>
 
