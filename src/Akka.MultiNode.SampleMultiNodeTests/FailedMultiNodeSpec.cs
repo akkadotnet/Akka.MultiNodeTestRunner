@@ -30,8 +30,7 @@ namespace Akka.MultiNode.TestAdapter.SampleTests
         {
         }
 
-        // [MultiNodeFact]
-        [CustomMultiNodeFact]
+        [MultiNodeFact]
         public void Should_fail()
         {
             throw new Exception("Spec should fail");

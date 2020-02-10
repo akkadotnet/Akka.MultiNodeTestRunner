@@ -30,8 +30,7 @@ namespace Akka.MultiNode.TestAdapter.SampleTests
         {
         }
 
-        // [MultiNodeFact]
-        [CustomMultiNodeFact(Skip = "This spec should be skipped")]
+        [MultiNodeFact]
         public void Should_skip()
         {
             throw new NotImplementedException("This spec should be skipped");

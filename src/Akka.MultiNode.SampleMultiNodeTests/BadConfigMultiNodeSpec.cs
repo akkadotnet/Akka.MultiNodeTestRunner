@@ -24,8 +24,7 @@ namespace Akka.MultiNode.TestAdapter.SampleTests
         {
         }
 
-        // [MultiNodeFact]
-        [CustomMultiNodeFact]
+        [MultiNodeFact]
         public void Should_not_be_started()
         {
         }

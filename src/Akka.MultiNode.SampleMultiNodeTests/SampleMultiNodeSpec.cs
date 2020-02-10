@@ -32,8 +32,7 @@ namespace Akka.MultiNode.TestAdapter.SampleTests
             _config = config;
         }
 
-        // [MultiNodeFact]
-        [CustomMultiNodeFact]
+        [MultiNodeFact]
         public void Should_start_and_join_cluster()
         {
             RunOn(StartClusterNode, _config.First);
