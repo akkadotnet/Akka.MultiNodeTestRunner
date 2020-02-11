@@ -36,6 +36,8 @@ namespace Akka.MultiNode.NodeRunner
 
         static int Main(string[] args)
         {
+            Console.WriteLine("Starting NodeRunner");
+            
             var nodeIndex = CommandLine.GetInt32("multinode.index");
             var nodeRole = CommandLine.GetProperty("multinode.role");
             var assemblyFileName = CommandLine.GetProperty("multinode.test-assembly");
@@ -53,6 +55,7 @@ namespace Akka.MultiNode.NodeRunner
             
             try
             {
+                Console.WriteLine("NodeRunner: init env");
                 MultiNodeEnvironment.Initialize();
 #if CORECLR
                 // In NetCore, if the assembly file hasn't been touched, 
@@ -73,6 +76,8 @@ namespace Akka.MultiNode.NodeRunner
                         .Select(dependency => AssemblyLoadContext.Default.LoadFromAssemblyName(new AssemblyName(dependency.Name)));
                 }
 #endif
+                
+                Console.WriteLine($"NodeRunner: preloaded {assemblyFileName}");
 
                 Thread.Sleep(TimeSpan.FromSeconds(10));
                 using (var controller = new XunitFrontController(AppDomainSupport.IfAvailable, assemblyFileName))
@@ -115,6 +120,7 @@ namespace Akka.MultiNode.NodeRunner
             }
             catch (AggregateException ex)
             {
+                Console.WriteLine($"NodeRunner: failed with error: {ex}");
                 var specFail = new SpecFail(nodeIndex, nodeRole, displayName);
                 specFail.FailureExceptionTypes.Add(ex.GetType().ToString());
                 specFail.FailureMessages.Add(ex.Message);
@@ -135,6 +141,7 @@ namespace Akka.MultiNode.NodeRunner
             }
             catch (Exception ex)
             {
+                Console.WriteLine($"NodeRunner: failed with error: {ex}");
                 var specFail = new SpecFail(nodeIndex, nodeRole, displayName);
                 specFail.FailureExceptionTypes.Add(ex.GetType().ToString());
                 specFail.FailureMessages.Add(ex.Message);
