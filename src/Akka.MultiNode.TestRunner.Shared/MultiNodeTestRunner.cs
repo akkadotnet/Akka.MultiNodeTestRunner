@@ -46,7 +46,7 @@ namespace Akka.MultiNode.TestRunner.Shared
             "netcore"
         };
 
-        private string _platformName = PlatformDetector.Current == PlatformDetector.PlatformType.NetCore ? "netcore" : "net";
+        private readonly string _platformName = PlatformDetector.Current == PlatformDetector.PlatformType.NetCore ? "netcore" : "net";
         
         protected ActorSystem TestRunSystem;
         protected IActorRef SinkCoordinator;
