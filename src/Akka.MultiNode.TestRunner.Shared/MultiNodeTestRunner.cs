@@ -45,6 +45,8 @@ namespace Akka.MultiNode.TestRunner.Shared
             "net",
             "netcore"
         };
+
+        private string _platformName = PlatformDetector.Current == PlatformDetector.PlatformType.NetCore ? "netcore" : "net";
         
         protected ActorSystem TestRunSystem;
         protected IActorRef SinkCoordinator;
@@ -57,8 +59,6 @@ namespace Akka.MultiNode.TestRunner.Shared
         /// </summary>
         public List<MultiNodeTestResult> Execute(string assemblyPath, MultiNodeTestRunnerOptions options)
         {
-            ValidatePlatform(options);
-
             // Perform output cleanup before anything is logged
             if (options.ClearOutputDirectory && Directory.Exists(options.OutputDirectory))
                 Directory.Delete(options.OutputDirectory, true);
@@ -149,7 +149,7 @@ namespace Akka.MultiNode.TestRunner.Shared
                 }
 
                 if (options.SpecNames != null &&
-                    !options.SpecNames.All(name => spec.FirstTest.TestName.IndexOf(name, StringComparison.InvariantCultureIgnoreCase) < 0))
+                    options.SpecNames.All(name => spec.FirstTest.TestName.IndexOf(name, StringComparison.InvariantCultureIgnoreCase) < 0))
                 {
                     PublishRunnerMessage($"Skipping [{spec.FirstTest.MethodName}] (Filtering)");
                     var skippedResult = new MultiNodeTestResult(spec, spec.FirstTest, MultiNodeTestResult.TestStatus.Skipped);
@@ -191,10 +191,11 @@ namespace Akka.MultiNode.TestRunner.Shared
                     .Append($@"-Dmultinode.index={nodeTest.Node - 1} ")
                     .Append($@"-Dmultinode.role=""{nodeTest.Role}"" ")
                     .Append($@"-Dmultinode.listen-address={options.ListenAddress} ")
-                    .Append($@"-Dmultinode.listen-port={listenPort} ");
+                    .Append($@"-Dmultinode.listen-port={listenPort} ")
+                    .Append($@"-Dmultinode.test-assembly=""{assemblyPath}"" ");
 
                 // Configure process for node
-                var process = BuildNodeProcess(assemblyPath, options, sbArguments);
+                var process = BuildNodeProcess(assemblyPath, sbArguments);
                 nodeProcesses.Add((nodeTest, process));
 
                 runningTestName = nodeTest.TestName;
@@ -264,14 +265,45 @@ namespace Akka.MultiNode.TestRunner.Shared
 
             return results;
         }
+        
+        private Process BuildNodeProcess(string assemblyPath, StringBuilder sbArguments)
+        {
+            var nodeRunnerFileName = PlatformDetector.IsNetCore ? "Akka.MultiNode.NodeRunner.dll" : "Akka.MultiNode.NodeRunner.exe";
+            
+            var searchPaths = new []
+            {
+                AppContext.BaseDirectory,
+                Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)
+            };
+            
+            // The most robust way is to just scan possible locations and find runner assembly
+            var nodeRunnerPath = FileToolInPaths(nodeRunnerFileName, dirPaths: searchPaths);
+            if (!nodeRunnerPath.HasValue)
+                throw new Exception($"Failed to find node runner '{nodeRunnerFileName}' at paths: {string.Join(", ", searchPaths)}");
+            
+            if (PlatformDetector.IsNetCore)
+                sbArguments.Insert(0, nodeRunnerPath.Value + " ");
+                
+            return new Process
+            {
+                StartInfo = new ProcessStartInfo
+                {
+                    FileName = PlatformDetector.IsNetCore ? "dotnet" : nodeRunnerPath.Value,
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true,
+                    Arguments = sbArguments.ToString(),
+                    WorkingDirectory = PlatformDetector.IsNetCore ? Path.GetDirectoryName(assemblyPath) : null
+                }
+            };
+        }
 
         private void StartNodeProcess(Process process, NodeTest nodeTest, MultiNodeTestRunnerOptions options, 
-                                             DirectoryInfo specFolder, IActorRef timelineCollector)
+            DirectoryInfo specFolder, IActorRef timelineCollector)
         {
             var nodeIndex = nodeTest.Node;
             var nodeRole = nodeTest.Role;
-            var logFilePath = Path.Combine(specFolder.FullName, $"node{nodeIndex}__{nodeRole}__{options.Platform}.txt");
-            var nodeInfo = new TimelineLogCollectorActor.NodeInfo(nodeIndex, nodeRole, options.Platform, nodeTest.TestName);
+            var logFilePath = Path.Combine(specFolder.FullName, $"node{nodeIndex}__{nodeRole}__{_platformName}.txt");
+            var nodeInfo = new TimelineLogCollectorActor.NodeInfo(nodeIndex, nodeRole, _platformName, nodeTest.TestName);
             var fileActor = TestRunSystem.ActorOf(Props.Create(() => new FileSystemAppenderActor(logFilePath)));
             process.OutputDataReceived += (sender, eventArgs) =>
             {
@@ -294,84 +326,10 @@ namespace Akka.MultiNode.TestRunner.Shared
                 }
             };
 
+            FileLogger.Write($"Running process: {process.StartInfo.FileName} {process.StartInfo.Arguments}");
             process.Start();
             process.BeginOutputReadLine();
             PublishRunnerMessage($"Started node {nodeIndex} : {nodeRole} on pid {process.Id}");
-        }
-
-        private Process BuildNodeProcess(string assemblyPath, MultiNodeTestRunnerOptions options, StringBuilder sbArguments)
-        {
-#if CORECLR
-            const string nrNetFileName = "Akka.MultiNode.NodeRunner.exe";
-            const string nrNetCodeFileName = "Akka.MultiNode.NodeRunner.dll";
-            var searchPaths = new []
-            {
-                AppContext.BaseDirectory,
-                Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)
-            };
-            
-            // Try to find node runner location (may be different under `dotnet test` on different platforms)
-            var ntrNetPath = FileToolInPaths(nrNetFileName, searchPaths);
-            var ntrNetCorePath = FileToolInPaths(nrNetCodeFileName, searchPaths);
-
-            string fileName;
-            switch (options.Platform)
-            {
-                case "net":
-                    if (!ntrNetPath.HasValue)
-                        throw new Exception($"No {nrNetFileName} file is found at paths: {string.Join(", ", searchPaths)}");
-                    
-                    fileName = ntrNetPath.Value;
-                    sbArguments.Insert(0, $@" -Dmultinode.test-assembly=""{assemblyPath}"" ");
-                    break;
-                case "netcore":
-                    if (!ntrNetCorePath.HasValue)
-                        throw new Exception($"No {nrNetCodeFileName} file is found at paths: {string.Join(", ", searchPaths)}");
-                    
-                    fileName = "dotnet";
-                    sbArguments.Insert(0, $@" -Dmultinode.test-assembly=""{assemblyPath}"" ");
-                    sbArguments.Insert(0, ntrNetCorePath.Value);
-                    break;
-                default: throw new ArgumentOutOfRangeException();
-            }
-
-            return new Process
-            {
-                StartInfo = new ProcessStartInfo
-                {
-                    FileName = fileName,
-                    UseShellExecute = false,
-                    RedirectStandardOutput = true,
-                    Arguments = sbArguments.ToString(),
-                    WorkingDirectory = Path.GetDirectoryName(assemblyPath)
-                }
-            };
-#else
-            const string nodeRunnerFileName = "Akka.MultiNode.NodeRunner.exe";
-            var searchPaths = new []
-            {
-                AppContext.BaseDirectory,
-                Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)
-            };
-            
-            // Under 'dotnet test' or as standalone util location of node runner is different.
-            // The most robust way is to just scan possible locations and find it
-            var ntrNetPath = FileToolInPaths(nodeRunnerFileName, dirPaths: searchPaths);
-            if (!ntrNetPath.HasValue)
-                throw new Exception($"Failed to find node runner '{nodeRunnerFileName}' at paths: {string.Join(", ", searchPaths)}");
-            
-            sbArguments.Insert(0, $@"-Dmultinode.test-assembly=""{assemblyPath}"" ");
-            return new Process
-            {
-                StartInfo = new ProcessStartInfo
-                {
-                    FileName = ntrNetPath.Value,
-                    UseShellExecute = false,
-                    RedirectStandardOutput = true,
-                    Arguments = sbArguments.ToString()
-                }
-            };
-#endif
         }
 
         private void ReportDiscoveryErrors(List<ErrorMessage> errors)
@@ -420,21 +378,6 @@ namespace Akka.MultiNode.TestRunner.Shared
 #endif
         }
 
-        private void ValidatePlatform(MultiNodeTestRunnerOptions options)
-        {
-#if CORECLR
-            if (!ValidNetCorePlatform.Contains(options.Platform))
-            {
-                throw new Exception($"Target platform not supported: {options.Platform}. Supported platforms are net and netcore");
-            }
-#else
-            if (options.Platform != "net")
-            {
-                throw new Exception($"Target platform not supported: {options.Platform}. Supported platforms are net");
-            }
-#endif
-        }
-
         private IActorRef CreateSinkCoordinator(MultiNodeTestRunnerOptions options, string suiteName)
         {
             Props coordinatorProps;
@@ -476,14 +419,14 @@ namespace Akka.MultiNode.TestRunner.Shared
 
             MessageSink CreateJsonFileSink()
             {
-                var fileName = FileNameGenerator.GenerateFileName(outputDirectory, assemblyName, options.Platform, ".json", now);
+                var fileName = FileNameGenerator.GenerateFileName(outputDirectory, assemblyName, _platformName, ".json", now);
                 var jsonStoreProps = Props.Create(() => new FileSystemMessageSinkActor(new JsonPersistentTestRunStore(), fileName, !options.TeamCityFormattingOn, true));
                 return new FileSystemMessageSink(jsonStoreProps);
             }
 
             MessageSink CreateVisualizerFileSink()
             {
-                var fileName = FileNameGenerator.GenerateFileName(outputDirectory, assemblyName, options.Platform, ".html", now);
+                var fileName = FileNameGenerator.GenerateFileName(outputDirectory, assemblyName, _platformName, ".html", now);
                 var visualizerProps = Props.Create(() => new FileSystemMessageSinkActor(new VisualizerPersistentTestRunStore(), fileName, !options.TeamCityFormattingOn, true));
                 return new FileSystemMessageSink(visualizerProps);
             }

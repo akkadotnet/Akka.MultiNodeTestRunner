@@ -24,7 +24,6 @@ namespace Akka.MultiNode.TestRunner.Shared
             ClearOutputDirectory = clearOutputDirectory;
             TeamCityFormattingOn = teamCityFormattingOn;
             Reporter = reporter ?? "console";
-            Platform = platform ?? (RuntimeDetector.IsWindows ? "net" : "netcore");
             FailedSpecsDirectory = failedSpecsDirectory ?? "FAILED_SPECS_LOGS";
             ListenAddress = listenAddress ?? "127.0.0.1";
             OutputDirectory = outputDirectory ?? "TestResults";
@@ -50,10 +49,6 @@ namespace Akka.MultiNode.TestRunner.Shared
         /// List of spec names to be executed. Other specs are skipped 
         /// </summary>
         public List<string> SpecNames { get; }
-        /// <summary>
-        /// Current platform. "net" or "netcore"
-        /// </summary>
-        public string Platform { get; }
         /// <summary>
         /// Reporter. "trx"/"teamcity"/"console"
         /// </summary>
