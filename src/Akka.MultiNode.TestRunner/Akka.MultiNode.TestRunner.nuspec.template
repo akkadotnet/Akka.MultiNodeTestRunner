@@ -16,6 +16,6 @@
   </metadata>
   <files>
     <file src="bin\Release\net472\publish\*.*" target="lib\net472\" />
-    <file src="bin\Release\netcoreapp3.0\publish\*.*" target="lib\netcoreapp3.0\" />
+    <file src="bin\Release\netcoreapp3.0\publish\*.*" target="lib\netcoreapp3.0\" exclude="**\*.exe" />
   </files>
 </package>
