@@ -10,19 +10,12 @@
         <PackageReference Include="Akka.Cluster.TestKit" Version="$(AkkaVersion)" />
         <PackageReference Include="Microsoft.NET.Test.Sdk" Version="$(TestSdkVersion)" />
         <PackageReference Include="FluentAssertions" Version="$(FluentAssertionsVersion)" />
+        <PackageReference Include="Microsoft.TestPlatform.ObjectModel" Version="$(TestSdkVersion)" />
     </ItemGroup>
 
     <!-- Include test adapter only for local debugging here. Some specs should fail, and CI should not run them -->
     <ItemGroup Condition=" '$(Configuration)' == 'Debug' ">
-        <ProjectReference Include="..\Akka.MultiNode.TestAdapter\Akka.MultiNode.TestAdapter.csproj" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <Compile Remove="TestResults\**" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <EmbeddedResource Remove="TestResults\**" />
+<!--        <ProjectReference Include="..\Akka.MultiNode.TestAdapter\Akka.MultiNode.TestAdapter.csproj" />-->
     </ItemGroup>
 
     <ItemGroup>
