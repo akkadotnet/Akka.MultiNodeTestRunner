@@ -8,10 +8,10 @@ namespace Akka.MultiNode.TestAdapter.SampleTests.Metadata
         /// <summary>
         /// Sample tests assembly path
         /// </summary>
-        public static string AssemblyPath => typeof(SampleMultiNodeSpec).Assembly.Location;
+        public static string AssemblyPath => typeof(SampleTestsMetadata).Assembly.Location;
         /// <summary>
         /// Gets assembly file name
         /// </summary>
-        public static string AssemblyFileName => typeof(SampleMultiNodeSpec).Assembly.GetName().Name + ".dll";
+        public static string AssemblyFileName => typeof(SampleTestsMetadata).Assembly.GetName().Name + ".dll";
     }
 }
