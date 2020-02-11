@@ -54,7 +54,6 @@ namespace Akka.MultiNode.NodeRunner
             try
             {
                 MultiNodeEnvironment.Initialize();
-
 #if CORECLR
                 // In NetCore, if the assembly file hasn't been touched, 
                 // XunitFrontController would fail loading external assemblies and its dependencies.
@@ -63,16 +62,16 @@ namespace Akka.MultiNode.NodeRunner
                 var dependencyContext = DependencyContext.Load(assembly);
                 if (dependencyContext == null)
                 {
-                    Console.WriteLine($"Failed to load assembly under .NET Core from {assemblyFileName}. " +
-                                      $"Possible reason is that assembly is compiled under .NET Full Framework.");
-                    Environment.Exit(1);
-                    return 1;
+                    // Sometimes this is fine - i.e. when running from `dotnet test`. But better to log this.
+                    Console.WriteLine($"Count not load assembly under .NET Core from {assemblyFileName}.");
                 }
-                
-                dependencyContext
-                    .CompileLibraries
-                    .Where(dep => dep.Name.ToLower().Contains(assembly.FullName.Split(new[] {','})[0].ToLower()))
-                    .Select(dependency => AssemblyLoadContext.Default.LoadFromAssemblyName(new AssemblyName(dependency.Name)));
+                else
+                {
+                    dependencyContext
+                        .CompileLibraries
+                        .Where(dep => dep.Name.ToLower().Contains(assembly.FullName.Split(new[] {','})[0].ToLower()))
+                        .Select(dependency => AssemblyLoadContext.Default.LoadFromAssemblyName(new AssemblyName(dependency.Name)));
+                }
 #endif
 
                 Thread.Sleep(TimeSpan.FromSeconds(10));
