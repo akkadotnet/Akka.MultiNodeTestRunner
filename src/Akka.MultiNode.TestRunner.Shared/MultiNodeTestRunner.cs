@@ -326,7 +326,6 @@ namespace Akka.MultiNode.TestRunner.Shared
                 }
             };
 
-            FileLogger.Write($"Running process: {process.StartInfo.FileName} {process.StartInfo.Arguments}");
             process.Start();
             process.BeginOutputReadLine();
             PublishRunnerMessage($"Started node {nodeIndex} : {nodeRole} on pid {process.Id}");
