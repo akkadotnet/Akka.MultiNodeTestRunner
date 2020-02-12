@@ -13,6 +13,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Reflection;
+using System.Runtime.Versioning;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -23,6 +24,7 @@ using Akka.MultiNode.Shared.Environment;
 using Akka.MultiNode.Shared.Persistence;
 using Akka.MultiNode.Shared.Sinks;
 using Akka.MultiNode.Shared.TrxReporter;
+using Akka.MultiNode.TestRunner.Shared.Helpers;
 using Akka.Remote.TestKit;
 using Akka.Util;
 using Newtonsoft.Json;
@@ -268,7 +270,9 @@ namespace Akka.MultiNode.TestRunner.Shared
         
         private Process BuildNodeProcess(string assemblyPath, StringBuilder sbArguments)
         {
-            var nodeRunnerFileName = PlatformDetector.IsNetCore ? "Akka.MultiNode.NodeRunner.dll" : "Akka.MultiNode.NodeRunner.exe";
+            var nodeRunnerReferencedAssembly = typeof(NodeRunner.Nothing).Assembly;
+            var nodeRunnerAssemblyName = nodeRunnerReferencedAssembly.GetName().Name;
+            var nodeRunnerFileName = nodeRunnerAssemblyName + (PlatformDetector.IsNetCore ? ".dll" : ".exe");
             
             var searchPaths = new []
             {
@@ -280,10 +284,16 @@ namespace Akka.MultiNode.TestRunner.Shared
             var nodeRunnerPath = FileToolInPaths(nodeRunnerFileName, dirPaths: searchPaths);
             if (!nodeRunnerPath.HasValue)
                 throw new Exception($"Failed to find node runner '{nodeRunnerFileName}' at paths: {string.Join(", ", searchPaths)}");
-            
+
+            var nodeRunnerDir = Path.GetDirectoryName(assemblyPath);
             if (PlatformDetector.IsNetCore)
+            {
                 sbArguments.Insert(0, nodeRunnerPath.Value + " ");
-                
+
+                // Under .net core "*.runtimeconfig.json" is required to run NodeRunner as a console app
+                CreateRuntimeConfigIfNotExists(nodeRunnerReferencedAssembly, nodeRunnerDir);
+            }
+            
             return new Process
             {
                 StartInfo = new ProcessStartInfo
@@ -292,9 +302,17 @@ namespace Akka.MultiNode.TestRunner.Shared
                     UseShellExecute = false,
                     RedirectStandardOutput = true,
                     Arguments = sbArguments.ToString(),
-                    WorkingDirectory = PlatformDetector.IsNetCore ? Path.GetDirectoryName(assemblyPath) : null
+                    WorkingDirectory = PlatformDetector.IsNetCore ? nodeRunnerDir : null
                 }
             };
+        }
+
+        private static void CreateRuntimeConfigIfNotExists(Assembly nodeRunnerReferencedAssembly, string nodeRunnerDir)
+        {
+            var runtimeConfigContent = RuntimeConfigGenerator.GetRuntimeConfigContent(nodeRunnerReferencedAssembly);
+            var runtimeConfigPath = Path.Combine(nodeRunnerDir, nodeRunnerReferencedAssembly.GetName().Name + ".runtimeconfig.json");
+            if (!File.Exists(runtimeConfigPath))
+                File.WriteAllText(runtimeConfigPath, runtimeConfigContent);
         }
 
         private void StartNodeProcess(Process process, NodeTest nodeTest, MultiNodeTestRunnerOptions options, 
