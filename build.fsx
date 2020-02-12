@@ -14,7 +14,7 @@ let configuration = "Release"
 
 // Configuration values for tests
 let testNetFrameworkVersion = "net472"
-let testNetCoreVersion = "netcoreapp3.0"
+let testNetCoreVersion = "netcoreapp3.1"
 
 // Metadata used when signing packages and DLLs
 let signingName = "My Library"

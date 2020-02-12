@@ -13,7 +13,6 @@
     <PackageReference Include="xunit.runner.utility" Version="$(XunitVersion)" />
     <PackageReference Include="Akka.Remote.TestKit" Version="$(AkkaVersion)" />
     <PackageReference Include="Akka.TestKit.Xunit2" Version="$(AkkaVersion)" />
-    <PackageReference Include="System.Collections.Immutable" Version="1.7.0" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == '$(NetCoreTestVersion)'">
