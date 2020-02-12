@@ -20,9 +20,6 @@ namespace Akka.MultiNode.TestRunner.Shared.Helpers
             var frameworkName = framework?.FrameworkName ?? ".NETCoreApp,Version=v3.0"; // Something like .NETCoreApp,Version=v3.0
             var majorFrameworkVersion = Regex.Match(frameworkName, @"\d\.\d").Value;
 
-            version = "3.0.0";
-            majorFrameworkVersion = "3.0";
-            
             return $@"
 {{
     ""runtimeOptions"": {{
