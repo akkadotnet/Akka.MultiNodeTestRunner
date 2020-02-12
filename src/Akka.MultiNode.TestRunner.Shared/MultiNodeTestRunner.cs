@@ -326,7 +326,9 @@ namespace Akka.MultiNode.TestRunner.Shared
                 }
             };
 
-            Console.WriteLine($"Starting process: {process.StartInfo.FileName} {process.StartInfo.Arguments}");
+            var filesNearProcess = Directory.GetFiles(Path.GetDirectoryName(process.StartInfo.FileName));
+            Console.WriteLine($"Starting process: {process.StartInfo.FileName} {process.StartInfo.Arguments}. " +
+                              $"Files near process: {string.Join($",{Environment.NewLine}", filesNearProcess)}");
             process.Start();
             process.BeginOutputReadLine();
             PublishRunnerMessage($"Started node {nodeIndex} : {nodeRole} on pid {process.Id}");
