@@ -53,14 +53,12 @@ namespace Akka.MultiNode.NodeRunner
             
             Console.WriteLine("Starting NodeRunner 3");
 
-            var system = ActorSystem.Create("NoteTestRunner-" + nodeIndex);
-            var tcpClient = _logger = system.ActorOf<RunnerTcpClient>();
-            system.Tcp().Tell(new Tcp.Connect(listenEndpoint), tcpClient);
-            
-            Console.WriteLine("Starting NodeRunner 4");
-            
             try
             {
+                var system = ActorSystem.Create("NoteTestRunner-" + nodeIndex);
+                var tcpClient = _logger = system.ActorOf<RunnerTcpClient>();
+                system.Tcp().Tell(new Tcp.Connect(listenEndpoint), tcpClient);
+                
                 Console.WriteLine("NodeRunner: init env");
                 MultiNodeEnvironment.Initialize();
 #if CORECLR
