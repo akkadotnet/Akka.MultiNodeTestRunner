@@ -13,11 +13,6 @@
         <PackageReference Include="Microsoft.TestPlatform.ObjectModel" Version="$(TestSdkVersion)" />
     </ItemGroup>
 
-    <!-- Include test adapter only for local debugging here. Some specs should fail, and CI should not run them -->
-    <ItemGroup Condition=" '$(Configuration)' == 'Debug' ">
-<!--        <ProjectReference Include="..\Akka.MultiNode.TestAdapter\Akka.MultiNode.TestAdapter.csproj" />-->
-    </ItemGroup>
-
     <ItemGroup>
       <None Remove="TestResults\**" />
     </ItemGroup>
