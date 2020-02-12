@@ -13,14 +13,9 @@
     <description>Akka.NET Multi-node Test Adapter; used for executing tests written with Akka.Remote.TestKit</description>
     <copyright>Copyright � 2013-2019 .NET Foundation</copyright>
     <tags>akka actors actor model Akka concurrency</tags>
-    <contentFiles>
-      <files include="cs\netcoreapp3.0\*.runtimeconfig.*" buildAction="None" copyToOuput="true"  />
-    </contentFiles>
   </metadata>
   <files>
     <file src="bin\Release\net472\publish\*.*" target="lib\net472\" />
     <file src="bin\Release\netcoreapp3.0\publish\*.*" target="lib\netcoreapp3.0\" exclude="**\*.exe"/>
-    <file src="bin\Release\netcoreapp3.0\publish\*.runtimeconfig.json" target="build"/>
-    <file src="build\Akka.MultiNode.TestAdapter.targets" target="build"/>
   </files>
 </package>
