@@ -326,7 +326,7 @@ namespace Akka.MultiNode.TestRunner.Shared
                 }
             };
 
-            var filesNearProcess = Directory.GetFiles(Path.GetDirectoryName(process.StartInfo.FileName));
+            var filesNearProcess = Directory.GetFiles(Path.GetDirectoryName(Path.GetFullPath(process.StartInfo.FileName)));
             Console.WriteLine($"Starting process: {process.StartInfo.FileName} {process.StartInfo.Arguments}. " +
                               $"Files near process: {string.Join($",{Environment.NewLine}", filesNearProcess)}");
             process.Start();
