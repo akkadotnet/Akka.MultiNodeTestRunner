@@ -15,10 +15,13 @@ namespace Akka.MultiNode.TestRunner.Shared.Helpers
         /// </summary>
         public static string GetRuntimeConfigContent(Assembly assembly)
         {
-            var version = Environment.Version; // Something like 3.1.1
+            var version = Environment.Version.ToString(); // Something like 3.1.1
             var framework = assembly.GetCustomAttribute<TargetFrameworkAttribute>();
             var frameworkName = framework?.FrameworkName ?? ".NETCoreApp,Version=v3.0"; // Something like .NETCoreApp,Version=v3.0
-            var majorFrameworkVersion = Regex.Match(frameworkName, @"\d\.\d");
+            var majorFrameworkVersion = Regex.Match(frameworkName, @"\d\.\d").Value;
+
+            version = "3.0.0";
+            majorFrameworkVersion = "3.0";
             
             return $@"
 {{
