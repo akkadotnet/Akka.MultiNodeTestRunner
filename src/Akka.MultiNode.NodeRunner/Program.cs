@@ -44,14 +44,20 @@ namespace Akka.MultiNode.NodeRunner
             var typeName = CommandLine.GetProperty("multinode.test-class");
             var testName = CommandLine.GetProperty("multinode.test-method");
             var displayName = testName;
+            
+            Console.WriteLine("Starting NodeRunner 2");
 
             var listenAddress = IPAddress.Parse(CommandLine.GetProperty("multinode.listen-address"));
             var listenPort = CommandLine.GetInt32("multinode.listen-port");
             var listenEndpoint = new IPEndPoint(listenAddress, listenPort);
+            
+            Console.WriteLine("Starting NodeRunner 3");
 
             var system = ActorSystem.Create("NoteTestRunner-" + nodeIndex);
             var tcpClient = _logger = system.ActorOf<RunnerTcpClient>();
             system.Tcp().Tell(new Tcp.Connect(listenEndpoint), tcpClient);
+            
+            Console.WriteLine("Starting NodeRunner 4");
             
             try
             {
