@@ -66,8 +66,7 @@ namespace Akka.MultiNode.NodeRunner
 #if CORECLR
                     // In NetCore, if the assembly file hasn't been touched, 
                     // XunitFrontController would fail loading external assemblies and its dependencies.
-                    AssemblyLoadContext.Default.Resolving +=
- (assemblyLoadContext, assemblyName) => DefaultOnResolving(assemblyLoadContext, assemblyName, assemblyFileName);
+                    AssemblyLoadContext.Default.Resolving += (assemblyLoadContext, assemblyName) => DefaultOnResolving(assemblyLoadContext, assemblyName, assemblyFileName);
                     var assembly = AssemblyLoadContext.Default.LoadFromAssemblyPath(assemblyFileName);
                     var dependencyContext = DependencyContext.Load(assembly);
                     if (dependencyContext == null)
@@ -77,8 +76,8 @@ namespace Akka.MultiNode.NodeRunner
                     }
                     else
                     {
-                        dependencyContext
-                            .CompileLibraries
+                        // TODO: Select is actually not executed (lazy), so maybe should just cut this off?
+                        dependencyContext.CompileLibraries
                             .Where(dep => dep.Name.ToLower().Contains(assembly.FullName.Split(new[] {','})[0].ToLower()))
                             .Select(dependency => AssemblyLoadContext.Default.LoadFromAssemblyName(new AssemblyName(dependency.Name)));
                     }
