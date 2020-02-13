@@ -27,11 +27,17 @@ namespace Akka.MultiNode.TestAdapter.Tests
             executor.RunTests(new[] {SampleTestsAssemblyPath}, new FakeRunContext(), frameworkHandler);
             
             frameworkHandler.TestResults.Should().NotBeEmpty();
-            
+
+            Should_report_passes(frameworkHandler);
             Should_report_failures(frameworkHandler);
             Should_report_failures_for_one_node(frameworkHandler);
             Should_report_skipped_specs(frameworkHandler);
             Should_ignore_specs_with_bad_config(frameworkHandler);
+        }
+        
+        private void Should_report_passes(FakeFrameworkHandler frameworkHandler)
+        {
+            frameworkHandler.TestResults.Should().Contain(r => r.Outcome == TestOutcome.Passed, "Should report passed spec results");
         }
 
         private void Should_report_failures(FakeFrameworkHandler frameworkHandler)

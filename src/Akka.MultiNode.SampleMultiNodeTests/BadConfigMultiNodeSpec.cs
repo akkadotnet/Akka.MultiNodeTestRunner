@@ -1,6 +1,5 @@
 using System;
 using Akka.Cluster.TestKit;
-using Akka.MultiNode.Shared.Environment;
 using Akka.Remote.TestKit;
 
 namespace Akka.MultiNode.TestAdapter.SampleTests
@@ -24,8 +23,7 @@ namespace Akka.MultiNode.TestAdapter.SampleTests
         {
         }
 
-        // [MultiNodeFact]
-        [CustomMultiNodeFact]
+        [MultiNodeFact]
         public void Should_not_be_started()
         {
         }

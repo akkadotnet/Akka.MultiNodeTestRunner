@@ -24,11 +24,6 @@
         <ProjectReference Include="..\Akka.MultiNode.Shared\Akka.MultiNode.Shared.csproj" />
     </ItemGroup>
 
-    <!-- Under .NET Core we need *.runtimeconfig.* files for NodeRunner to make it runnable as console app -->
-    <ItemGroup Condition="'$(TargetFramework)' == '$(NetCoreTestVersion)'">
-        <None Include="$(SolutionDir)src\Akka.MultiNode.NodeRunner\bin\Debug\$(NetCoreTestVersion)\*.runtimeconfig.*" CopyToOutputDirectory="PreserveNewest" />
-    </ItemGroup>
-
     <PropertyGroup Condition=" '$(TargetFramework)' == '$(NetCoreTestVersion)' ">
         <DefineConstants>$(DefineConstants);CORECLR</DefineConstants>
     </PropertyGroup>
