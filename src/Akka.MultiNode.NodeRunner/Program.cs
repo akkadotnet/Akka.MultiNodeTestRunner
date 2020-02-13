@@ -38,8 +38,6 @@ namespace Akka.MultiNode.NodeRunner
         {
             try
             {
-                Console.WriteLine("Starting NodeRunner");
-
                 var nodeIndex = CommandLine.GetInt32("multinode.index");
                 var nodeRole = CommandLine.GetProperty("multinode.role");
                 var assemblyFileName = CommandLine.GetProperty("multinode.test-assembly");
@@ -47,13 +45,9 @@ namespace Akka.MultiNode.NodeRunner
                 var testName = CommandLine.GetProperty("multinode.test-method");
                 var displayName = testName;
 
-                Console.WriteLine("Starting NodeRunner 2");
-
                 var listenAddress = IPAddress.Parse(CommandLine.GetProperty("multinode.listen-address"));
                 var listenPort = CommandLine.GetInt32("multinode.listen-port");
                 var listenEndpoint = new IPEndPoint(listenAddress, listenPort);
-
-                Console.WriteLine("Starting NodeRunner 3");
 
                 try
                 {
@@ -61,7 +55,6 @@ namespace Akka.MultiNode.NodeRunner
                     var tcpClient = _logger = system.ActorOf<RunnerTcpClient>();
                     system.Tcp().Tell(new Tcp.Connect(listenEndpoint), tcpClient);
 
-                    Console.WriteLine("NodeRunner: init env");
                     MultiNodeEnvironment.Initialize();
 #if CORECLR
                     // In NetCore, if the assembly file hasn't been touched, 
@@ -82,8 +75,6 @@ namespace Akka.MultiNode.NodeRunner
                             .Select(dependency => AssemblyLoadContext.Default.LoadFromAssemblyName(new AssemblyName(dependency.Name)));
                     }
 #endif
-
-                    Console.WriteLine($"NodeRunner: preloaded {assemblyFileName}");
 
                     Thread.Sleep(TimeSpan.FromSeconds(10));
                     using (var controller = new XunitFrontController(AppDomainSupport.IfAvailable, assemblyFileName))
@@ -127,7 +118,6 @@ namespace Akka.MultiNode.NodeRunner
                 }
                 catch (AggregateException ex)
                 {
-                    Console.WriteLine($"NodeRunner: failed with error: {ex}");
                     var specFail = new SpecFail(nodeIndex, nodeRole, displayName);
                     specFail.FailureExceptionTypes.Add(ex.GetType().ToString());
                     specFail.FailureMessages.Add(ex.Message);
@@ -149,7 +139,6 @@ namespace Akka.MultiNode.NodeRunner
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"NodeRunner: failed with error: {ex}");
                     var specFail = new SpecFail(nodeIndex, nodeRole, displayName);
                     specFail.FailureExceptionTypes.Add(ex.GetType().ToString());
                     specFail.FailureMessages.Add(ex.Message);

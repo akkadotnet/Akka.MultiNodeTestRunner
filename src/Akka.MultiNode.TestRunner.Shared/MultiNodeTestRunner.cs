@@ -42,12 +42,6 @@ namespace Akka.MultiNode.TestRunner.Shared
     /// </summary>
     public class MultiNodeTestRunner
     {
-        private static readonly HashSet<string> ValidNetCorePlatform = new HashSet<string>
-        {
-            "net",
-            "netcore"
-        };
-
         private readonly string _platformName = PlatformDetector.Current == PlatformDetector.PlatformType.NetCore ? "netcore" : "net";
         
         protected ActorSystem TestRunSystem;
@@ -312,10 +306,7 @@ namespace Akka.MultiNode.TestRunner.Shared
             var runtimeConfigContent = RuntimeConfigGenerator.GetRuntimeConfigContent(nodeRunnerReferencedAssembly);
             var runtimeConfigPath = Path.Combine(nodeRunnerDir, nodeRunnerReferencedAssembly.GetName().Name + ".runtimeconfig.json");
             if (!File.Exists(runtimeConfigPath))
-            {
-                Console.WriteLine($"Creating runtime config at {runtimeConfigPath}. Content: {runtimeConfigContent}");
                 File.WriteAllText(runtimeConfigPath, runtimeConfigContent);
-            }
         }
 
         private void StartNodeProcess(Process process, NodeTest nodeTest, MultiNodeTestRunnerOptions options, 
@@ -347,11 +338,6 @@ namespace Akka.MultiNode.TestRunner.Shared
                 }
             };
 
-            var filesNearProcess = Directory
-                .GetFiles(Path.GetDirectoryName(Path.GetFullPath(process.StartInfo.FileName)))
-                .Where(f => f.Contains("runtimeconfig")).ToList();
-            Console.WriteLine($"Starting process: {process.StartInfo.FileName} {process.StartInfo.Arguments}. " +
-                              $"Runtime configs near process: {string.Join($",{Environment.NewLine}", filesNearProcess)}");
             process.Start();
             process.BeginOutputReadLine();
             PublishRunnerMessage($"Started node {nodeIndex} : {nodeRole} on pid {process.Id}");
