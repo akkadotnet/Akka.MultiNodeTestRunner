@@ -108,7 +108,22 @@ namespace Akka.MultiNode.TestRunner.Shared
                 ? options.ListenPort 
                 : _tcpLogger.Ask<int>(TcpLoggingServer.GetBoundPort.Instance).Result;
 
-            return RunSpec(options, test, listenPort);
+            TestStarted?.Invoke(test);
+            try
+            {
+                var result = RunSpec(options, test, listenPort);
+                if(result.Status == MultiNodeTestResult.TestStatus.Failed)
+                    TestFailed?.Invoke(result);
+                else
+                    TestPassed?.Invoke(result);
+                return result;
+            }
+            catch (Exception e)
+            {
+                Exception?.Invoke(test, e);
+                PublishRunnerMessage(e.Message);
+                return null;
+            }
         }
         
         /// <summary>
