@@ -5,7 +5,6 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -152,14 +151,11 @@ namespace Akka.MultiNode.Shared.Sinks
                         .PipeTo(Self);
                 }
             });
-            Receive<string>(s =>
-            {
-                PublishToChildren(s);
-            });
-            Receive<NodeCompletedSpecWithSuccess>(s => PublishToChildren(s));
-            Receive<IList<NodeTest>>(tests => BeginSpec(tests));
-            Receive<EndSpec>(spec => EndSpec(spec.ClassName, spec.MethodName, spec.Log));
-            Receive<RunnerMessage>(runner => PublishToChildren(runner));
+            Receive<string>(PublishToChildren);
+            Receive<NodeCompletedSpecWithSuccess>(PublishToChildren);
+            Receive<MultiNodeTest>(BeginSpec);
+            Receive<EndSpec>(spec => EndSpec(spec.Test, spec.Log));
+            Receive<RunnerMessage>(PublishToChildren);
         }
 
         private void PublishToChildren(NodeCompletedSpecWithSuccess message)
@@ -169,18 +165,16 @@ namespace Akka.MultiNode.Shared.Sinks
         }
 
 
-        private void EndSpec(string testName, string methodName, SpecLog specLog)
+        private void EndSpec(MultiNodeTest test, SpecLog specLog)
         {
             foreach (var sink in Sinks)
-                sink.EndTest(testName, methodName, specLog);
+                sink.EndTest(test, specLog);
         }
 
-        private void BeginSpec(IList<NodeTest> tests)
+        private void BeginSpec(MultiNodeTest test)
         {
-            var test = tests.First();
-
             foreach (var sink in Sinks)
-                sink.BeginTest(test.TestName, test.MethodName, tests);
+                sink.BeginTest(test);
         }
 
         private void PublishToChildren(RunnerMessage message)

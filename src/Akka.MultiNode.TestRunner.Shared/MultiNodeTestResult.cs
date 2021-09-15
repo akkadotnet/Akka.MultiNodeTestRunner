@@ -1,3 +1,5 @@
+using System.Linq;
+using System.Text;
 using Akka.MultiNode.Shared;
 
 namespace Akka.MultiNode.TestRunner.Shared
@@ -10,30 +12,46 @@ namespace Akka.MultiNode.TestRunner.Shared
         /// <summary>
         /// MultiNodeTestResult
         /// </summary>
-        public MultiNodeTestResult(MultiNodeSpec spec, NodeTest test, TestStatus status)
+        public MultiNodeTestResult(MultiNodeTest test)
         {
-            Spec = spec;
             Test = test;
-            Status = status;
+            NodeResults = string.IsNullOrWhiteSpace(Test.SkipReason)
+                ? new TestStatus[Test.Nodes.Count]
+                : new TestStatus[0];
         }
 
         /// <summary>
-        /// Spec name
+        /// Test name
         /// </summary>
-        public MultiNodeSpec Spec { get; }
-        /// <summary>
-        /// Full name of executed test
-        /// </summary>
-        public NodeTest Test { get; }
+        public MultiNodeTest Test { get; }
         /// <summary>
         /// Test result
         /// </summary>
-        public TestStatus Status { get; }
+        public TestStatus Status {
+            get
+            {
+                if (!string.IsNullOrWhiteSpace(Test.SkipReason))
+                    return TestStatus.Skipped;
+                return NodeResults.Any(result => result == TestStatus.Failed) ? TestStatus.Failed : TestStatus.Passed;
+            } 
+        }
+        /// <summary>
+        /// Node Test results
+        /// </summary>
+        public TestStatus[] NodeResults { get; }
 
         /// <inheritdoc />
         public override string ToString()
         {
-            return $"Spec {Spec.SpecName} result for {Test.MethodName}: {Status}";
+            var sb = new StringBuilder($"Test {Test.TestName}: {Status}");
+            if (Test.SkipReason != null)
+                sb.Append(" Skipped: ").Append(Test.SkipReason);
+            for (var i = 0; i < NodeResults.Length; i++)
+            {
+                sb.Append("\n\tNode ").Append(i).Append(": ").Append(NodeResults[i]);
+            }
+
+            return sb.ToString();
         }
 
         public enum TestStatus

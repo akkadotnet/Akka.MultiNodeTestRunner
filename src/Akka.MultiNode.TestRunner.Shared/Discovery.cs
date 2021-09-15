@@ -8,7 +8,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using System.Threading;
 using Akka.MultiNode.Shared;
 using Akka.Remote.TestKit;
@@ -23,39 +22,38 @@ namespace Akka.MultiNode.TestRunner.Shared
     public class Discovery : MarshalByRefObject, IMessageSink, IDisposable
 #endif
     {
-        public Dictionary<string, List<NodeTest>> Tests { get; set; }
+        // There can be multiple fact attributes in a single class, but our convention
+        // limits them to 1 fact attribute per test class
+        public List<MultiNodeTest> Tests { get; }
         public List<ErrorMessage> Errors { get; } = new List<ErrorMessage>();
         public bool WasSuccessful => Errors.Count == 0;
+
+        private readonly string _assemblyPath;
         
         /// <summary>
         /// Initializes a new instance of the <see cref="Discovery"/> class.
         /// </summary>
-        public Discovery()
+        public Discovery(string assemblyPath)
         {
-            Tests = new Dictionary<string, List<NodeTest>>();
+            _assemblyPath = assemblyPath;
+            Tests = new List<MultiNodeTest>();
             Finished = new ManualResetEvent(false);
         }
 
-        public ManualResetEvent Finished { get; private set; }
-        public IMessageSink NextSink { get; private set; }
+        public ManualResetEvent Finished { get; }
 
         public virtual bool OnMessage(IMessageSinkMessage message)
         {
             switch (message)
             {
-                case ITestCaseDiscoveryMessage testCaseDiscoveryMessage:
-                    var testClass = testCaseDiscoveryMessage.TestClass.Class;
-                    if (testClass.IsAbstract) return true;
+                case ITestCaseDiscoveryMessage discovery:
+                    var testClass = discovery.TestClass.Class;
+                    if (testClass.IsAbstract) 
+                        break;
+                    if (!discovery.TestMethod.Method.GetCustomAttributes(typeof(MultiNodeFactAttribute)).Any())
+                        break;
                     
-                    var details = LoadTestCaseDetails(testCaseDiscoveryMessage, testClass);
-                    if (details.Any())
-                    {
-                        var dictKey = details.First().TestName;
-                        if (Tests.ContainsKey(dictKey))
-                            Tests[dictKey].AddRange(details);
-                        else
-                            Tests.Add(dictKey, details);
-                    }
+                    Tests.Add(new MultiNodeTest(discovery, _assemblyPath));
                     break;
                 case IDiscoveryCompleteMessage discoveryComplete:
                     Finished.Set();
@@ -66,101 +64,6 @@ namespace Akka.MultiNode.TestRunner.Shared
             }
 
             return true;
-        }
-
-        private List<NodeTest> LoadTestCaseDetails(ITestCaseDiscoveryMessage testCaseDiscoveryMessage, ITypeInfo testClass)
-        {
-            try
-            {
-#if CORECLR
-                var specType = testCaseDiscoveryMessage.TestAssembly.Assembly.GetType(testClass.Name).ToRuntimeType();
-#else
-                var testAssembly = Assembly.LoadFrom(testCaseDiscoveryMessage.TestAssembly.Assembly.AssemblyPath);
-                var specType = testAssembly.GetType(testClass.Name);
-#endif
-                if (!typeof(Remote.TestKit.MultiNodeSpec).IsAssignableFrom(specType))
-                {
-                    Console.WriteLine($"Ignoring {testClass.Name} test class - MNTR spec should inherit from {typeof(Remote.TestKit.MultiNodeSpec).FullName}");
-                    return new List<NodeTest>();
-                }
-                
-                var roles = RoleNames(specType);
-
-                var details = roles.Select((r, i) => new NodeTest
-                {
-                    Node = i + 1,
-                    Role = r.Name,
-                    TestName = testClass.Name,
-                    TypeName = testClass.Name,
-                    MethodName = testCaseDiscoveryMessage.TestCase.TestMethod.Method.Name,
-                    SkipReason = testCaseDiscoveryMessage.TestCase.SkipReason,
-                }).ToList();
-
-                return details;
-            }
-            catch (Exception ex)
-            {
-                // If something goes wrong with loading test details - just keep going with other tests
-                Console.WriteLine($"Failed to load test details for [{testClass.Name}] test class: {ex}");
-                return new List<NodeTest>();
-            }
-        }
-
-        private IEnumerable<RoleName> RoleNames(Type specType)
-        {
-            var ctorWithConfig = FindConfigConstructor(specType);
-            var configType = ctorWithConfig.GetParameters().First().ParameterType;
-            var args = ConfigConstructorParamValues(configType);
-            var configInstance = Activator.CreateInstance(configType, args);
-            var roleType = typeof(RoleName);
-            var configProps = configType.GetProperties(BindingFlags.Instance | BindingFlags.Public);
-            var roleProps = configProps.Where(p => p.PropertyType == roleType && p.Name != "Myself").Select(p => (RoleName)p.GetValue(configInstance));
-            var configFields = configType.GetFields(BindingFlags.Instance | BindingFlags.Public);
-            var roleFields = configFields.Where(f => f.FieldType == roleType && f.Name != "Myself").Select(f => (RoleName)f.GetValue(configInstance));
-            var roles = roleProps.Concat(roleFields).Distinct();
-            return roles;
-        }
-
-        internal static ConstructorInfo FindConfigConstructor(Type configUser)
-        {
-            var baseConfigType = typeof(MultiNodeConfig);
-            var current = configUser;
-            while (current != null)
-            {
-
-#if CORECLR
-                var ctorWithConfig = current
-                    .GetConstructors(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance)
-                    .FirstOrDefault(c => null != c.GetParameters().FirstOrDefault(p => p.ParameterType.GetTypeInfo().IsSubclassOf(baseConfigType)));
-            
-                current = current.GetTypeInfo().BaseType;
-#else
-                var ctorWithConfig = current
-                    .GetConstructors(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance)
-                    .FirstOrDefault(c => null != c.GetParameters().FirstOrDefault(p => p.ParameterType.IsSubclassOf(baseConfigType)));
-
-                current = current.BaseType;
-#endif
-                if (ctorWithConfig != null) return ctorWithConfig;
-            }
-
-            throw new ArgumentException($"[{configUser}] or one of its base classes must specify constructor, which first parameter is a subclass of {baseConfigType}");
-        }
-
-        private object[] ConfigConstructorParamValues(Type configType)
-        {
-            var ctors = configType.GetConstructors(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
-            var empty = ctors.FirstOrDefault(c => !c.GetParameters().Any());
-
-#if CORECLR
-            return empty != null
-                ? new object[0]
-                : ctors.First().GetParameters().Select(p => p.ParameterType.GetTypeInfo().IsValueType ? Activator.CreateInstance(p.ParameterType) : null).ToArray();
-#else
-            return empty != null
-                ? new object[0]
-                : ctors.First().GetParameters().Select(p => p.ParameterType.IsValueType ? Activator.CreateInstance(p.ParameterType) : null).ToArray();
-#endif
         }
 
         /// <inheritdoc/>

@@ -22,14 +22,8 @@ namespace Akka.MultiNode.Shared.Tests
         internal const string DummyRoleFor = "Dummy_role_for_";
         internal static readonly Random Random = new Random();
 
-        public static IList<NodeTest> BuildNodeTests(IEnumerable<int> nodeIndicies)
-        {
-            var methodName = AlphaNumericString();
-            var className = AlphaNumericString();
-            var testName = AlphaNumericString();
-
-            return nodeIndicies.Select(i => new NodeTest() {MethodName = methodName, Node = i, Role = DummyRoleFor+i, TestName = testName, TypeName = className}).ToList();
-        }
+        public static MultiNodeTest BuildNodeTests(IEnumerable<int> nodeIndicies)
+            => new MockMultiNodeTest(nodeIndicies);
 
         /// <summary>
         /// Meta-function for generating a distribution of messages across multiple nodes
@@ -190,6 +184,34 @@ namespace Akka.MultiNode.Shared.Tests
             return Random.Next(min, max);
         }
         #endregion
+        
+        internal class MockMultiNodeTest : MultiNodeTest
+        {
+            public MockMultiNodeTest(IEnumerable<int> nodeIndices)
+            {
+                _indices = nodeIndices;
+                MethodName = AlphaNumericString();
+                TypeName = AlphaNumericString();
+                AssemblyPath = AlphaNumericString();
+            }
+
+            private readonly IEnumerable<int> _indices;
+            
+            public override string MethodName { get; }
+            public override string TypeName { get; }
+            public override string AssemblyPath { get; }
+            public override string SkipReason { get; set; }
+            protected override List<NodeTest> LoadDetails()
+            {
+                return _indices.Select(i => new NodeTest
+                {
+                    Node = i,
+                    Role = DummyRoleFor + i,
+                    Test = this
+                }).ToList();
+            }
+        }
+        
     }
 }
 

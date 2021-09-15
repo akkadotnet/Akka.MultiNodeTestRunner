@@ -157,13 +157,17 @@ namespace Akka.MultiNode.Shared.TrxReporter
             }
         }
 
-        private static void ReportNodes(BeginNewSpec begin, UnitTestResult specResult, DateTime beginTime,
+        private static void ReportNodes(
+            BeginNewSpec begin,
+            UnitTestResult specResult,
+            DateTime beginTime,
             Dictionary<int, UnitTestResult> nodeResults)
         {
+            var skipReason = begin.Test.SkipReason;
             foreach (var node in begin.Nodes)
             {
                 var result = specResult.AddChildResult(node.Role);
-                if (!string.IsNullOrWhiteSpace(node.SkipReason))
+                if (!string.IsNullOrWhiteSpace(skipReason))
                 {
                     result.Outcome = TestOutcome.NotExecuted;
                     result.StartTime = beginTime;

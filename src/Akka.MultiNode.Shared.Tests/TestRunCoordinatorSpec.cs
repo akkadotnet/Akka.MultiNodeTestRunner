@@ -21,9 +21,8 @@ namespace Akka.MultiNode.Shared.Tests
         {
             var testRunCoordinator = Sys.ActorOf(Props.Create<TestRunCoordinator>());
             var nodeIndexes = Enumerable.Range(1, 4).ToArray();
-            var nodeTests = NodeMessageHelpers.BuildNodeTests(nodeIndexes);
 
-            var beginSpec = new BeginNewSpec(nodeTests.First().TypeName, nodeTests.First().MethodName, nodeTests);
+            var beginSpec = new BeginNewSpec(NodeMessageHelpers.BuildNodeTests(nodeIndexes));
 
             //begin a new spec
             testRunCoordinator.Tell(beginSpec);
@@ -60,9 +59,8 @@ namespace Akka.MultiNode.Shared.Tests
         {
             var testRunCoordinator = Sys.ActorOf(Props.Create<TestRunCoordinator>());
             var nodeIndexes = Enumerable.Range(1, 4).ToArray();
-            var nodeTests = NodeMessageHelpers.BuildNodeTests(nodeIndexes);
 
-            var beginSpec = new BeginNewSpec(nodeTests.First().TypeName, nodeTests.First().MethodName, nodeTests);
+            var beginSpec = new BeginNewSpec(NodeMessageHelpers.BuildNodeTests(nodeIndexes));
 
             //register the TestActor as a subscriber for FactData announcements
             testRunCoordinator.Tell(new TestRunCoordinator.SubscribeFactCompletionMessages(TestActor));

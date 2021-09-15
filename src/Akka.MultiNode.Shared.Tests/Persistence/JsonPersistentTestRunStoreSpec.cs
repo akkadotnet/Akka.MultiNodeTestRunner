@@ -24,9 +24,8 @@ namespace Akka.MultiNode.Shared.Tests.Persistence
             var testRunStore = new JsonPersistentTestRunStore();
             var testRunCoordinator = Sys.ActorOf(Props.Create<TestRunCoordinator>());
             var nodeIndexes = Enumerable.Range(1, 4).ToArray();
-            var nodeTests = NodeMessageHelpers.BuildNodeTests(nodeIndexes);
 
-            var beginSpec = new BeginNewSpec(nodeTests.First().TypeName, nodeTests.First().MethodName, nodeTests);
+            var beginSpec = new BeginNewSpec(NodeMessageHelpers.BuildNodeTests(nodeIndexes));
 
             //begin a new spec
             testRunCoordinator.Tell(beginSpec);
@@ -55,9 +54,8 @@ namespace Akka.MultiNode.Shared.Tests.Persistence
             var testRunStore = new JsonPersistentTestRunStore();
             var testRunCoordinator = Sys.ActorOf(Props.Create<TestRunCoordinator>());
             var nodeIndexes = Enumerable.Range(1, 4).ToArray();
-            var nodeTests = NodeMessageHelpers.BuildNodeTests(nodeIndexes);
 
-            var beginSpec = new BeginNewSpec(nodeTests.First().TypeName, nodeTests.First().MethodName, nodeTests);
+            var beginSpec = new BeginNewSpec(NodeMessageHelpers.BuildNodeTests(nodeIndexes));
 
             //begin a new spec
             testRunCoordinator.Tell(beginSpec);
