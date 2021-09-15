@@ -20,10 +20,10 @@ namespace Akka.MultiNode.Shared.Tests
         public void SpecRunCoordinator_should_log_TestRunner_messages()
         {
             var nodeIndexes = Enumerable.Range(1, 3).ToArray();
-            var nodeTests = NodeMessageHelpers.BuildNodeTests(nodeIndexes);
+            var test = NodeMessageHelpers.BuildNodeTests(nodeIndexes);
 
-            var specRunCoordinator = Sys.ActorOf(Props.Create(() => new SpecRunCoordinator(nodeTests.First()
-                .TypeName, nodeTests.First().MethodName, nodeTests)));
+            var specRunCoordinator = Sys.ActorOf(Props.Create(() => 
+                new SpecRunCoordinator(test.TypeName, test.MethodName, test.Nodes)));
 
             var runnerMessages = NodeMessageHelpers.GenerateTestRunnerMessageSequence(100);
             foreach (var multiNodeMessage in runnerMessages)
@@ -43,10 +43,10 @@ namespace Akka.MultiNode.Shared.Tests
         public void SpecRunCoordinator_should_route_messages_correctly_to_child_NodeDataActors()
         {
             var nodeIndexes = Enumerable.Range(1, 3).ToArray();
-            var nodeTests = NodeMessageHelpers.BuildNodeTests(nodeIndexes);
+            var test = NodeMessageHelpers.BuildNodeTests(nodeIndexes);
 
-            var specRunCoordinator = Sys.ActorOf(Props.Create(() => new SpecRunCoordinator(nodeTests.First()
-                .TypeName, nodeTests.First().MethodName, nodeTests)));
+            var specRunCoordinator = Sys.ActorOf(Props.Create(() => 
+                new SpecRunCoordinator(test.TypeName, test.MethodName, test.Nodes)));
 
             var messages = NodeMessageHelpers.GenerateMessageSequence(nodeIndexes, 100);
             foreach (var multiNodeMessage in messages)
@@ -72,10 +72,10 @@ namespace Akka.MultiNode.Shared.Tests
         public void SpecRunCoordinator_should_mark_spec_as_passed_if_all_nodes_pass()
         {
             var nodeIndexes = Enumerable.Range(1, 3).ToArray();
-            var nodeTests = NodeMessageHelpers.BuildNodeTests(nodeIndexes);
+            var test = NodeMessageHelpers.BuildNodeTests(nodeIndexes);
 
-            var specRunCoordinator = Sys.ActorOf(Props.Create(() => new SpecRunCoordinator(nodeTests.First()
-                .TypeName, nodeTests.First().MethodName, nodeTests)));
+            var specRunCoordinator = Sys.ActorOf(Props.Create(() => 
+                new SpecRunCoordinator(test.TypeName, test.MethodName, test.Nodes)));
 
             var messages = NodeMessageHelpers.GenerateMessageSequence(nodeIndexes, 100);
 
@@ -100,10 +100,10 @@ namespace Akka.MultiNode.Shared.Tests
         public void SpecRunCoordinator_should_mark_spec_as_failed_if_all_nodes_fail()
         {
             var nodeIndexes = Enumerable.Range(1, 3).ToArray();
-            var nodeTests = NodeMessageHelpers.BuildNodeTests(nodeIndexes);
+            var test = NodeMessageHelpers.BuildNodeTests(nodeIndexes);
 
-            var specRunCoordinator = Sys.ActorOf(Props.Create(() => new SpecRunCoordinator(nodeTests.First()
-                .TypeName, nodeTests.First().MethodName, nodeTests)));
+            var specRunCoordinator = Sys.ActorOf(Props.Create(() => 
+                new SpecRunCoordinator(test.TypeName, test.MethodName, test.Nodes)));
 
             var messages = NodeMessageHelpers.GenerateMessageSequence(nodeIndexes, 100);
 
@@ -128,10 +128,10 @@ namespace Akka.MultiNode.Shared.Tests
         public void SpecRunCoordinator_should_mark_spec_as_failed_if_one_node_fails()
         {
             var nodeIndexes = Enumerable.Range(1, 3).ToArray();
-            var nodeTests = NodeMessageHelpers.BuildNodeTests(nodeIndexes);
+            var test = NodeMessageHelpers.BuildNodeTests(nodeIndexes);
 
-            var specRunCoordinator = Sys.ActorOf(Props.Create(() => new SpecRunCoordinator(nodeTests.First()
-                .TypeName, nodeTests.First().MethodName, nodeTests)));
+            var specRunCoordinator = Sys.ActorOf(Props.Create(() => 
+                new SpecRunCoordinator(test.TypeName, test.MethodName, test.Nodes)));
 
             var messages = NodeMessageHelpers.GenerateMessageSequence(nodeIndexes, 100);
 

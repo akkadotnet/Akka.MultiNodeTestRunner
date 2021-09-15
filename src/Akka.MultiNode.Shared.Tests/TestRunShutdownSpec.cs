@@ -23,9 +23,8 @@ namespace Akka.MultiNode.Shared.Tests
         {
             var consoleMessageSink = Sys.ActorOf(Props.Create(() => new ConsoleMessageSinkActor(true)));
             var nodeIndexes = Enumerable.Range(1, 4).ToArray();
-            var nodeTests = NodeMessageHelpers.BuildNodeTests(nodeIndexes);
 
-            var beginSpec = new BeginNewSpec(nodeTests.First().TypeName, nodeTests.First().MethodName, nodeTests);
+            var beginSpec = new BeginNewSpec(NodeMessageHelpers.BuildNodeTests(nodeIndexes));
             consoleMessageSink.Tell(beginSpec);
 
             // create some messages for each node, the test runner, and some result messages

@@ -5,16 +5,17 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
+using System;
+
 namespace Akka.MultiNode.Shared
 {
     public class NodeTest
     {
         public int Node { get; set; }
         public string Role { get; set; }
-        public string TestName { get; set; }
-        public string TypeName { get; set; }
-        public string MethodName { get; set; }
-        public string SkipReason { get; set; }
+        public MultiNodeTest Test { get; set; }
+
+        public string Name => $"{Test.TestName}_node{Node}[{Role}]";
     }
 }
 

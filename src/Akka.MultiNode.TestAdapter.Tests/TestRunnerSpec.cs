@@ -18,7 +18,7 @@ namespace Akka.MultiNode.TestAdapter.Tests
             File.Exists(sampleTestAssemblyPath).Should().BeTrue($"Assembly with samples should exist at {sampleTestAssemblyPath}");
             
             var runner = new MultiNodeTestRunner();
-            var results = runner.Execute(sampleTestAssemblyPath, MultiNodeTestRunnerOptions.Default);
+            var results = runner.ExecuteAssembly(sampleTestAssemblyPath, MultiNodeTestRunnerOptions.Default);
             results.Should().NotBeEmpty();
         }
     }

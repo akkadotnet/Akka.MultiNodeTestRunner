@@ -11,20 +11,20 @@ namespace Akka.MultiNode.TestAdapter.Tests
     [Collection(TestCollections.MultiNode)]
     public class MultiNodeTestExecutorSpec
     {
-        public string SampleTestsAssemblyPath { get; }
+        private readonly string _sampleTestsAssemblyPath;
 
         public MultiNodeTestExecutorSpec()
         {
-            SampleTestsAssemblyPath = Path.GetFullPath(SampleTestsMetadata.AssemblyFileName);
-            File.Exists(SampleTestsAssemblyPath).Should().BeTrue($"Assemblies with samples should exist at {SampleTestsAssemblyPath}");
+            _sampleTestsAssemblyPath = Path.GetFullPath(SampleTestsMetadata.AssemblyFileName);
+            File.Exists(_sampleTestsAssemblyPath).Should().BeTrue($"Assemblies with samples should exist at {_sampleTestsAssemblyPath}");
         }
         
         [Fact]
         public void Should_run_tests_and_report_results()
         {
-            var executor = new MultiNodeTestExecutor();
+            var executor = new MultiNodeTestAdapter();
             var frameworkHandler = new FakeFrameworkHandler();
-            executor.RunTests(new[] {SampleTestsAssemblyPath}, new FakeRunContext(), frameworkHandler);
+            executor.RunTests(new[] {_sampleTestsAssemblyPath}, new FakeRunContext(), frameworkHandler);
             
             frameworkHandler.TestResults.Should().NotBeEmpty();
 
@@ -70,8 +70,8 @@ namespace Akka.MultiNode.TestAdapter.Tests
         {
             frameworkHandler.TestResults
                 .Should()
-                .NotContain(r => r.TestCase.FullyQualifiedName.Contains(nameof(BadConfigMultiNodeSpec)),
-                            "Should not even discover specs with bad configuration - because can not build configuration");
+                .Contain(r => r.TestCase.FullyQualifiedName.Contains(nameof(BadConfigMultiNodeSpec)) && r.Outcome == TestOutcome.Skipped,
+                            "Should skip specs with bad configuration - because can not build configuration");
             
             frameworkHandler.TestResults.Should().NotBeEmpty("Should still report other spec results");
         }

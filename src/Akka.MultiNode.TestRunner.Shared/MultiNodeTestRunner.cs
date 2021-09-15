@@ -8,12 +8,10 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net;
 using System.Reflection;
-using System.Runtime.Versioning;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -27,7 +25,6 @@ using Akka.MultiNode.Shared.TrxReporter;
 using Akka.MultiNode.TestRunner.Shared.Helpers;
 using Akka.Remote.TestKit;
 using Akka.Util;
-using Newtonsoft.Json;
 using Xunit;
 using ErrorMessage = Xunit.Sdk.ErrorMessage;
 
@@ -40,21 +37,45 @@ namespace Akka.MultiNode.TestRunner.Shared
     /// <summary>
     /// Entry point for the MultiNodeTestRunner
     /// </summary>
-    public class MultiNodeTestRunner
+    public class MultiNodeTestRunner : IDisposable
     {
         private readonly string _platformName = PlatformDetector.Current == PlatformDetector.PlatformType.NetCore ? "netcore" : "net";
+
+        private string _currentAssembly;
+        private IActorRef _tcpLogger;
         
         protected ActorSystem TestRunSystem;
         protected IActorRef SinkCoordinator;
 
-        public event Action<MultiNodeSpec, NodeTest> TestStarted;
-        public event Action<MultiNodeTestResult> TestFinished;
+        public event Action<MultiNodeTest> TestStarted;
+        public event Action<MultiNodeTestResult> TestPassed;
+        public event Action<MultiNodeTestResult> TestFailed;
+        public event Action<MultiNodeTest, string> TestSkipped;
+        public event Action<MultiNodeTest, Exception> Exception;
 
-        /// <summary>
-        /// Executes multi-node tests from given assembly
-        /// </summary>
-        public List<MultiNodeTestResult> Execute(string assemblyPath, MultiNodeTestRunnerOptions options)
+        private void Initialize(string assemblyPath, MultiNodeTestRunnerOptions options)
         {
+            if (string.IsNullOrWhiteSpace(assemblyPath))
+                throw new ArgumentNullException(nameof(assemblyPath));
+
+            var extension = Path.GetExtension(assemblyPath).ToLowerInvariant();
+            if (extension != ".exe" && extension != ".dll")
+                throw new ArgumentException($"Invalid assembly type, expected .exe or .dll, found: {extension}");
+
+            var fileName = Path.GetFileName(assemblyPath);
+            if (!string.IsNullOrEmpty(_currentAssembly))
+            {
+                if(!_currentAssembly.Equals(fileName))
+                {
+                    throw new ArgumentException(
+                        $"Runner can only run a single assembly at a time, currently running: {_currentAssembly}, " +
+                        $"requested assembly: {fileName}");
+                }
+
+                return;
+            }
+            
+            _currentAssembly = fileName;
             // Perform output cleanup before anything is logged
             if (options.ClearOutputDirectory && Directory.Exists(options.OutputDirectory))
                 Directory.Delete(options.OutputDirectory, true);
@@ -64,172 +85,187 @@ namespace Akka.MultiNode.TestRunner.Shared
             var suiteName = Path.GetFileNameWithoutExtension(Path.GetFullPath(assemblyPath));
             SinkCoordinator = CreateSinkCoordinator(options, suiteName);
 
-            var tcpLogger = TestRunSystem.ActorOf(Props.Create(() => new TcpLoggingServer(SinkCoordinator)), "TcpLogger");
+            _tcpLogger = TestRunSystem.ActorOf(Props.Create(() => new TcpLoggingServer(SinkCoordinator)), "TcpLogger");
             var listenEndpoint = new IPEndPoint(IPAddress.Parse(options.ListenAddress), options.ListenPort);
-            TestRunSystem.Tcp().Tell(new Tcp.Bind(tcpLogger, listenEndpoint), sender: tcpLogger);
+            TestRunSystem.Tcp().Tell(new Tcp.Bind(_tcpLogger, listenEndpoint), sender: _tcpLogger);
 
             EnableAllSinks(assemblyPath, options);
 
-            // Set MNTR environment for correct tests discovert
+            // Set MNTR environment for correct tests discovery
             MultiNodeEnvironment.Initialize();
 
             // In NetCore, if the assembly file hasn't been touched, 
             // XunitFrontController would fail loading external assemblies and its dependencies.
             PreLoadTestAssembly_WhenNetCore(assemblyPath);
+        }
+        
+        public MultiNodeTestResult ExecuteSpec(MultiNodeTest test, MultiNodeTestRunnerOptions options)
+        {
+            Initialize(test.AssemblyPath, options);
+            
+            // If port was set random, request the actual port from TcpLoggingServer
+            var listenPort = options.ListenPort > 0 
+                ? options.ListenPort 
+                : _tcpLogger.Ask<int>(TcpLoggingServer.GetBoundPort.Instance).Result;
 
+            return RunSpec(options, test, listenPort);
+        }
+        
+        /// <summary>
+        /// Executes multi-node tests from given assembly
+        /// </summary>
+        public List<MultiNodeTestResult> ExecuteAssembly(string assemblyPath, MultiNodeTestRunnerOptions options)
+        {
+            Initialize(assemblyPath, options);
+            
             // Here is where main action goes
-            var results = DiscoverAndRunSpecs(assemblyPath, options, tcpLogger);
+            var results = DiscoverAndRunSpecs(assemblyPath, options);
 
-            AbortTcpLoggingServer(tcpLogger);
+            return results;
+        }
+        
+        public void Dispose()
+        {
+            AbortTcpLoggingServer();
             CloseAllSinks();
 
             // Block until all Sinks have been terminated.
-            TestRunSystem.WhenTerminated.Wait(TimeSpan.FromMinutes(1));
-
-            // Return the proper exit code
-            return results;
+            TestRunSystem?.WhenTerminated.Wait(TimeSpan.FromMinutes(1));
         }
 
         /// <summary>
         /// Discovers all tests in given assembly
         /// </summary>
-        public static (List<MultiNodeSpec> Specs, List<ErrorMessage> Errors) DiscoverSpecs(string assemblyPath)
+        public static (List<MultiNodeTest> Tests, List<ErrorMessage> Errors) DiscoverSpecs(string assemblyPath)
         {
             MultiNodeEnvironment.Initialize();
 
             using (var controller = new XunitFrontController(AppDomainSupport.IfAvailable, assemblyPath))
             {
-                using (var discovery = new Discovery())
+                using (var discovery = new Discovery(assemblyPath))
                 {
                     controller.Find(false, discovery, TestFrameworkOptions.ForDiscovery());
                     discovery.Finished.WaitOne();
-
-                    if (!discovery.WasSuccessful)
-                    {
-                        return (Specs: new List<MultiNodeSpec>(), Errors: discovery.Errors);
-                    }
-
-                    var specs = discovery.Tests.Reverse().Select(pair => new MultiNodeSpec(pair.Key, pair.Value)).ToList();
-                    return (specs, new List<ErrorMessage>());
+                    return (discovery.Tests, discovery.Errors);
                 }
             }
         }
 
-        private List<MultiNodeTestResult> DiscoverAndRunSpecs(string assemblyPath, MultiNodeTestRunnerOptions options, IActorRef tcpLogger)
+        private List<MultiNodeTestResult> DiscoverAndRunSpecs(string assemblyPath, MultiNodeTestRunnerOptions options)
         {
             var testResults = new List<MultiNodeTestResult>();
             PublishRunnerMessage($"Running MultiNodeTests for {assemblyPath}");
 
-            var (discoveredSpecs, errors) = DiscoverSpecs(assemblyPath);
+            var (discoveredTests, errors) = DiscoverSpecs(assemblyPath);
             if (errors.Any())
             {
                 ReportDiscoveryErrors(errors);
-                return testResults;
             }
-            
+
             // If port was set random, request the actual port from TcpLoggingServer
             var listenPort = options.ListenPort > 0 
                 ? options.ListenPort 
-                : tcpLogger.Ask<int>(TcpLoggingServer.GetBoundPort.Instance).Result;
+                : _tcpLogger.Ask<int>(TcpLoggingServer.GetBoundPort.Instance).Result;
             
-            foreach (var spec in discoveredSpecs)
+            foreach (var test in discoveredTests)
             {
-                if (!string.IsNullOrEmpty(spec.FirstTest.SkipReason))
+                TestStarted?.Invoke(test);
+                try
                 {
-                    PublishRunnerMessage($"Skipping test {spec.FirstTest.MethodName}. Reason - {spec.FirstTest.SkipReason}");
-                    var skippedResult = new MultiNodeTestResult(spec, spec.FirstTest, MultiNodeTestResult.TestStatus.Skipped);
-                    testResults.Add(skippedResult);
-                    TestStarted?.Invoke(spec, spec.FirstTest);
-                    TestFinished?.Invoke(skippedResult);
-                    continue;
-                }
+                    if (options.SpecNames != null &&
+                        options.SpecNames.All(name => test.TestName.IndexOf(name, StringComparison.InvariantCultureIgnoreCase) < 0))
+                    {
+                        test.SkipReason = "Excluded by filtering";
+                    }
+                
+                    if (!string.IsNullOrEmpty(test.SkipReason))
+                    {
+                        PublishRunnerMessage($"Skipping [{test.MethodName}]. Reason: [{test.SkipReason}]");
+                        testResults.Add(new MultiNodeTestResult(test));
+                        TestSkipped?.Invoke(test, test.SkipReason);
+                        continue;
+                    }
+                
+                    // touch test.Nodes to load details
+                    var nodes = test.Nodes;
 
-                if (options.SpecNames != null &&
-                    options.SpecNames.All(name => spec.FirstTest.TestName.IndexOf(name, StringComparison.InvariantCultureIgnoreCase) < 0))
+                    // Run test on several nodes and report results
+                    var result = RunSpec(options, test, listenPort);
+                    if(result.Status == MultiNodeTestResult.TestStatus.Failed)
+                        TestFailed?.Invoke(result);
+                    else
+                        TestPassed?.Invoke(result);
+                
+                    testResults.Add(result);
+                }
+                catch (Exception e)
                 {
-                    PublishRunnerMessage($"Skipping [{spec.FirstTest.MethodName}] (Filtering)");
-                    var skippedResult = new MultiNodeTestResult(spec, spec.FirstTest, MultiNodeTestResult.TestStatus.Skipped);
-                    testResults.Add(skippedResult);
-                    TestStarted?.Invoke(spec, spec.FirstTest);
-                    TestFinished?.Invoke(skippedResult);
-                    continue;
+                    Exception?.Invoke(test, e);
+                    PublishRunnerMessage(e.Message);
                 }
-
-                // Run test on several nodes and report results
-                var results = RunSpec(assemblyPath, options, spec, listenPort);
-                testResults.AddRange(results);
             }
 
             return testResults;
         }
 
-        private List<MultiNodeTestResult> RunSpec(string assemblyPath, MultiNodeTestRunnerOptions options, MultiNodeSpec spec, int listenPort)
+        private MultiNodeTestResult RunSpec(MultiNodeTestRunnerOptions options, MultiNodeTest test, int listenPort)
         {
-            PublishRunnerMessage($"Starting test {spec.FirstTest.MethodName}");
-            Console.Out.WriteLine($"Starting test {spec.FirstTest.MethodName}");
-
-            StartNewSpec(spec.Tests);
+            PublishRunnerMessage($"Starting test {test.MethodName}");
+            StartNewSpec(test);
 
             var timelineCollector = TestRunSystem.ActorOf(Props.Create(() => new TimelineLogCollectorActor()));
-            string testOutputDir = null;
-            string runningTestName = null;
+            //TODO: might need to do some validation here to avoid the 260 character max path error on Windows
+            var folder = Directory.CreateDirectory(Path.Combine(options.OutputDirectory, test.TestName));
+            var testOutputDir = folder.FullName;
 
             var nodeProcesses = new List<(NodeTest, Process)>();
-            foreach (var nodeTest in spec.Tests)
+            foreach (var nodeTest in test.Nodes)
             {
                 //Loop through each test, work out number of nodes to run on and kick off process
                 var sbArguments = new StringBuilder()
-                    .Append($@"-Dmultinode.test-class=""{nodeTest.TypeName}"" ")
-                    .Append($@"-Dmultinode.test-method=""{nodeTest.MethodName}"" ")
-                    .Append($@"-Dmultinode.max-nodes={spec.Tests.Count} ")
+                    .Append($@"-Dmultinode.test-class=""{nodeTest.Test.TypeName}"" ")
+                    .Append($@"-Dmultinode.test-method=""{nodeTest.Test.MethodName}"" ")
+                    .Append($@"-Dmultinode.max-nodes={test.Nodes.Count} ")
                     .Append($@"-Dmultinode.server-host=""{"localhost"}"" ")
                     .Append($@"-Dmultinode.host=""{"localhost"}"" ")
                     .Append($@"-Dmultinode.index={nodeTest.Node - 1} ")
                     .Append($@"-Dmultinode.role=""{nodeTest.Role}"" ")
                     .Append($@"-Dmultinode.listen-address={options.ListenAddress} ")
                     .Append($@"-Dmultinode.listen-port={listenPort} ")
-                    .Append($@"-Dmultinode.test-assembly=""{assemblyPath}"" ");
+                    .Append($@"-Dmultinode.test-assembly=""{test.AssemblyPath}"" ");
 
                 // Configure process for node
-                var process = BuildNodeProcess(assemblyPath, sbArguments);
+                var process = BuildNodeProcess(test.AssemblyPath, sbArguments);
                 nodeProcesses.Add((nodeTest, process));
 
-                runningTestName = nodeTest.TestName;
-
-                //TODO: might need to do some validation here to avoid the 260 character max path error on Windows
-                var folder = Directory.CreateDirectory(Path.Combine(options.OutputDirectory, nodeTest.TestName));
-                testOutputDir = testOutputDir ?? folder.FullName;
-
-                TestStarted?.Invoke(spec, nodeTest);
                 // Start process for node
                 StartNodeProcess(process, nodeTest, options, folder, timelineCollector);
             }
 
+            var testResult = new MultiNodeTestResult(test);
+            
             // Wait for all nodes to finish and collect results
-            var testResults = WaitForNodeExit(nodeProcesses);
+            WaitForNodeExit(testResult, nodeProcesses);
 
             PublishRunnerMessage("Waiting 3 seconds for all messages from all processes to be collected.");
             Thread.Sleep(TimeSpan.FromSeconds(3));
 
             // Save timelined logs to file system
-            var specFailed = testResults.Any(r => r.IsFailed);
-            DumpAggregatedSpecLogs(options, testOutputDir, timelineCollector, specFailed, runningTestName);
-
-            FinishSpec(spec.Tests, timelineCollector);
-
-            return testResults.Select(testResult =>
-            {
-                var status = testResult.IsFailed ? MultiNodeTestResult.TestStatus.Failed : MultiNodeTestResult.TestStatus.Passed;
-                var result = new MultiNodeTestResult(spec, testResult.Test, status);
-                TestFinished?.Invoke(result);
-                return result;
-            }).ToList();
+            DumpAggregatedSpecLogs(testResult, options, testOutputDir, timelineCollector);
+            
+            FinishSpec(test, timelineCollector);
+            
+            return testResult;
         }
 
-        private void DumpAggregatedSpecLogs(MultiNodeTestRunnerOptions options, string testOutputDir,
-                                                   IActorRef timelineCollector, bool specFailed, string runningSpecName)
+        private void DumpAggregatedSpecLogs(
+            MultiNodeTestResult result,
+            MultiNodeTestRunnerOptions options, 
+            string testOutputDir,
+            IActorRef timelineCollector)
         {
             if (testOutputDir == null) return;
+            
             var dumpTasks = new List<Task>()
             {
                 // Dump aggregated timeline to file for this test
@@ -238,9 +274,9 @@ namespace Akka.MultiNode.TestRunner.Shared
                 timelineCollector.Ask<Done>(new TimelineLogCollectorActor.PrintToConsole())
             };
 
-            if (specFailed)
+            if (result.Status == MultiNodeTestResult.TestStatus.Failed)
             {
-                var failedSpecPath = Path.Combine(Path.GetFullPath(options.OutputDirectory), options.FailedSpecsDirectory, $"{runningSpecName}.txt");
+                var failedSpecPath = Path.Combine(options.OutputDirectory, options.FailedSpecsDirectory, $"{result.Test.TestName}.txt");
                 var dumpFailureArtifactTask = timelineCollector.Ask<Done>(new TimelineLogCollectorActor.DumpToFile(failedSpecPath));
                 dumpTasks.Add(dumpFailureArtifactTask);
             }
@@ -248,18 +284,27 @@ namespace Akka.MultiNode.TestRunner.Shared
             Task.WaitAll(dumpTasks.ToArray());
         }
 
-        private List<(NodeTest Test, bool IsFailed)> WaitForNodeExit(List<(NodeTest Test, Process Process)> nodeProcesses)
+        private void WaitForNodeExit(MultiNodeTestResult result, List<(NodeTest, Process)> nodeProcesses)
         {
-            var results = new List<(NodeTest Test, bool IsFailed)>();
-            foreach (var (test, process) in nodeProcesses)
+            try
             {
-                process.WaitForExit();
-                Console.WriteLine($"Process for test {test.MethodName}_node{test.Node}[{test.Role}] finished with code {process.ExitCode}");
-                results.Add((test, IsFailed: process.ExitCode != 0));
-                process.Dispose();
+                for (var i = 0; i < nodeProcesses.Count; i++)
+                {
+                    var (test, process) = nodeProcesses[i];
+                    process.WaitForExit();
+                    Console.WriteLine($"Process for test {test.Name} finished with code {process.ExitCode}");
+                    result.NodeResults[i] = process.ExitCode == 0
+                        ? MultiNodeTestResult.TestStatus.Passed
+                        : MultiNodeTestResult.TestStatus.Failed;
+                }
             }
-
-            return results;
+            finally
+            {
+                foreach (var (_, process) in nodeProcesses)
+                {
+                    process.Dispose();
+                }
+            }
         }
         
         private Process BuildNodeProcess(string assemblyPath, StringBuilder sbArguments)
@@ -282,13 +327,13 @@ namespace Akka.MultiNode.TestRunner.Shared
             var nodeRunnerDir = Path.GetDirectoryName(assemblyPath);
             if (PlatformDetector.IsNetCore)
             {
-                sbArguments.Insert(0, nodeRunnerPath.Value + " ");
+                sbArguments.Insert(0, $"{nodeRunnerPath.Value} ");
 
                 // Under .net core "*.runtimeconfig.json" is required to run NodeRunner as a console app
                 CreateRuntimeConfigIfNotExists(nodeRunnerReferencedAssembly, nodeRunnerDir);
             }
-            
-            return new Process
+
+            var process = new Process
             {
                 StartInfo = new ProcessStartInfo
                 {
@@ -299,6 +344,8 @@ namespace Akka.MultiNode.TestRunner.Shared
                     WorkingDirectory = PlatformDetector.IsNetCore ? nodeRunnerDir : null
                 }
             };
+            
+            return process;
         }
 
         private static void CreateRuntimeConfigIfNotExists(Assembly nodeRunnerReferencedAssembly, string nodeRunnerDir)
@@ -309,13 +356,18 @@ namespace Akka.MultiNode.TestRunner.Shared
                 File.WriteAllText(runtimeConfigPath, runtimeConfigContent);
         }
 
-        private void StartNodeProcess(Process process, NodeTest nodeTest, MultiNodeTestRunnerOptions options, 
-            DirectoryInfo specFolder, IActorRef timelineCollector)
+        private void StartNodeProcess(
+            Process process, 
+            NodeTest nodeTest,
+            MultiNodeTestRunnerOptions options, 
+            DirectoryInfo specFolder,
+            IActorRef timelineCollector)
         {
+            var closureTest = nodeTest;
             var nodeIndex = nodeTest.Node;
             var nodeRole = nodeTest.Role;
             var logFilePath = Path.Combine(specFolder.FullName, $"node{nodeIndex}__{nodeRole}__{_platformName}.txt");
-            var nodeInfo = new TimelineLogCollectorActor.NodeInfo(nodeIndex, nodeRole, _platformName, nodeTest.TestName);
+            var nodeInfo = new TimelineLogCollectorActor.NodeInfo(nodeIndex, nodeRole, _platformName, nodeTest.Test.TestName);
             var fileActor = TestRunSystem.ActorOf(Props.Create(() => new FileSystemAppenderActor(logFilePath)));
             process.OutputDataReceived += (sender, eventArgs) =>
             {
@@ -329,12 +381,11 @@ namespace Akka.MultiNode.TestRunner.Shared
                     }
                 }
             };
-            var closureTest = nodeTest;
             process.Exited += (sender, eventArgs) =>
             {
                 if (process.ExitCode == 0)
                 {
-                    ReportSpecPassFromExitCode(nodeIndex, nodeRole, closureTest.TestName);
+                    ReportSpecPassFromExitCode(nodeIndex, nodeRole, closureTest.Test.TestName);
                 }
             };
 
@@ -382,7 +433,7 @@ namespace Akka.MultiNode.TestRunner.Shared
                     }
                     catch (Exception e)
                     {
-                        Console.Out.WriteLine($"Failed to load dll: {path}");
+                        Console.Out.WriteLine($"Failed to load dll [{path}]: {e}");
                     }
                 }
             }
@@ -409,7 +460,7 @@ namespace Akka.MultiNode.TestRunner.Shared
 
                 default:
                     throw new ArgumentException(
-                        $"Given reporter name '{options.Reporter}' is not understood, valid reporters are: trx and teamcity");
+                        $"Given reporter name '{options.Reporter}' is not understood, valid reporters are: trx, teamcity, and console");
             }
 
             return TestRunSystem.ActorOf(coordinatorProps, "sinkCoordinator");
@@ -450,19 +501,19 @@ namespace Akka.MultiNode.TestRunner.Shared
             }
         }
 
-        private void AbortTcpLoggingServer(IActorRef tcpLogger)
+        private void AbortTcpLoggingServer()
         {
-            tcpLogger.Ask<TcpLoggingServer.ListenerStopped>(new TcpLoggingServer.StopListener(), TimeSpan.FromMinutes(1)).Wait();
+            _tcpLogger?.Ask<TcpLoggingServer.ListenerStopped>(new TcpLoggingServer.StopListener(), TimeSpan.FromMinutes(1)).Wait();
         }
 
         private void CloseAllSinks()
         {
-            SinkCoordinator.Tell(new SinkCoordinator.CloseAllSinks());
+            SinkCoordinator?.Tell(new SinkCoordinator.CloseAllSinks());
         }
 
-        private void StartNewSpec(IList<NodeTest> tests)
+        private void StartNewSpec(MultiNodeTest test)
         {
-            SinkCoordinator.Tell(tests);
+            SinkCoordinator.Tell(test);
         }
 
         private void ReportSpecPassFromExitCode(int nodeIndex, string nodeRole, string testName)
@@ -470,11 +521,10 @@ namespace Akka.MultiNode.TestRunner.Shared
             SinkCoordinator.Tell(new NodeCompletedSpecWithSuccess(nodeIndex, nodeRole, testName + " passed."));
         }
 
-        private void FinishSpec(IList<NodeTest> tests, IActorRef timelineCollector)
+        private void FinishSpec(MultiNodeTest test, IActorRef timelineCollector)
         {
-            var spec = tests.First();
             var log = timelineCollector.Ask<SpecLog>(new TimelineLogCollectorActor.GetSpecLog(), TimeSpan.FromMinutes(1)).Result;
-            SinkCoordinator.Tell(new EndSpec(spec.TestName, spec.MethodName, log));
+            SinkCoordinator.Tell(new EndSpec(test, log));
         }
 
         private void PublishRunnerMessage(string message)

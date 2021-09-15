@@ -5,6 +5,7 @@
     <TargetFramework>$(NetStandardLibVersion)</TargetFramework>
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
     <RootNamespace>Akka.MultiNode.Shared</RootNamespace>
   </PropertyGroup>
 

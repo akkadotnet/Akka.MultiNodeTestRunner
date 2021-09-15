@@ -56,15 +56,13 @@ namespace Akka.MultiNode.Shared.Sinks
         /// <summary>
         /// Report that the test runner is moving onto the next test in the testsuite.
         /// </summary>
-        /// <param name="className">The name of the class containing the spec.</param>
-        /// <param name="methodName">The name of the individual test method.</param>
-        /// <param name="nodes">The number of nodes who will be participating in this test.</param>
-        void BeginTest(string className, string methodName, IList<NodeTest> nodes);
+        /// <param name="test"></param>
+        void BeginTest(MultiNodeTest test);
 
         /// <summary>
         /// Report that the test runner is terminating the current test in the suite.
         /// </summary>
-        void EndTest(string className, string methodName, SpecLog specLog);
+        void EndTest(MultiNodeTest test, SpecLog specLog);
 
         /// <summary>
         /// Report that an individual node has passed its test.

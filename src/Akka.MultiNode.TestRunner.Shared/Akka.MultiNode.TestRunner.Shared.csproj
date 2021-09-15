@@ -11,6 +11,7 @@
         <PackageReference Include="TeamCity.ServiceMessages" Version="$(TeamCityVersion)" />
         <PackageReference Include="xunit.runner.utility" Version="$(XunitVersion)" />
         <PackageReference Include="Akka.Remote.TestKit" Version="$(AkkaVersion)" />
+        <PackageReference Include="Akka.Cluster.TestKit" Version="$(AkkaVersion)" />
         <PackageReference Include="Akka.TestKit.Xunit2" Version="$(AkkaVersion)" />
     </ItemGroup>
 

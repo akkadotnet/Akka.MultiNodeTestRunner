@@ -18,18 +18,18 @@ namespace Akka.MultiNode.Shared.Sinks
     /// </summary>
     public class BeginNewSpec
     {
-        public BeginNewSpec(string className, string methodName, IList<NodeTest> nodes)
+        public BeginNewSpec(MultiNodeTest test)
         {
-            Nodes = nodes;
-            MethodName = methodName;
-            ClassName = className;
+            Test = test;
         }
+        
+        public MultiNodeTest Test { get; }
 
-        public string ClassName { get; private set; }
+        public string ClassName => Test.TypeName;
 
-        public string MethodName { get; private set; }
+        public string MethodName => Test.MethodName;
 
-        public IList<NodeTest> Nodes { get; private set; }
+        public IList<NodeTest> Nodes => Test.Nodes;
     }
 
     /// <summary>
@@ -38,20 +38,18 @@ namespace Akka.MultiNode.Shared.Sinks
     public class EndSpec
     {
         public EndSpec()
-        {
-            ClassName = null;
-            MethodName = null;
-        }
+        { }
 
-        public EndSpec(string className, string methodName, SpecLog log)
+        public EndSpec(MultiNodeTest test, SpecLog log)
         {
-            ClassName = className;
-            MethodName = methodName;
+            Test = test;
             Log = log;
         }
         
-        public string ClassName { get; }
-        public string MethodName { get; }
+        public MultiNodeTest Test { get; }
+
+        public string ClassName => Test?.TypeName;
+        public string MethodName => Test?.MethodName;
         public SpecLog Log { get; }
     }
 
