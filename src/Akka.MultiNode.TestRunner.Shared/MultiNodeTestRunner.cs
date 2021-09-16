@@ -108,7 +108,38 @@ namespace Akka.MultiNode.TestRunner.Shared
                 ? options.ListenPort 
                 : _tcpLogger.Ask<int>(TcpLoggingServer.GetBoundPort.Instance).Result;
 
-            return RunSpec(options, test, listenPort);
+            TestStarted?.Invoke(test);
+            try
+            {
+                if (options.SpecNames != null &&
+                    options.SpecNames.All(name => test.TestName.IndexOf(name, StringComparison.InvariantCultureIgnoreCase) < 0))
+                {
+                    test.SkipReason = "Excluded by filtering";
+                }
+                
+                if (!string.IsNullOrEmpty(test.SkipReason))
+                {
+                    PublishRunnerMessage($"Skipping [{test.MethodName}]. Reason: [{test.SkipReason}]");
+                    TestSkipped?.Invoke(test, test.SkipReason);
+                    return null;
+                }
+                
+                // touch test.Nodes to load details
+                var nodes = test.Nodes;
+
+                var result = RunSpec(options, test, listenPort);
+                if(result.Status == MultiNodeTestResult.TestStatus.Failed)
+                    TestFailed?.Invoke(result);
+                else
+                    TestPassed?.Invoke(result);
+                return result;
+            }
+            catch (Exception e)
+            {
+                Exception?.Invoke(test, e);
+                PublishRunnerMessage(e.Message);
+                return null;
+            }
         }
         
         /// <summary>
