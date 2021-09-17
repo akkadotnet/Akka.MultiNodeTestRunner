@@ -182,9 +182,16 @@ namespace Akka.MultiNode.TestAdapter
                 var result = localTestResults[testResult.Test.TestName];
                 result.Outcome = TestOutcome.Passed;
                 result.EndTime = DateTimeOffset.Now;
-                result.Duration = result.StartTime - result.EndTime;
+                result.Duration = result.EndTime - result.StartTime;
                 result.Messages.Add(new TestResultMessage(
                     TestResultMessage.StandardOutCategory, testResult.ToString()));
+
+                var attachments = new AttachmentSet(null, "Test logs");
+                result.Attachments.Add(attachments);
+                foreach (var entry in testResult.Attachments)
+                {
+                    attachments.Attachments.Add(UriDataAttachment.CreateFrom(entry.Path, entry.Title));
+                }
                 RecordEnd(result);
             }
 
@@ -193,8 +200,15 @@ namespace Akka.MultiNode.TestAdapter
                 var result = localTestResults[testResult.Test.TestName];
                 result.Outcome = TestOutcome.Failed;
                 result.EndTime = DateTimeOffset.Now;
-                result.Duration = result.StartTime - result.EndTime;
+                result.Duration = result.EndTime - result.StartTime;
                 result.ErrorMessage = testResult.ToString();
+                
+                var attachments = new AttachmentSet(null, "Test logs");
+                result.Attachments.Add(attachments);
+                foreach (var entry in testResult.Attachments)
+                {
+                    attachments.Attachments.Add(UriDataAttachment.CreateFrom(entry.Path, entry.Title));
+                }
                 RecordEnd(result);
             }
 
@@ -223,7 +237,7 @@ namespace Akka.MultiNode.TestAdapter
                         result.ErrorMessage = exception.Message;
                         result.ErrorStackTrace = exception.StackTrace;
                         result.EndTime = DateTimeOffset.Now;
-                        result.Duration = result.StartTime - result.EndTime;
+                        result.Duration = result.EndTime - result.StartTime;
                         break;
                 }
                         

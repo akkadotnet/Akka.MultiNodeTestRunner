@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Akka.MultiNode.Shared;
@@ -15,9 +16,18 @@ namespace Akka.MultiNode.TestRunner.Shared
         public MultiNodeTestResult(MultiNodeTest test)
         {
             Test = test;
-            NodeResults = string.IsNullOrWhiteSpace(Test.SkipReason)
-                ? new TestStatus[Test.Nodes.Count]
-                : new TestStatus[0];
+            if (string.IsNullOrWhiteSpace(Test.SkipReason))
+            {
+                NodeResults = Test.Nodes.Select(n => new NodeResult
+                {
+                    Index = n.Node,
+                    Role = n.Role
+                }).ToArray();
+            }
+            else
+            {
+                NodeResults = new NodeResult[0];
+            }
         }
 
         /// <summary>
@@ -32,13 +42,15 @@ namespace Akka.MultiNode.TestRunner.Shared
             {
                 if (!string.IsNullOrWhiteSpace(Test.SkipReason))
                     return TestStatus.Skipped;
-                return NodeResults.Any(result => result == TestStatus.Failed) ? TestStatus.Failed : TestStatus.Passed;
+                return NodeResults.Any(result => result.Result == TestStatus.Failed) ? TestStatus.Failed : TestStatus.Passed;
             } 
         }
         /// <summary>
         /// Node Test results
         /// </summary>
-        public TestStatus[] NodeResults { get; }
+        public NodeResult[] NodeResults { get; }
+
+        public List<Attachment> Attachments { get; } = new List<Attachment>();
 
         /// <inheritdoc />
         public override string ToString()
@@ -46,9 +58,9 @@ namespace Akka.MultiNode.TestRunner.Shared
             var sb = new StringBuilder($"Test {Test.TestName}: {Status}");
             if (Test.SkipReason != null)
                 sb.Append(" Skipped: ").Append(Test.SkipReason);
-            for (var i = 0; i < NodeResults.Length; i++)
+            foreach (var node in NodeResults)
             {
-                sb.Append("\n\tNode ").Append(i).Append(": ").Append(NodeResults[i]);
+                sb.Append($"\n\tNode {node.Index} [{node.Role}]: {node.Result}");
             }
 
             return sb.ToString();
@@ -68,6 +80,19 @@ namespace Akka.MultiNode.TestRunner.Shared
             /// Test failed
             /// </summary>
             Failed
+        }
+        
+        public class NodeResult
+        {
+            public int Index { get; set; }
+            public string Role { get; set; }
+            public TestStatus Result { get; set; }
+        }
+        
+        public class Attachment
+        {
+            public string Title { get; set; }
+            public string Path { get; set; }
         }
     }
 }
