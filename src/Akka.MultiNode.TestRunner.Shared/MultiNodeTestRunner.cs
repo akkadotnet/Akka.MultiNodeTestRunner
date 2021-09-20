@@ -108,7 +108,38 @@ namespace Akka.MultiNode.TestRunner.Shared
                 ? options.ListenPort 
                 : _tcpLogger.Ask<int>(TcpLoggingServer.GetBoundPort.Instance).Result;
 
-            return RunSpec(options, test, listenPort);
+            TestStarted?.Invoke(test);
+            try
+            {
+                if (options.SpecNames != null &&
+                    options.SpecNames.All(name => test.TestName.IndexOf(name, StringComparison.InvariantCultureIgnoreCase) < 0))
+                {
+                    test.SkipReason = "Excluded by filtering";
+                }
+                
+                if (!string.IsNullOrEmpty(test.SkipReason))
+                {
+                    PublishRunnerMessage($"Skipping [{test.MethodName}]. Reason: [{test.SkipReason}]");
+                    TestSkipped?.Invoke(test, test.SkipReason);
+                    return null;
+                }
+                
+                // touch test.Nodes to load details
+                var nodes = test.Nodes;
+
+                var result = RunSpec(options, test, listenPort);
+                if(result.Status == MultiNodeTestResult.TestStatus.Failed)
+                    TestFailed?.Invoke(result);
+                else
+                    TestPassed?.Invoke(result);
+                return result;
+            }
+            catch (Exception e)
+            {
+                Exception?.Invoke(test, e);
+                PublishRunnerMessage(e.Message);
+                return null;
+            }
         }
         
         /// <summary>
@@ -218,6 +249,8 @@ namespace Akka.MultiNode.TestRunner.Shared
             var folder = Directory.CreateDirectory(Path.Combine(options.OutputDirectory, test.TestName));
             var testOutputDir = folder.FullName;
 
+            var testResult = new MultiNodeTestResult(test);
+            
             var nodeProcesses = new List<(NodeTest, Process)>();
             foreach (var nodeTest in test.Nodes)
             {
@@ -239,11 +272,9 @@ namespace Akka.MultiNode.TestRunner.Shared
                 nodeProcesses.Add((nodeTest, process));
 
                 // Start process for node
-                StartNodeProcess(process, nodeTest, options, folder, timelineCollector);
+                StartNodeProcess(process, nodeTest, options, folder, timelineCollector, testResult);
             }
 
-            var testResult = new MultiNodeTestResult(test);
-            
             // Wait for all nodes to finish and collect results
             WaitForNodeExit(testResult, nodeProcesses);
 
@@ -265,20 +296,23 @@ namespace Akka.MultiNode.TestRunner.Shared
             IActorRef timelineCollector)
         {
             if (testOutputDir == null) return;
-            
+
+            var dumpPath = Path.GetFullPath(Path.Combine(testOutputDir, "aggregated.txt"));
+            result.Attachments.Add(new MultiNodeTestResult.Attachment{Title = "Aggregated", Path = dumpPath});
             var dumpTasks = new List<Task>()
             {
                 // Dump aggregated timeline to file for this test
-                timelineCollector.Ask<Done>(new TimelineLogCollectorActor.DumpToFile(Path.Combine(testOutputDir, "aggregated.txt"))),
+                timelineCollector.Ask<Done>(new TimelineLogCollectorActor.DumpToFile(dumpPath)),
                 // Print aggregated timeline into the console
                 timelineCollector.Ask<Done>(new TimelineLogCollectorActor.PrintToConsole())
             };
 
             if (result.Status == MultiNodeTestResult.TestStatus.Failed)
             {
-                var failedSpecPath = Path.Combine(options.OutputDirectory, options.FailedSpecsDirectory, $"{result.Test.TestName}.txt");
+                var failedSpecPath = Path.GetFullPath(Path.Combine(options.OutputDirectory, options.FailedSpecsDirectory, $"{result.Test.TestName}.txt"));
                 var dumpFailureArtifactTask = timelineCollector.Ask<Done>(new TimelineLogCollectorActor.DumpToFile(failedSpecPath));
                 dumpTasks.Add(dumpFailureArtifactTask);
+                result.Attachments.Add(new MultiNodeTestResult.Attachment{Title = "Fail log", Path = failedSpecPath});
             }
 
             Task.WaitAll(dumpTasks.ToArray());
@@ -293,7 +327,8 @@ namespace Akka.MultiNode.TestRunner.Shared
                     var (test, process) = nodeProcesses[i];
                     process.WaitForExit();
                     Console.WriteLine($"Process for test {test.Name} finished with code {process.ExitCode}");
-                    result.NodeResults[i] = process.ExitCode == 0
+                    var nodeResult = result.NodeResults.First(n => n.Index == test.Node); 
+                    nodeResult.Result = process.ExitCode == 0
                         ? MultiNodeTestResult.TestStatus.Passed
                         : MultiNodeTestResult.TestStatus.Failed;
                 }
@@ -361,14 +396,16 @@ namespace Akka.MultiNode.TestRunner.Shared
             NodeTest nodeTest,
             MultiNodeTestRunnerOptions options, 
             DirectoryInfo specFolder,
-            IActorRef timelineCollector)
+            IActorRef timelineCollector,
+            MultiNodeTestResult result)
         {
             var closureTest = nodeTest;
             var nodeIndex = nodeTest.Node;
             var nodeRole = nodeTest.Role;
-            var logFilePath = Path.Combine(specFolder.FullName, $"node{nodeIndex}__{nodeRole}__{_platformName}.txt");
+            var logFilePath = Path.GetFullPath(Path.Combine(specFolder.FullName, $"node{nodeIndex}__{nodeRole}__{_platformName}.txt"));
             var nodeInfo = new TimelineLogCollectorActor.NodeInfo(nodeIndex, nodeRole, _platformName, nodeTest.Test.TestName);
             var fileActor = TestRunSystem.ActorOf(Props.Create(() => new FileSystemAppenderActor(logFilePath)));
+            result.Attachments.Add(new MultiNodeTestResult.Attachment{Title = $"Node {nodeIndex} [{nodeRole}]", Path = logFilePath});
             process.OutputDataReceived += (sender, eventArgs) =>
             {
                 if (eventArgs?.Data != null)

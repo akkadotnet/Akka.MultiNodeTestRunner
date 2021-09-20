@@ -15,7 +15,6 @@ namespace Akka.MultiNode.Shared
         {
             _discovery = discovery;
             AssemblyPath = Path.GetFullPath(assemblyPath);
-            Console.WriteLine($"!!!!!!!!!!!! {AssemblyPath}"); 
             
             TypeName = discovery.TestClass.Class.Name;
             MethodName = discovery.TestMethod.Method.Name;

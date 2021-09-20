@@ -76,10 +76,8 @@ namespace Akka.MultiNode.TestAdapter
         /// <param name="tests">Tests to be run.</param>
         /// <param name="runContext">Context to use when executing the tests.</param>
         /// <param name="frameworkHandle">Handle to the framework to record results and to do framework operations.</param>
-        public void RunTests(IEnumerable<TestCase> rawTests, IRunContext runContext, IFrameworkHandle frameworkHandle)
+        public void RunTests(IEnumerable<TestCase> tests, IRunContext runContext, IFrameworkHandle frameworkHandle)
         {
-            // throw new NotImplementedException("Running from VS is not implemented yet");
-            var tests = rawTests.ToList();
             RunTestsWithOptions(tests, frameworkHandle, MultiNodeTestRunnerOptions.Default);
         }
 
@@ -104,95 +102,8 @@ namespace Akka.MultiNode.TestAdapter
             foreach (var maybeRelativeAssemblyPath in testAssemblyPaths)
             {
                 var assemblyPath = Path.GetFullPath(maybeRelativeAssemblyPath);
-
-                #region Callbacks
-                void RecordEnd(TestResult result)
+                using (var runner = CreateRunner(frameworkHandle, testResults, assemblyPath))
                 {
-                    frameworkHandle.RecordEnd(result.TestCase, result.Outcome);
-                    frameworkHandle.RecordResult(result);
-                }
-
-                void TestStarted(MultiNodeTest test)
-                {
-                    var result = new TestResult(new TestCase(test.TestName, Constants.ExecutorUri, assemblyPath));
-                    testResults[test.TestName] = result;
-                    
-                    result.StartTime = DateTimeOffset.Now;
-                    frameworkHandle.RecordStart(result.TestCase);
-                }
-
-                void TestSkipped(MultiNodeTest test, string reason)
-                {
-                    var result = testResults[test.TestName];
-                    result.Outcome = TestOutcome.Skipped;
-                    result.EndTime = DateTimeOffset.Now;
-                    result.Messages.Add(new TestResultMessage(
-                        TestResultMessage.AdditionalInfoCategory, $"Skipped: {reason}"));
-                    RecordEnd(result);
-                }
-
-                void TestPassed(MultiNodeTestResult testResult)
-                {
-                    var result = testResults[testResult.Test.TestName];
-                    result.Outcome = TestOutcome.Passed;
-                    result.EndTime = DateTimeOffset.Now;
-                    result.Duration = result.StartTime - result.EndTime;
-                    result.Messages.Add(new TestResultMessage(
-                        TestResultMessage.StandardOutCategory, testResult.ToString()));
-                    RecordEnd(result);
-                }
-
-                void TestFailed(MultiNodeTestResult testResult)
-                {
-                    var result = testResults[testResult.Test.TestName];
-                    result.Outcome = TestOutcome.Failed;
-                    result.EndTime = DateTimeOffset.Now;
-                    result.Duration = result.StartTime - result.EndTime;
-                    result.ErrorMessage = testResult.ToString();
-                    RecordEnd(result);
-                }
-
-                void Exception(MultiNodeTest test, Exception exception)
-                {
-                    var result = testResults[test.TestName];
-
-                    switch (exception)
-                    {
-                        case TestConfigurationException ex:
-                            result.Outcome = TestOutcome.Skipped;
-                            result.EndTime = DateTimeOffset.Now;
-                            result.Messages.Add(new TestResultMessage(
-                                TestResultMessage.AdditionalInfoCategory, $"Skipped: {ex.Message}"));
-                            break;
-                                
-                        case TestBaseTypeException ex:
-                            result.Outcome = TestOutcome.Skipped;
-                            result.EndTime = DateTimeOffset.Now;
-                            result.Messages.Add(new TestResultMessage(
-                                TestResultMessage.AdditionalInfoCategory, $"Skipped: {ex.Message}"));
-                            break;
-                                
-                        default:
-                            result.Outcome = TestOutcome.Failed;
-                            result.ErrorMessage = exception.Message;
-                            result.ErrorStackTrace = exception.StackTrace;
-                            result.EndTime = DateTimeOffset.Now;
-                            result.Duration = result.StartTime - result.EndTime;
-                            break;
-                    }
-                            
-                    RecordEnd(result);
-                }
-                #endregion
-
-                using (var runner = new MultiNodeTestRunner())
-                {
-                    runner.TestStarted += TestStarted;
-                    runner.TestSkipped += TestSkipped;
-                    runner.TestPassed += TestPassed;
-                    runner.TestFailed += TestFailed;
-                    runner.Exception += Exception;
-                        
                     try
                     {
                         runner.ExecuteAssembly(assemblyPath, options);
@@ -208,27 +119,57 @@ namespace Akka.MultiNode.TestAdapter
         private void RunTestsWithOptions(IEnumerable<TestCase> rawTestCases, IFrameworkHandle frameworkHandle, MultiNodeTestRunnerOptions options)
         {
             var testCases = rawTestCases.ToList();
-            var testResults = new ConcurrentDictionary<string, TestResult>(
-                testCases.Select(t => new KeyValuePair<string, TestResult>(t.FullyQualifiedName, new TestResult(t)))
-            );
+            var testResults = new ConcurrentDictionary<string, TestResult>();
 
+            foreach (var group in testCases.GroupBy(t => Path.GetFullPath(t.Source)))
+            {
+                var assemblyPath = Path.GetFullPath(group.Key);
+                var tests = GetTests(assemblyPath, group.GetEnumerator());
+                foreach (var test in tests)
+                {
+                    using (var runner = CreateRunner(frameworkHandle, testResults, assemblyPath))
+                    {
+                        try
+                        {
+                            runner.ExecuteSpec(test, options);
+                        }
+                        catch (Exception ex)
+                        {
+                            frameworkHandle.SendMessage(TestMessageLevel.Error, $"Failed during test execution: {ex}");
+                        }
+                    }
+                }
+            }
+        }
+
+        private MultiNodeTestRunner CreateRunner(
+            IFrameworkHandle frameworkHandle,
+            ConcurrentDictionary<string, TestResult> testResults,
+            string assemblyPath)
+        {
+            var localFrameworkHandle = frameworkHandle;
+            var localTestResults = testResults;
+            var localAssemblyPath = assemblyPath;
+            
             #region Callbacks
             void RecordEnd(TestResult result)
             {
-                frameworkHandle.RecordEnd(result.TestCase, result.Outcome);
-                frameworkHandle.RecordResult(result);
+                localFrameworkHandle.RecordEnd(result.TestCase, result.Outcome);
+                localFrameworkHandle.RecordResult(result);
             }
 
             void TestStarted(MultiNodeTest test)
             {
-                var result = testResults[test.TestName];
+                var result = new TestResult(new TestCase(test.TestName, Constants.ExecutorUri, localAssemblyPath));
+                localTestResults[test.TestName] = result;
+                
                 result.StartTime = DateTimeOffset.Now;
-                frameworkHandle.RecordStart(result.TestCase);
+                localFrameworkHandle.RecordStart(result.TestCase);
             }
 
             void TestSkipped(MultiNodeTest test, string reason)
             {
-                var result = testResults[test.TestName];
+                var result = localTestResults[test.TestName];
                 result.Outcome = TestOutcome.Skipped;
                 result.EndTime = DateTimeOffset.Now;
                 result.Messages.Add(new TestResultMessage(
@@ -238,28 +179,42 @@ namespace Akka.MultiNode.TestAdapter
 
             void TestPassed(MultiNodeTestResult testResult)
             {
-                var result = testResults[testResult.Test.TestName];
+                var result = localTestResults[testResult.Test.TestName];
                 result.Outcome = TestOutcome.Passed;
                 result.EndTime = DateTimeOffset.Now;
-                result.Duration = result.StartTime - result.EndTime;
+                result.Duration = result.EndTime - result.StartTime;
                 result.Messages.Add(new TestResultMessage(
                     TestResultMessage.StandardOutCategory, testResult.ToString()));
+
+                var attachments = new AttachmentSet(null, "Test logs");
+                result.Attachments.Add(attachments);
+                foreach (var entry in testResult.Attachments)
+                {
+                    attachments.Attachments.Add(UriDataAttachment.CreateFrom(entry.Path, entry.Title));
+                }
                 RecordEnd(result);
             }
 
             void TestFailed(MultiNodeTestResult testResult)
             {
-                var result = testResults[testResult.Test.TestName];
+                var result = localTestResults[testResult.Test.TestName];
                 result.Outcome = TestOutcome.Failed;
                 result.EndTime = DateTimeOffset.Now;
-                result.Duration = result.StartTime - result.EndTime;
+                result.Duration = result.EndTime - result.StartTime;
                 result.ErrorMessage = testResult.ToString();
+                
+                var attachments = new AttachmentSet(null, "Test logs");
+                result.Attachments.Add(attachments);
+                foreach (var entry in testResult.Attachments)
+                {
+                    attachments.Attachments.Add(UriDataAttachment.CreateFrom(entry.Path, entry.Title));
+                }
                 RecordEnd(result);
             }
 
             void Exception(MultiNodeTest test, Exception exception)
             {
-                var result = testResults[test.TestName];
+                var result = localTestResults[test.TestName];
 
                 switch (exception)
                 {
@@ -282,7 +237,7 @@ namespace Akka.MultiNode.TestAdapter
                         result.ErrorMessage = exception.Message;
                         result.ErrorStackTrace = exception.StackTrace;
                         result.EndTime = DateTimeOffset.Now;
-                        result.Duration = result.StartTime - result.EndTime;
+                        result.Duration = result.EndTime - result.StartTime;
                         break;
                 }
                         
@@ -290,32 +245,16 @@ namespace Akka.MultiNode.TestAdapter
             }
             #endregion
             
-            foreach (var group in testCases.GroupBy(t => Path.GetFullPath(t.Source)))
-            {
-                var tests = GetTests(group.Key, group.GetEnumerator());
-                foreach (var test in tests)
-                {
-                    using (var runner = new MultiNodeTestRunner())
-                    {
-                        runner.TestStarted += TestStarted;
-                        runner.TestSkipped += TestSkipped;
-                        runner.TestPassed += TestPassed;
-                        runner.TestFailed += TestFailed;
-                        runner.Exception += Exception;
-                        
-                        try
-                        {
-                            runner.ExecuteSpec(test, options);
-                        }
-                        catch (Exception ex)
-                        {
-                            frameworkHandle.SendMessage(TestMessageLevel.Error, $"Failed during test execution: {ex}");
-                        }
-                    }
-                }
-            }
-        }
+            var runner = new MultiNodeTestRunner();
+            runner.TestStarted += TestStarted;
+            runner.TestSkipped += TestSkipped;
+            runner.TestPassed += TestPassed;
+            runner.TestFailed += TestFailed;
+            runner.Exception += Exception;
 
+            return runner;
+        }
+        
         private List<MultiNodeTest> GetTests(string assemblyPath, IEnumerator<TestCase> cases)
         {
             var tests = MultiNodeTestRunner.DiscoverSpecs(assemblyPath);
@@ -328,20 +267,5 @@ namespace Akka.MultiNode.TestAdapter
 
             return result;
         }
-
-        private TestOutcome MapToOutcome(MultiNodeTestResult.TestStatus status)
-        {
-            switch (status)
-            {
-                case MultiNodeTestResult.TestStatus.Passed:
-                    return TestOutcome.Passed;
-                case MultiNodeTestResult.TestStatus.Skipped:
-                    return TestOutcome.Skipped;
-                case MultiNodeTestResult.TestStatus.Failed:
-                    return TestOutcome.Failed;
-                default:
-                    return TestOutcome.None; // Unknown result
-            }
-        }        
     }
 }
