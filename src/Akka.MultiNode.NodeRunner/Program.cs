@@ -129,7 +129,7 @@ namespace Akka.MultiNode.NodeRunner
                         specFail.FailureStackTraces.Add(innerEx.StackTrace);
                     }
 
-                    _logger.Tell(specFail.ToString());
+                    _logger?.Tell(specFail.ToString());
                     Console.WriteLine(specFail);
 
                     //make sure message is send over the wire
@@ -152,7 +152,7 @@ namespace Akka.MultiNode.NodeRunner
                         innerEx = innerEx.InnerException;
                     }
 
-                    _logger.Tell(specFail.ToString());
+                    _logger?.Tell(specFail.ToString());
                     Console.WriteLine(specFail);
 
                     //make sure message is send over the wire
@@ -173,7 +173,7 @@ namespace Akka.MultiNode.NodeRunner
         {
             try
             {
-                _logger.GracefulStop(TimeSpan.FromSeconds(2)).Wait();
+                _logger?.GracefulStop(TimeSpan.FromSeconds(2)).Wait();
             }
             catch
             {
