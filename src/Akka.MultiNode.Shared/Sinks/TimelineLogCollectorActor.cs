@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Text.RegularExpressions;
 using Akka.Actor;
 using Akka.Event;
@@ -66,17 +67,20 @@ namespace Akka.MultiNode.Shared.Sinks
                     .SelectMany(msg => msg)
                     .GroupBy(m => m.Node.TestName);
 
+                var sb = new StringBuilder();
                 foreach (var testLogs in logsPerTest)
                 {
                     Console.WriteLine($"Detailed logs for {testLogs.Key}\n");
                     foreach (var log in testLogs)
                     {
-                        Console.WriteLine(log);
+                        var logLine = log.ToString();
+                        Console.WriteLine(logLine);
+                        sb.AppendLine(logLine);
                     }
                     Console.WriteLine($"\nEnd logs for {testLogs.Key}\n");
                 }
                 
-                Sender.Tell(Done.Instance);
+                Sender.Tell(sb.ToString());
             });
         }
 

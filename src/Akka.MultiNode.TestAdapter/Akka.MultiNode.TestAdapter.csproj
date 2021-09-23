@@ -23,13 +23,14 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.TestPlatform" Version="$(TestSdkVersion)" PrivateAssets="All" />
     <PackageReference Include="Microsoft.TestPlatform.ObjectModel" Version="$(TestSdkVersion)" PrivateAssets="All" />
+    <PackageReference Include="Microsoft.TestPlatform.TestHost" Version="$(TestSdkVersion)" PrivateAssets="All" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Akka.MultiNode.TestRunner.Shared\Akka.MultiNode.TestRunner.Shared.csproj" />
-    <ProjectReference Include="..\Akka.MultiNode.NodeRunner\Akka.MultiNode.NodeRunner.csproj" />
-    <ProjectReference Include="..\Akka.MultiNode.Shared\Akka.MultiNode.Shared.csproj" />
+    <ProjectReference Include="..\Akka.MultiNode.TestRunner.Shared\Akka.MultiNode.TestRunner.Shared.csproj" PrivateAssets="All" />
+    <ProjectReference Include="..\Akka.MultiNode.NodeRunner\Akka.MultiNode.NodeRunner.csproj" PrivateAssets="All" />
+    <ProjectReference Include="..\Akka.MultiNode.Shared\Akka.MultiNode.Shared.csproj" PrivateAssets="All" />
   </ItemGroup>
-
 </Project>

@@ -12,6 +12,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Reflection;
+using System.Runtime.Versioning;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -299,12 +300,16 @@ namespace Akka.MultiNode.TestRunner.Shared
 
             var dumpPath = Path.GetFullPath(Path.Combine(testOutputDir, "aggregated.txt"));
             result.Attachments.Add(new MultiNodeTestResult.Attachment{Title = "Aggregated", Path = dumpPath});
+            string consoleLog = null;
             var dumpTasks = new List<Task>()
             {
                 // Dump aggregated timeline to file for this test
                 timelineCollector.Ask<Done>(new TimelineLogCollectorActor.DumpToFile(dumpPath)),
                 // Print aggregated timeline into the console
-                timelineCollector.Ask<Done>(new TimelineLogCollectorActor.PrintToConsole())
+                timelineCollector.Ask<string>(new TimelineLogCollectorActor.PrintToConsole()).ContinueWith(t =>
+                {
+                    consoleLog = t.Result;
+                })
             };
 
             if (result.Status == MultiNodeTestResult.TestStatus.Failed)
@@ -316,6 +321,7 @@ namespace Akka.MultiNode.TestRunner.Shared
             }
 
             Task.WaitAll(dumpTasks.ToArray());
+            result.ConsoleOutput = consoleLog;
         }
 
         private void WaitForNodeExit(MultiNodeTestResult result, List<(NodeTest, Process)> nodeProcesses)
@@ -346,7 +352,11 @@ namespace Akka.MultiNode.TestRunner.Shared
         {
             var nodeRunnerReferencedAssembly = typeof(NodeRunner.Nothing).Assembly;
             var nodeRunnerAssemblyName = nodeRunnerReferencedAssembly.GetName().Name;
-            var nodeRunnerFileName = nodeRunnerAssemblyName + (PlatformDetector.IsNetCore ? ".dll" : ".exe");
+
+            var assembly = Assembly.LoadFrom(assemblyPath);
+            var attribute = assembly.GetCustomAttribute<TargetFrameworkAttribute>();
+            
+            var nodeRunnerFileName = nodeRunnerAssemblyName + (attribute.FrameworkName.StartsWith(".NETFramework") ? ".exe" : ".dll");
             
             var searchPaths = new []
             {

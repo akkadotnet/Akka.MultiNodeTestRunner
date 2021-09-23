@@ -10,7 +10,7 @@
  
   <ItemGroup>
     <ProjectReference Include="..\Akka.MultiNode.Shared\Akka.MultiNode.Shared.csproj" />
-    <ProjectReference Include="..\Akka.MultiNode.TestRunner\Akka.MultiNode.TestRunner.csproj" />
+    <ProjectReference Include="..\Akka.MultiNode.TestRunner.Shared\Akka.MultiNode.TestRunner.Shared.csproj" />
   </ItemGroup>
 
   <ItemGroup>
