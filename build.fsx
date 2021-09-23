@@ -201,8 +201,7 @@ Target "CreateNuget" (fun _ ->
     let projects = !! "src/**/*.csproj" 
                    -- "src/**/*Tests.csproj" // Don't publish unit tests
                    -- "src/**/*Tests*.csproj"
-                   -- "src/**/*.MultiNode.TestRunner.csproj" // Do not publish MNTR nuget packages
-                   -- "src/**/*.MultiNode.TestAdapter.csproj"
+                   -- "src/**/*.MultiNode.TestAdapter.csproj"  // Do not publish MNTR nuget packages
                    -- "src/**/*.MultiNode.NodeRunner.csproj"
                    -- "src/**/*.MultiNode.Shared.csproj"
                    -- "src/**/*.MultiNode.TestRunner.Shared.csproj"
@@ -221,7 +220,7 @@ Target "CreateNuget" (fun _ ->
 )
 
 Target "PublishMntr" (fun _ ->
-    let executableProjects = !! "./src/**/Akka.MultiNode.TestRunner.csproj" ++ "./src/**/Akka.MultiNode.TestAdapter.csproj"
+    let executableProjects = !! "./src/**/Akka.MultiNode.TestAdapter.csproj"
 
     executableProjects |> Seq.iter (fun project ->
         DotNetCli.Restore
@@ -264,13 +263,11 @@ Target "CreateMntrNuget" (fun _ ->
         nuspecPath
         
     let nuspecTemplates = [ 
-        "./src/Akka.MultiNode.TestRunner/Akka.MultiNode.TestRunner.nuspec.template";
         "./src/Akka.MultiNode.TestAdapter/Akka.MultiNode.TestAdapter.nuspec.template"
     ]
     let nuspecFiles = List.map (generateNuspec) nuspecTemplates
     
-    let executableProjects = !! "./src/**/Akka.MultiNode.TestRunner.csproj"
-                             ++ "./src/**/Akka.MultiNode.TestAdapter.csproj"
+    let executableProjects = !! "./src/**/Akka.MultiNode.TestAdapter.csproj"
 
     executableProjects |> Seq.iter (fun project ->  
         DotNetCli.Pack
