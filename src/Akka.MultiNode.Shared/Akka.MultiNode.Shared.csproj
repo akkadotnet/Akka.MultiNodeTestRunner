@@ -4,6 +4,7 @@
     <TargetFramework>$(NetStandardLibVersion)</TargetFramework>
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
     <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
   </PropertyGroup>
 
   <ItemGroup>

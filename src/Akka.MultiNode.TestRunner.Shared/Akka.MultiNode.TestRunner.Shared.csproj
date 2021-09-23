@@ -2,7 +2,7 @@
     <Import Project="..\common.props" />
     
     <PropertyGroup>
-        <TargetFramework>$(NetCoreTestVersion)</TargetFramework>
+        <TargetFrameworks>$(NetCoreTestVersion);$(NetTestVersion)</TargetFrameworks>
     </PropertyGroup>
 
     <ItemGroup>

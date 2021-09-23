@@ -13,8 +13,8 @@ open Fake.DocFxHelper
 let configuration = "Release"
 
 // Configuration values for tests
-let testNetFrameworkVersion = "net472"
 let testNetCoreVersion = "netcoreapp3.1"
+let testNetVersion = "net5.0"
 
 // Metadata used when signing packages and DLLs
 let signingName = "Akka.MultiNode.TestAdapter"
@@ -65,12 +65,14 @@ Target "AssemblyInfo" (fun _ ->
     XmlPokeInnerText "./src/common.props" "//Project/PropertyGroup/PackageReleaseNotes" (releaseNotes.Notes |> String.concat "\n")
 )
 
-Target "Build" (fun _ ->          
+Target "Build" (fun _ ->
+    let additionalArgs = if versionSuffix.Length > 0 then [sprintf "/p:VersionSuffix=%s" versionSuffix] else []
     DotNetCli.Build
         (fun p -> 
             { p with
                 Project = solutionFile
-                Configuration = configuration }) // "Rebuild"  
+                Configuration = configuration
+                AdditionalArgs = additionalArgs }) // "Rebuild"  
 )
 
 
@@ -96,25 +98,46 @@ module internal ResultHandling =
         >> Option.iter (failBuildWithMessage errorLevel)
 
 Target "RunTests" (fun _ ->
-    let projects = 
-        match (isWindows) with 
-        | true -> !! "./src/**/*.Tests.csproj"
-        | _ -> !! "./src/**/*.Tests.csproj" // if you need to filter specs for Linux vs. Windows, do it here
+    let projects = match (isWindows) with
+                    | true -> !! "./src/**/*.Tests.*sproj"
+                    | _ -> !! "./src/**/*.Tests.*sproj" // if you need to filter specs for Linux vs. Windows, do it here
 
     let runSingleProject project =
         let arguments =
-            match (isWindows) with
-            | true -> (sprintf "test -c Release --no-build --logger:trx --logger:\"console;verbosity=normal\" --results-directory %s" (outputTests))
-            | false -> (sprintf "test -c Release --no-build --logger:trx --logger:\"console;verbosity=normal\" --results-directory %s --framework %s" outputTests testNetCoreVersion)
+            match (hasTeamCity) with
+              | true -> (sprintf "test -c Release --no-build --logger:trx --logger:\"console;verbosity=normal\" --framework %s --results-directory \"%s\" -- -parallel none -teamcity" testNetCoreVersion outputTests)
+              | false -> (sprintf "test -c Release --no-build --logger:trx --logger:\"console;verbosity=normal\" --framework %s --results-directory \"%s\" -- -parallel none" testNetCoreVersion outputTests)
 
         let result = ExecProcess(fun info ->
             info.FileName <- "dotnet"
             info.WorkingDirectory <- (Directory.GetParent project).FullName
-            info.Arguments <- arguments) (TimeSpan.FromMinutes 30.0) 
-        
-        ResultHandling.failBuildIfXUnitReportedError TestRunnerErrorLevel.Error result  
+            info.Arguments <- arguments) (TimeSpan.FromMinutes 30.0)
 
-    projects |> Seq.iter (log)
+        ResultHandling.failBuildIfXUnitReportedError TestRunnerErrorLevel.Error result
+
+    CreateDir outputTests
+    projects |> Seq.iter (runSingleProject)
+)
+
+Target "RunTestsNet" (fun _ ->
+    let projects = match (isWindows) with
+                    | true -> !! "./src/**/*.Tests.*sproj"
+                    | _ -> !! "./src/**/*.Tests.*sproj" // if you need to filter specs for Linux vs. Windows, do it here
+
+    let runSingleProject project =
+        let arguments =
+            match (hasTeamCity) with
+              | true -> (sprintf "test -c Release --no-build --logger:trx --logger:\"console;verbosity=normal\" --framework %s --results-directory \"%s\" -- -parallel none -teamcity" testNetVersion outputTests)
+              | false -> (sprintf "test -c Release --no-build --logger:trx --logger:\"console;verbosity=normal\" --framework %s --results-directory \"%s\" -- -parallel none" testNetVersion outputTests)
+
+        let result = ExecProcess(fun info ->
+            info.FileName <- "dotnet"
+            info.WorkingDirectory <- (Directory.GetParent project).FullName
+            info.Arguments <- arguments) (TimeSpan.FromMinutes 30.0)
+
+        ResultHandling.failBuildIfXUnitReportedError TestRunnerErrorLevel.Error result
+
+    CreateDir outputTests
     projects |> Seq.iter (runSingleProject)
 )
 
@@ -221,13 +244,14 @@ Target "CreateNuget" (fun _ ->
 
 Target "PublishMntr" (fun _ ->
     let executableProjects = !! "./src/**/Akka.MultiNode.TestAdapter.csproj"
-
+    let additionalArgs = if versionSuffix.Length > 0 then [sprintf "/p:VersionSuffix=%s" versionSuffix] else []
+    
     executableProjects |> Seq.iter (fun project ->
         DotNetCli.Restore
             (fun p -> 
                 { p with
                     Project = project                  
-                    AdditionalArgs = [sprintf "/p:VersionSuffix=%s" versionSuffix] })
+                    AdditionalArgs = additionalArgs })
     )
 
     executableProjects |> Seq.iter (fun project ->  
@@ -236,17 +260,16 @@ Target "PublishMntr" (fun _ ->
                 { p with
                     Project = project
                     Configuration = configuration
-                    Framework = testNetFrameworkVersion
+                    Framework = testNetCoreVersion
                     VersionSuffix = versionSuffix }))
 
-    // Windows .NET Core
     executableProjects |> Seq.iter (fun project ->  
         DotNetCli.Publish
             (fun p ->
                 { p with
                     Project = project
                     Configuration = configuration
-                    Framework = testNetCoreVersion
+                    Framework = testNetVersion
                     VersionSuffix = versionSuffix }))
 )
 
@@ -365,17 +388,19 @@ Target "Nuget" DoNothing
 
 // tests dependencies
 "Build" ==> "RunTests"
+"Build" ==> "RunTestsNet"
 
 // nuget dependencies
 "BuildRelease" ==> "CreateMntrNuget" ==> "CreateNuget"
 "CreateNuget" ==> "SignPackages" ==> "PublishNuget" ==> "Nuget"
 
 // docs
-"Clean" ==> "BuildRelease" ==> "Docfx"
+"BuildRelease" ==> "Docfx"
 
 // all
 "BuildRelease" ==> "All"
 "RunTests" ==> "All"
+"RunTestsNet" ==> "All"
 "NBench" ==> "All"
 "Nuget" ==> "All"
 

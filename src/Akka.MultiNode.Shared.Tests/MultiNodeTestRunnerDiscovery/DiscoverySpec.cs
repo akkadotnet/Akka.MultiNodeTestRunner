@@ -73,7 +73,7 @@ namespace Akka.MultiNode.Shared.Tests.MultiNodeTestRunnerDiscovery
 
         private static List<MultiNodeTest> DiscoverSpecs()
         {
-            var assemblyPath = new Uri(typeof(DiscoveryCases).GetTypeInfo().Assembly.CodeBase).LocalPath; 
+            var assemblyPath = new Uri(typeof(DiscoveryCases).GetTypeInfo().Assembly.Location).LocalPath; 
             using (var controller = new XunitFrontController(AppDomainSupport.IfAvailable, assemblyPath))
             {
                 using (var discovery = new Discovery(assemblyPath))

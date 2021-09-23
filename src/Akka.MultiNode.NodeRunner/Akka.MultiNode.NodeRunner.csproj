@@ -3,7 +3,7 @@
   
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFrameworks>$(NetCoreTestVersion);net5.0</TargetFrameworks>
+    <TargetFrameworks>$(NetCoreTestVersion);$(NetTestVersion)</TargetFrameworks>
   </PropertyGroup>
 
   <ItemGroup>

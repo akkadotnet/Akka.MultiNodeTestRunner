@@ -2,7 +2,7 @@
     <Import Project="..\common.props" />
 
     <PropertyGroup>
-        <TargetFrameworks>netcoreapp3.1;net5.0</TargetFrameworks>
+        <TargetFrameworks>$(NetCoreTestVersion);$(NetTestVersion)</TargetFrameworks>
         <RootNamespace>Akka.MultiNode.TestAdapter.SampleTests</RootNamespace>
     </PropertyGroup>
 

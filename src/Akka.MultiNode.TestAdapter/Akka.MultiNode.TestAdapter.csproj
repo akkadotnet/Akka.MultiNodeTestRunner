@@ -3,7 +3,7 @@
 
   <PropertyGroup>
     <Description>Visual Studio 2017 15.9+ Test Explorer runner for the Akka.NET MultiNode tests</Description>
-    <TargetFrameworks>$(NetCoreTestVersion);net5.0</TargetFrameworks>
+    <TargetFrameworks>$(NetCoreTestVersion);$(NetTestVersion)</TargetFrameworks>
     <NuspecFile>Akka.MultiNode.TestAdapter.nuspec</NuspecFile>
   </PropertyGroup>
 
