@@ -8,7 +8,6 @@
 using System;
 using System.Reflection;
 
-#if CORECLR
 namespace Akka.MultiNode.Shared.Extensions
 {
     internal static class TypeExtension
@@ -19,4 +18,3 @@ namespace Akka.MultiNode.Shared.Extensions
         }
     }
 }
-#endif

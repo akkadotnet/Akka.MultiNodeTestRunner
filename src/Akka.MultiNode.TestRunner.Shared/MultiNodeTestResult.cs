@@ -49,6 +49,8 @@ namespace Akka.MultiNode.TestRunner.Shared
         /// Node Test results
         /// </summary>
         public NodeResult[] NodeResults { get; }
+        
+        public string ConsoleOutput { get; set; }
 
         public List<Attachment> Attachments { get; } = new List<Attachment>();
 

@@ -9,8 +9,6 @@ using System;
 using Akka.Actor;
 using Akka.MultiNode.Shared.Reporting;
 using JetBrains.TeamCity.ServiceMessages.Write.Special;
-#if CORECLR
-#endif
 
 namespace Akka.MultiNode.Shared.Sinks
 {

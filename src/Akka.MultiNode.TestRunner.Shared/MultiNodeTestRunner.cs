@@ -12,6 +12,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Reflection;
+using System.Runtime.Versioning;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -27,10 +28,7 @@ using Akka.Remote.TestKit;
 using Akka.Util;
 using Xunit;
 using ErrorMessage = Xunit.Sdk.ErrorMessage;
-
-#if CORECLR
 using System.Runtime.Loader;
-#endif
 
 namespace Akka.MultiNode.TestRunner.Shared
 {
@@ -39,7 +37,7 @@ namespace Akka.MultiNode.TestRunner.Shared
     /// </summary>
     public class MultiNodeTestRunner : IDisposable
     {
-        private readonly string _platformName = PlatformDetector.Current == PlatformDetector.PlatformType.NetCore ? "netcore" : "net";
+        private string _platformName;
 
         private string _currentAssembly;
         private IActorRef _tcpLogger;
@@ -75,6 +73,15 @@ namespace Akka.MultiNode.TestRunner.Shared
                 return;
             }
             
+            // In NetCore, if the assembly file hasn't been touched, 
+            // XunitFrontController would fail loading external assemblies and its dependencies.
+            var assembly = PreLoadTestAssembly(assemblyPath);
+            var attr = assembly.GetCustomAttribute<TargetFrameworkAttribute>();
+            var frameworkParts = attr.FrameworkName.Split(",");
+            var versionParts = frameworkParts[1].Split("=");
+            _platformName = (frameworkParts[0].Replace(".", "") + versionParts[1].Replace("v", "").Replace(".", "_")).ToLowerInvariant();
+            Console.WriteLine($"Platform name: {_platformName}");
+            
             _currentAssembly = fileName;
             // Perform output cleanup before anything is logged
             if (options.ClearOutputDirectory && Directory.Exists(options.OutputDirectory))
@@ -93,10 +100,6 @@ namespace Akka.MultiNode.TestRunner.Shared
 
             // Set MNTR environment for correct tests discovery
             MultiNodeEnvironment.Initialize();
-
-            // In NetCore, if the assembly file hasn't been touched, 
-            // XunitFrontController would fail loading external assemblies and its dependencies.
-            PreLoadTestAssembly_WhenNetCore(assemblyPath);
         }
         
         public MultiNodeTestResult ExecuteSpec(MultiNodeTest test, MultiNodeTestRunnerOptions options)
@@ -299,12 +302,16 @@ namespace Akka.MultiNode.TestRunner.Shared
 
             var dumpPath = Path.GetFullPath(Path.Combine(testOutputDir, "aggregated.txt"));
             result.Attachments.Add(new MultiNodeTestResult.Attachment{Title = "Aggregated", Path = dumpPath});
+            string consoleLog = null;
             var dumpTasks = new List<Task>()
             {
                 // Dump aggregated timeline to file for this test
                 timelineCollector.Ask<Done>(new TimelineLogCollectorActor.DumpToFile(dumpPath)),
                 // Print aggregated timeline into the console
-                timelineCollector.Ask<Done>(new TimelineLogCollectorActor.PrintToConsole())
+                timelineCollector.Ask<string>(new TimelineLogCollectorActor.PrintToConsole()).ContinueWith(t =>
+                {
+                    consoleLog = t.Result;
+                })
             };
 
             if (result.Status == MultiNodeTestResult.TestStatus.Failed)
@@ -316,6 +323,7 @@ namespace Akka.MultiNode.TestRunner.Shared
             }
 
             Task.WaitAll(dumpTasks.ToArray());
+            result.ConsoleOutput = consoleLog;
         }
 
         private void WaitForNodeExit(MultiNodeTestResult result, List<(NodeTest, Process)> nodeProcesses)
@@ -346,8 +354,8 @@ namespace Akka.MultiNode.TestRunner.Shared
         {
             var nodeRunnerReferencedAssembly = typeof(NodeRunner.Nothing).Assembly;
             var nodeRunnerAssemblyName = nodeRunnerReferencedAssembly.GetName().Name;
-            var nodeRunnerFileName = nodeRunnerAssemblyName + (PlatformDetector.IsNetCore ? ".dll" : ".exe");
-            
+            var nodeRunnerFileName = nodeRunnerAssemblyName +  ".dll";
+
             var searchPaths = new []
             {
                 AppContext.BaseDirectory,
@@ -360,23 +368,20 @@ namespace Akka.MultiNode.TestRunner.Shared
                 throw new Exception($"Failed to find node runner '{nodeRunnerFileName}' at paths: {string.Join(", ", searchPaths)}");
 
             var nodeRunnerDir = Path.GetDirectoryName(assemblyPath);
-            if (PlatformDetector.IsNetCore)
-            {
-                sbArguments.Insert(0, $"{nodeRunnerPath.Value} ");
+            sbArguments.Insert(0, $"{nodeRunnerPath.Value} ");
 
-                // Under .net core "*.runtimeconfig.json" is required to run NodeRunner as a console app
-                CreateRuntimeConfigIfNotExists(nodeRunnerReferencedAssembly, nodeRunnerDir);
-            }
+            // Under .net core "*.runtimeconfig.json" is required to run NodeRunner as a console app
+            CreateRuntimeConfigIfNotExists(nodeRunnerReferencedAssembly, nodeRunnerDir);
 
             var process = new Process
             {
                 StartInfo = new ProcessStartInfo
                 {
-                    FileName = PlatformDetector.IsNetCore ? "dotnet" : nodeRunnerPath.Value,
+                    FileName = "dotnet",
                     UseShellExecute = false,
                     RedirectStandardOutput = true,
                     Arguments = sbArguments.ToString(),
-                    WorkingDirectory = PlatformDetector.IsNetCore ? nodeRunnerDir : null
+                    WorkingDirectory =  nodeRunnerDir
                 }
             };
             
@@ -449,9 +454,8 @@ namespace Akka.MultiNode.TestRunner.Shared
             Console.Out.WriteLine(sb.ToString());
         }
 
-        private void PreLoadTestAssembly_WhenNetCore(string assemblyPath)
+        private Assembly PreLoadTestAssembly(string assemblyPath)
         {
-#if CORECLR
             var assembly = AssemblyLoadContext.Default.LoadFromAssemblyPath(assemblyPath);
             var asms = assembly.GetReferencedAssemblies();
             var basePath = Path.GetDirectoryName(assemblyPath);
@@ -474,7 +478,8 @@ namespace Akka.MultiNode.TestRunner.Shared
                     }
                 }
             }
-#endif
+
+            return assembly;
         }
 
         private IActorRef CreateSinkCoordinator(MultiNodeTestRunnerOptions options, string suiteName)

@@ -1,12 +1,10 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <Import Project="..\common.props" />
   <PropertyGroup>
-    <AssemblyTitle>Akka.MultiNode.Shared</AssemblyTitle>
     <TargetFramework>$(NetStandardLibVersion)</TargetFramework>
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
-    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
-    <RootNamespace>Akka.MultiNode.Shared</RootNamespace>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
   </PropertyGroup>
 
   <ItemGroup>
@@ -28,10 +26,6 @@
       <LastGenOutput>VisualizerRuntimeTemplate.cs</LastGenOutput>
     </Content>
   </ItemGroup>
-
-  <PropertyGroup Condition=" '$(TargetFramework)' == '$(NetStandardLibVersion)' ">
-    <DefineConstants>$(DefineConstants);CORECLR</DefineConstants>
-  </PropertyGroup>
 
   <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
     <DefineConstants>$(DefineConstants);RELEASE</DefineConstants>

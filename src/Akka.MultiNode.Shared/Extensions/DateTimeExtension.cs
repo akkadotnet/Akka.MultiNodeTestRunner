@@ -7,7 +7,6 @@
 
 using System;
 
-#if CORECLR
 namespace Akka.MultiNode.Shared.Extensions
 {
     internal static class DateTimeExtension
@@ -18,4 +17,3 @@ namespace Akka.MultiNode.Shared.Extensions
         }
     }
 }
-#endif
