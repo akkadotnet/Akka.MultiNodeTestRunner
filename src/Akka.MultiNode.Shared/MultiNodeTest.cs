@@ -39,12 +39,7 @@ namespace Akka.MultiNode.Shared
         /// <exception cref="TestConfigurationException">Invalid configuration class</exception>
         protected virtual List<NodeTest> LoadDetails()
         {
-#if CORECLR
             var specType = _discovery.TestAssembly.Assembly.GetType(TypeName).ToRuntimeType();
-#else
-            var testAssembly = Assembly.LoadFrom(discovery.TestAssembly.Assembly.AssemblyPath);
-            var specType = testAssembly.GetType(TypeName);
-#endif
             if (!typeof(MultiNodeSpec).IsAssignableFrom(specType))
             {
                 throw new TestBaseTypeException();
@@ -92,19 +87,11 @@ namespace Akka.MultiNode.Shared
             while (current != null)
             {
 
-#if CORECLR
                 var ctorWithConfig = current
                     .GetConstructors(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance)
                     .FirstOrDefault(c => null != c.GetParameters().FirstOrDefault(p => p.ParameterType.GetTypeInfo().IsSubclassOf(baseConfigType)));
             
                 current = current.GetTypeInfo().BaseType;
-#else
-                var ctorWithConfig = current
-                    .GetConstructors(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance)
-                    .FirstOrDefault(c => null != c.GetParameters().FirstOrDefault(p => p.ParameterType.IsSubclassOf(baseConfigType)));
-
-                current = current.BaseType;
-#endif
                 if (ctorWithConfig != null) return ctorWithConfig;
             }
 
@@ -116,15 +103,9 @@ namespace Akka.MultiNode.Shared
             var ctors = configType.GetConstructors(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
             var empty = ctors.FirstOrDefault(c => !c.GetParameters().Any());
 
-#if CORECLR
             return empty != null
                 ? new object[0]
                 : ctors.First().GetParameters().Select(p => p.ParameterType.GetTypeInfo().IsValueType ? Activator.CreateInstance(p.ParameterType) : null).ToArray();
-#else
-            return empty != null
-                ? new object[0]
-                : ctors.First().GetParameters().Select(p => p.ParameterType.IsValueType ? Activator.CreateInstance(p.ParameterType) : null).ToArray();
-#endif
         }
     }
 }

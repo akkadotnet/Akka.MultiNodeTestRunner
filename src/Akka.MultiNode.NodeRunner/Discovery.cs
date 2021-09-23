@@ -15,11 +15,7 @@ using Xunit.Abstractions;
 namespace Akka.MultiNode.NodeRunner
 {
     [Serializable]
-#if CORECLR
     public class Discovery : IMessageSink, IDisposable
-#else
-    public class Discovery : MarshalByRefObject, IMessageSink, IDisposable
-#endif
     {
         private readonly string _assemblyName;
         private readonly string _className;

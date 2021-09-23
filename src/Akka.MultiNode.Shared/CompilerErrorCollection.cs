@@ -7,7 +7,6 @@
 
 using System.Collections.Generic;
 
-#if CORECLR
 namespace Akka.MultiNode.Shared
 {
     public class CompilerErrorCollection : List<CompilerError>
@@ -20,4 +19,3 @@ namespace Akka.MultiNode.Shared
         public bool IsWarning { get; set; }
     }
 }
-#endif

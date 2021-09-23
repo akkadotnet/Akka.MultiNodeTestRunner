@@ -17,8 +17,8 @@ let testNetFrameworkVersion = "net472"
 let testNetCoreVersion = "netcoreapp3.1"
 
 // Metadata used when signing packages and DLLs
-let signingName = "My Library"
-let signingDescription = "My REALLY COOL Library"
+let signingName = "Akka.MultiNode.TestAdapter"
+let signingDescription = "Akka.NET Multi-node Test Adapter; used for executing tests written with Akka.Remote.TestKit"
 let signingUrl = "https://signing.is.cool/"
 
 // Read release notes and version

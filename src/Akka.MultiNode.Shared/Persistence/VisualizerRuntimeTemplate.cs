@@ -15,9 +15,7 @@
 // </auto-generated>
 // ------------------------------------------------------------------------------
 
-#if CORECLR
 using Akka.MultiNode.Shared.Extensions;
-#endif
 
 namespace Akka.MultiNode.Shared.Persistence
 {

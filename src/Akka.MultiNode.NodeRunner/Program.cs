@@ -18,10 +18,8 @@ using Akka.MultiNode.Shared.Sinks;
 using Akka.Remote.TestKit;
 using Xunit;
 
-#if CORECLR
 using System.Runtime.Loader;
 using Microsoft.Extensions.DependencyModel;
-#endif
 
 namespace Akka.MultiNode.NodeRunner
 {
@@ -56,7 +54,7 @@ namespace Akka.MultiNode.NodeRunner
                     system.Tcp().Tell(new Tcp.Connect(listenEndpoint), tcpClient);
 
                     MultiNodeEnvironment.Initialize();
-#if CORECLR
+                    
                     // In NetCore, if the assembly file hasn't been touched, 
                     // XunitFrontController would fail loading external assemblies and its dependencies.
                     AssemblyLoadContext.Default.Resolving += (assemblyLoadContext, assemblyName) => DefaultOnResolving(assemblyLoadContext, assemblyName, assemblyFileName);
@@ -74,7 +72,6 @@ namespace Akka.MultiNode.NodeRunner
                             .Where(dep => dep.Name.ToLower().Contains(assembly.FullName.Split(new[] {','})[0].ToLower()))
                             .Select(dependency => AssemblyLoadContext.Default.LoadFromAssemblyName(new AssemblyName(dependency.Name)));
                     }
-#endif
 
                     Thread.Sleep(TimeSpan.FromSeconds(10));
                     using (var controller = new XunitFrontController(AppDomainSupport.IfAvailable, assemblyFileName))
@@ -181,13 +178,11 @@ namespace Akka.MultiNode.NodeRunner
             }
         }
 
-#if CORECLR
         private static Assembly DefaultOnResolving(AssemblyLoadContext assemblyLoadContext, AssemblyName assemblyName, string assemblyPath)
         {
             string dllName = assemblyName.Name.Split(new[] { ',' })[0] + ".dll";
             return assemblyLoadContext.LoadFromAssemblyPath(Path.Combine(Path.GetDirectoryName(assemblyPath), dllName));
         }
-#endif
     }
 
     class RunnerTcpClient : ReceiveActor, IWithUnboundedStash

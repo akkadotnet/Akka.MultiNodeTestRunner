@@ -16,11 +16,7 @@ using Xunit.Sdk;
 
 namespace Akka.MultiNode.TestRunner.Shared
 {
-#if CORECLR
     public class Discovery : IMessageSink, IDisposable
-#else
-    public class Discovery : MarshalByRefObject, IMessageSink, IDisposable
-#endif
     {
         // There can be multiple fact attributes in a single class, but our convention
         // limits them to 1 fact attribute per test class

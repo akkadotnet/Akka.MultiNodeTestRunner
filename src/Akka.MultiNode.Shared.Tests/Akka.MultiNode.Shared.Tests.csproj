@@ -2,10 +2,7 @@
   <Import Project="..\common.props" />
 
   <PropertyGroup>
-    <AssemblyTitle>Akka.MultiNode.Shared.Tests</AssemblyTitle>
-    <TargetFrameworks>$(NetFrameworkTestVersion);$(NetCoreTestVersion)</TargetFrameworks>
-    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-    <RootNamespace>Akka.MultiNode.Shared.Tests</RootNamespace>
+    <TargetFramework>$(NetCoreTestVersion)</TargetFramework>
   </PropertyGroup>
  
   <ItemGroup>
@@ -22,10 +19,6 @@
     <PackageReference Include="TeamCity.ServiceMessages" Version="$(TeamCityVersion)" />
     <PackageReference Include="FluentAssertions" Version="$(FluentAssertionsVersion)" />
   </ItemGroup>
-
-  <PropertyGroup Condition=" '$(TargetFramework)' == '$(NetCoreTestVersion)' ">
-    <DefineConstants>$(DefineConstants);CORECLR</DefineConstants>
-  </PropertyGroup>
 
   <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
     <DefineConstants>$(DefineConstants);RELEASE</DefineConstants>

@@ -10,8 +10,6 @@ using System.Linq;
 using Akka.Actor;
 using Akka.Event;
 using Akka.MultiNode.Shared.Reporting;
-#if CORECLR
-#endif
 
 namespace Akka.MultiNode.Shared.Sinks
 {
