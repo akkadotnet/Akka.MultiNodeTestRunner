@@ -5,15 +5,13 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Xml;
-using Akka.MultiNode.Shared;
-using Akka.MultiNode.Shared.Environment;
-using Akka.MultiNode.TestRunner.Shared;
+using Akka.MultiNode.TestAdapter.Internal;
+using Akka.MultiNode.TestAdapter.Internal.Environment;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel.Adapter;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel.Logging;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel.Resources;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel.Utilities;
-using TestResultMessage = Microsoft.VisualStudio.TestPlatform.ObjectModel.TestResultMessage;
 
 namespace Akka.MultiNode.TestAdapter
 {
@@ -302,69 +300,71 @@ namespace Akka.MultiNode.TestAdapter
         
         private static MultiNodeTestRunnerOptions FromXml(XmlReader reader)
         {
-          ValidateArg.NotNull(reader, nameof (reader));
-          var options = MultiNodeTestRunnerOptions.Default;
-          ThrowOnHasAttributes(reader);
-          reader.Read();
-          
-          if (!reader.IsEmptyElement)
-          { 
-              while (reader.NodeType == XmlNodeType.Element)
-              {
-                  var name = reader.Name;
-                  switch (name)
-                  {
-                      case "ListenAddress":
-                      {
-                          ThrowOnHasAttributes(reader);
-                          var xmlValue = reader.ReadElementContentAsString();
-                          options = options.WithListenAddress(xmlValue);
-                          continue;
-                      }
-                      
-                      case "ListenPort":
-                      {
-                          ThrowOnHasAttributes(reader);
-                          var xmlValue = reader.ReadElementContentAsString();
-                          options = options.WithListenPort(
-                              int.TryParse(xmlValue, out var port) && port >= 0
-                                  ? port
-                                  : throw new SettingsException(
-                                      $"Invalid XML settings for {nameof(MultiNodeTestRunnerOptions)} element {name}, value: {xmlValue}"));
-                          continue;
-                      }
-                      
-                      case "ClearOutputDirectory":
-                      {
-                          ThrowOnHasAttributes(reader);
-                          var xmlValue = reader.ReadElementContentAsString();
-                          if (!bool.TryParse(xmlValue, out var value))
-                              throw new SettingsException($"Invalid XML settings for {nameof(MultiNodeTestRunnerOptions)} element {name}, value: {xmlValue}");
-                          options = options.WithClearOutputDirectory(value);
-                          continue;
-                      }
-                      
-                      case "UseTeamCityFormatting":
-                      {
-                          ThrowOnHasAttributes(reader);
-                          var xmlValue = reader.ReadElementContentAsString();
-                          if (!bool.TryParse(xmlValue, out var value))
-                              throw new SettingsException($"Invalid XML settings for {nameof(MultiNodeTestRunnerOptions)} element {name}, value: {xmlValue}");
-                          options = options.WithTeamCityFormatting(value);
-                          continue;
-                      } 
-                      
-                      default:
-                          if (EqtTrace.IsErrorEnabled)
-                              EqtTrace.Warning($"Invalid XML Element for {nameof(MultiNodeTestRunnerOptions)}, unknown element: {name}");
-                          reader.Skip(); 
-                          continue;
-                  }
-              }
-              reader.ReadEndElement();
-          }
-          
-          return options;
+            if (reader == null)
+                throw new ArgumentNullException(nameof(reader));
+            
+            var options = MultiNodeTestRunnerOptions.Default;
+            ThrowOnHasAttributes(reader);
+            reader.Read();
+
+            if (!reader.IsEmptyElement)
+            { 
+                while (reader.NodeType == XmlNodeType.Element)
+                {
+                    var name = reader.Name;
+                    switch (name)
+                    {
+                        case "ListenAddress":
+                        {
+                            ThrowOnHasAttributes(reader);
+                            var xmlValue = reader.ReadElementContentAsString();
+                            options = options.WithListenAddress(xmlValue);
+                            continue;
+                        }
+
+                        case "ListenPort":
+                        {
+                            ThrowOnHasAttributes(reader);
+                            var xmlValue = reader.ReadElementContentAsString();
+                            options = options.WithListenPort(
+                                int.TryParse(xmlValue, out var port) && port >= 0
+                                    ? port
+                                    : throw new SettingsException(
+                                        $"Invalid XML settings for {nameof(MultiNodeTestRunnerOptions)} element {name}, value: {xmlValue}"));
+                            continue;
+                        }
+
+                        case "ClearOutputDirectory":
+                        {
+                            ThrowOnHasAttributes(reader);
+                            var xmlValue = reader.ReadElementContentAsString();
+                            if (!bool.TryParse(xmlValue, out var value)) 
+                                throw new SettingsException($"Invalid XML settings for {nameof(MultiNodeTestRunnerOptions)} element {name}, value: {xmlValue}");
+                            options = options.WithClearOutputDirectory(value);
+                            continue;
+                        }
+
+                        case "UseTeamCityFormatting":
+                        {
+                            ThrowOnHasAttributes(reader);
+                            var xmlValue = reader.ReadElementContentAsString();
+                            if (!bool.TryParse(xmlValue, out var value)) 
+                                throw new SettingsException($"Invalid XML settings for {nameof(MultiNodeTestRunnerOptions)} element {name}, value: {xmlValue}");
+                            options = options.WithTeamCityFormatting(value);
+                            continue;
+                        } 
+
+                        default:
+                            //if (EqtTrace.IsErrorEnabled)
+                              //EqtTrace.Warning($"Invalid XML Element for {nameof(MultiNodeTestRunnerOptions)}, unknown element: {name}");
+                            reader.Skip(); 
+                            continue; 
+                    } 
+                }
+                reader.ReadEndElement();
+            }
+
+            return options;
         }
         
         private static void ThrowOnHasAttributes(XmlReader reader)

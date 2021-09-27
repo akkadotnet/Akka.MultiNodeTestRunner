@@ -263,16 +263,7 @@ Target "PublishMntr" (fun _ ->
                 { p with
                     Project = project
                     Configuration = configuration
-                    Framework = testNetCoreVersion
-                    VersionSuffix = versionSuffix }))
-
-    executableProjects |> Seq.iter (fun project ->  
-        DotNetCli.Publish
-            (fun p ->
-                { p with
-                    Project = project
-                    Configuration = configuration
-                    Framework = testNetVersion
+                    Framework = "netstandard2.0"
                     VersionSuffix = versionSuffix }))
 )
 

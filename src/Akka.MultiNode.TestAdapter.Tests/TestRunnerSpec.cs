@@ -2,7 +2,6 @@ using System.IO;
 using Akka.MultiNode.TestAdapter.SampleTests;
 using Akka.MultiNode.TestAdapter.SampleTests.Metadata;
 using Akka.MultiNode.TestAdapter.Tests.Helpers;
-using Akka.MultiNode.TestRunner.Shared;
 using FluentAssertions;
 using Xunit;
 
