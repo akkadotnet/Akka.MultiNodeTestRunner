@@ -1,5 +1,5 @@
-#### 0.1.14 October 05 2019 ####
-Temp local nuget
+#### 1.0.0-beta1 October 05 2019 ####
+First beta release
 
 #### 0.1.13 October 05 2019 ####
-First release
+Initial commit
