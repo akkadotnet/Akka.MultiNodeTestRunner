@@ -78,7 +78,7 @@ namespace Akka.MultiNode.TestAdapter.Tests.Internal
         {
             var summary = new ResultSummary(tests, new Output());
 
-            summary.Outcome.Should().BeEquivalentTo(outcome);
+            summary.Outcome.Should().Be(outcome);
         }
     }
 }
