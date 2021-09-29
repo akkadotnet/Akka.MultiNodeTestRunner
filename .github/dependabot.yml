@@ -1,0 +1,23 @@
+version: 2
+updates:
+- package-ecosystem: nuget
+  directory: "/"
+  schedule:
+    interval: daily
+  open-pull-requests-limit: 10
+  ignore:
+  - dependency-name: Akka.Cluster.TestKit
+    versions:
+    - 1.4.16
+    - 1.4.17
+    - 1.4.18
+  - dependency-name: Akka.TestKit.Xunit2
+    versions:
+    - 1.4.16
+    - 1.4.17
+    - 1.4.18
+  - dependency-name: Akka.Remote.TestKit
+    versions:
+    - 1.4.16
+    - 1.4.17
+    - 1.4.18
