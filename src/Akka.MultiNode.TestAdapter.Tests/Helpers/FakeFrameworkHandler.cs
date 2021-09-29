@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using Akka.Util;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel.Adapter;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel.Logging;
@@ -15,7 +14,7 @@ namespace Akka.MultiNode.TestAdapter.Tests.Helpers
         public List<(TestMessageLevel Level, string Message)> Messages { get; } = new List<(TestMessageLevel Level, string Message)>();
         public List<TestResult> TestResults { get; } = new List<TestResult>();
         public List<TestCase> StartedTestCases { get; } = new List<TestCase>();
-        public List<(TestCase TestCase, Option<TestOutcome> Outcome)> FinishedTestCases { get; } = new List<(TestCase TestCase, Option<TestOutcome> Outcome)>();
+        public List<(TestCase TestCase, TestOutcome Outcome)> FinishedTestCases { get; } = new List<(TestCase TestCase, TestOutcome Outcome)>();
 
         /// <inheritdoc />
         public void SendMessage(TestMessageLevel testMessageLevel, string message)

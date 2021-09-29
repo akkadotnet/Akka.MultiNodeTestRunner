@@ -2,14 +2,26 @@
     <Import Project="..\common.props" />
 
     <PropertyGroup>
-        <TargetFrameworks>$(NetFrameworkTestVersion);$(NetCoreTestVersion)</TargetFrameworks>
+        <TargetFrameworks>netcoreapp2.1;$(NetCoreTestVersion);$(NetTestVersion)</TargetFrameworks>
+        <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="FluentAssertions" Version="$(FluentAssertionsVersion)" />
-        <PackageReference Include="Microsoft.TestPlatform.ObjectModel" Version="$(TestSdkVersion)" />
+        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="$(TestSdkVersion)" />
         <PackageReference Include="xunit" Version="$(XunitVersion)" />
         <PackageReference Include="xunit.runner.visualstudio" Version="$(XunitVersion)" />
+        <PackageReference Include="FluentAssertions" Version="$(FluentAssertionsVersion)" />
+        <PackageReference Include="xunit.runner.utility" Version="$(XunitVersion)" />
+        <!--
+        <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="5.0.0"/>
+        <PackageReference Include="System.Text.Json" Version="5.0.2"/>
+        <PackageReference Include="System.Memory" Version="4.5.4"/>
+        -->
+
+        <!-- <PackageReference Include="FluentAssertions" Version="$(FluentAssertionsVersion)" /> -->
+        <!-- <PackageReference Include="Microsoft.TestPlatform.ObjectModel" Version="$(TestSdkVersion)" /> -->
+        <!-- <PackageReference Include="xunit" Version="$(XunitVersion)" /> -->
+        <!-- <PackageReference Include="xunit.runner.visualstudio" Version="$(XunitVersion)" /> -->
     </ItemGroup>
 
     <ItemGroup>

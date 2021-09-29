@@ -1,16 +1,17 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
-using Akka.MultiNode.Shared;
-using Akka.MultiNode.Shared.Environment;
-using Akka.MultiNode.TestRunner.Shared;
+using System.Xml;
+using Akka.MultiNode.TestAdapter.Internal;
+using Akka.MultiNode.TestAdapter.Internal.Environment;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel.Adapter;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel.Logging;
-using Xunit.Sdk;
-using TestResultMessage = Microsoft.VisualStudio.TestPlatform.ObjectModel.TestResultMessage;
+using Microsoft.VisualStudio.TestPlatform.ObjectModel.Resources;
+using Microsoft.VisualStudio.TestPlatform.ObjectModel.Utilities;
 
 namespace Akka.MultiNode.TestAdapter
 {
@@ -73,12 +74,41 @@ namespace Akka.MultiNode.TestAdapter
         /// This would already have the information as to what ITestExecutor can run the test case via a URI property.
         /// The platform would then just call into that specific executor to run the test cases.
         /// </remarks>
-        /// <param name="tests">Tests to be run.</param>
+        /// <param name="rawTestCases">Tests to be run.</param>
         /// <param name="runContext">Context to use when executing the tests.</param>
         /// <param name="frameworkHandle">Handle to the framework to record results and to do framework operations.</param>
-        public void RunTests(IEnumerable<TestCase> tests, IRunContext runContext, IFrameworkHandle frameworkHandle)
+        public void RunTests(IEnumerable<TestCase> rawTestCases, IRunContext runContext, IFrameworkHandle frameworkHandle)
         {
-            RunTestsWithOptions(tests, frameworkHandle, MultiNodeTestRunnerOptions.Default);
+            var testCases = rawTestCases.ToList();
+            var testResults = new ConcurrentDictionary<string, TestResult>();
+            var options = BuildOptions(runContext, frameworkHandle);
+
+            foreach (var group in testCases.GroupBy(t => Path.GetFullPath(t.Source)))
+            {
+                var assemblyPath = group.Key;
+                var groupOptions = options;
+                if (options.OutputDirectory == null || options.DesignMode)
+                    groupOptions =
+                        options.WithOutputDirectory(
+                            Path.Combine(Path.GetDirectoryName(assemblyPath) ?? "", 
+                            "TestResults"));
+                
+                var tests = GetTests(assemblyPath, group.GetEnumerator());
+                using (var runner = CreateRunner(frameworkHandle, testResults, assemblyPath))
+                {
+                    foreach (var test in tests)
+                    {
+                        try
+                        {
+                            runner.ExecuteSpec(test, groupOptions);
+                        }
+                        catch (Exception ex)
+                        {
+                            frameworkHandle.SendMessage(TestMessageLevel.Error, $"Failed during test execution: {ex}");
+                        }
+                    }
+                }
+            }
         }
 
         /// <summary>
@@ -89,11 +119,7 @@ namespace Akka.MultiNode.TestAdapter
         /// <param param name="frameworkHandle">Handle to the framework to record results and to do framework operations.</param>
         public void RunTests(IEnumerable<string> sources, IRunContext runContext, IFrameworkHandle frameworkHandle)
         {
-            RunTestsWithOptions(sources, frameworkHandle, MultiNodeTestRunnerOptions.Default);
-        }
-
-        private void RunTestsWithOptions(IEnumerable<string> sources, IFrameworkHandle frameworkHandle, MultiNodeTestRunnerOptions options)
-        {
+            var options = BuildOptions(runContext, frameworkHandle);
             var testResults = new ConcurrentDictionary<string, TestResult>();
             
             var testAssemblyPaths = sources.ToList();
@@ -116,33 +142,26 @@ namespace Akka.MultiNode.TestAdapter
             }
         }
         
-        private void RunTestsWithOptions(IEnumerable<TestCase> rawTestCases, IFrameworkHandle frameworkHandle, MultiNodeTestRunnerOptions options)
+        private static MultiNodeTestRunnerOptions BuildOptions(IRunContext runContext, IFrameworkHandle frameworkHandle)
         {
-            var testCases = rawTestCases.ToList();
-            var testResults = new ConcurrentDictionary<string, TestResult>();
-
-            foreach (var group in testCases.GroupBy(t => Path.GetFullPath(t.Source)))
+            var runSettings = runContext.RunSettings;
+            if (runSettings == null)
             {
-                var assemblyPath = Path.GetFullPath(group.Key);
-                var tests = GetTests(assemblyPath, group.GetEnumerator());
-                foreach (var test in tests)
-                {
-                    using (var runner = CreateRunner(frameworkHandle, testResults, assemblyPath))
-                    {
-                        try
-                        {
-                            runner.ExecuteSpec(test, options);
-                        }
-                        catch (Exception ex)
-                        {
-                            frameworkHandle.SendMessage(TestMessageLevel.Error, $"Failed during test execution: {ex}");
-                        }
-                    }
-                }
+                return MultiNodeTestRunnerOptions.Default;
             }
+            
+            var runConfiguration = XmlRunSettingsUtilities.GetRunConfigurationNode(runSettings.SettingsXml);
+            var options = GetMultiNodeTestRunnerOptions(runSettings.SettingsXml);
+            
+            if (runConfiguration.DesignModeSet)
+                options = options.WithDesignMode(runConfiguration.DesignMode);
+            if (runConfiguration.ResultsDirectorySet)
+                options = options.WithOutputDirectory(runConfiguration.ResultsDirectory);
+            
+            return options;
         }
 
-        private MultiNodeTestRunner CreateRunner(
+        private static MultiNodeTestRunner CreateRunner(
             IFrameworkHandle frameworkHandle,
             ConcurrentDictionary<string, TestResult> testResults,
             string assemblyPath)
@@ -183,10 +202,14 @@ namespace Akka.MultiNode.TestAdapter
                 result.Outcome = TestOutcome.Passed;
                 result.EndTime = DateTimeOffset.Now;
                 result.Duration = result.EndTime - result.StartTime;
+                if(!string.IsNullOrWhiteSpace(testResult.ConsoleOutput))
+                    result.Messages.Add(new TestResultMessage(
+                        TestResultMessage.StandardOutCategory, testResult.ConsoleOutput));
+                
                 result.Messages.Add(new TestResultMessage(
                     TestResultMessage.StandardOutCategory, testResult.ToString()));
 
-                var attachments = new AttachmentSet(null, "Test logs");
+                var attachments = new AttachmentSet(new Uri(Path.GetDirectoryName(testResult.Test.AssemblyPath) ?? ""), "Test logs");
                 result.Attachments.Add(attachments);
                 foreach (var entry in testResult.Attachments)
                 {
@@ -201,9 +224,13 @@ namespace Akka.MultiNode.TestAdapter
                 result.Outcome = TestOutcome.Failed;
                 result.EndTime = DateTimeOffset.Now;
                 result.Duration = result.EndTime - result.StartTime;
+                if(!string.IsNullOrWhiteSpace(testResult.ConsoleOutput))
+                    result.Messages.Add(new TestResultMessage(
+                        TestResultMessage.StandardOutCategory, testResult.ConsoleOutput));
+                
                 result.ErrorMessage = testResult.ToString();
                 
-                var attachments = new AttachmentSet(null, "Test logs");
+                var attachments = new AttachmentSet(new Uri(Path.GetDirectoryName(testResult.Test.AssemblyPath) ?? ""), "Test logs");
                 result.Attachments.Add(attachments);
                 foreach (var entry in testResult.Attachments)
                 {
@@ -255,7 +282,7 @@ namespace Akka.MultiNode.TestAdapter
             return runner;
         }
         
-        private List<MultiNodeTest> GetTests(string assemblyPath, IEnumerator<TestCase> cases)
+        private static List<MultiNodeTest> GetTests(string assemblyPath, IEnumerator<TestCase> cases)
         {
             var tests = MultiNodeTestRunner.DiscoverSpecs(assemblyPath);
             var result = new List<MultiNodeTest>();
@@ -266,6 +293,116 @@ namespace Akka.MultiNode.TestAdapter
             }
 
             return result;
+        }
+        
+        private static MultiNodeTestRunnerOptions GetMultiNodeTestRunnerOptions(string settingsXml) => 
+            GetNodeValue(settingsXml, "MultiNodeTestRunnerOptions", FromXml) ?? MultiNodeTestRunnerOptions.Default;
+        
+        private static MultiNodeTestRunnerOptions FromXml(XmlReader reader)
+        {
+            if (reader == null)
+                throw new ArgumentNullException(nameof(reader));
+            
+            var options = MultiNodeTestRunnerOptions.Default;
+            ThrowOnHasAttributes(reader);
+            reader.Read();
+
+            if (!reader.IsEmptyElement)
+            { 
+                while (reader.NodeType == XmlNodeType.Element)
+                {
+                    var name = reader.Name;
+                    switch (name)
+                    {
+                        case "ListenAddress":
+                        {
+                            ThrowOnHasAttributes(reader);
+                            var xmlValue = reader.ReadElementContentAsString();
+                            options = options.WithListenAddress(xmlValue);
+                            continue;
+                        }
+
+                        case "ListenPort":
+                        {
+                            ThrowOnHasAttributes(reader);
+                            var xmlValue = reader.ReadElementContentAsString();
+                            options = options.WithListenPort(
+                                int.TryParse(xmlValue, out var port) && port >= 0
+                                    ? port
+                                    : throw new SettingsException(
+                                        $"Invalid XML settings for {nameof(MultiNodeTestRunnerOptions)} element {name}, value: {xmlValue}"));
+                            continue;
+                        }
+
+                        case "ClearOutputDirectory":
+                        {
+                            ThrowOnHasAttributes(reader);
+                            var xmlValue = reader.ReadElementContentAsString();
+                            if (!bool.TryParse(xmlValue, out var value)) 
+                                throw new SettingsException($"Invalid XML settings for {nameof(MultiNodeTestRunnerOptions)} element {name}, value: {xmlValue}");
+                            options = options.WithClearOutputDirectory(value);
+                            continue;
+                        }
+
+                        case "UseTeamCityFormatting":
+                        {
+                            ThrowOnHasAttributes(reader);
+                            var xmlValue = reader.ReadElementContentAsString();
+                            if (!bool.TryParse(xmlValue, out var value)) 
+                                throw new SettingsException($"Invalid XML settings for {nameof(MultiNodeTestRunnerOptions)} element {name}, value: {xmlValue}");
+                            options = options.WithTeamCityFormatting(value);
+                            continue;
+                        } 
+
+                        default:
+                            //if (EqtTrace.IsErrorEnabled)
+                              //EqtTrace.Warning($"Invalid XML Element for {nameof(MultiNodeTestRunnerOptions)}, unknown element: {name}");
+                            reader.Skip(); 
+                            continue; 
+                    } 
+                }
+                reader.ReadEndElement();
+            }
+
+            return options;
+        }
+        
+        private static void ThrowOnHasAttributes(XmlReader reader)
+        {
+            if (reader.HasAttributes)
+            {
+                var name = reader.Name;
+                reader.MoveToNextAttribute();
+                throw new SettingsException($"Invalid XML attribute for XML element {name}, attribute: {reader.Name}");
+            }
+        }
+        
+        private static T GetNodeValue<T>(
+            string settingsXml,
+            string nodeName,
+            Func<XmlReader, T> nodeParser)
+        {
+            if (!string.IsNullOrWhiteSpace(settingsXml))
+            {
+                try
+                {
+                    using (var stringReader = new StringReader(settingsXml))
+                    {
+                        var reader = XmlReader.Create(stringReader, XmlRunSettingsUtilities.ReaderSettings);
+                        XmlReaderUtilities.ReadToRootNode(reader);
+                        reader.ReadToNextElement();
+                        while (!string.Equals(reader.Name, nodeName, StringComparison.OrdinalIgnoreCase) && !reader.EOF)
+                            reader.SkipToNextElement();
+                        if (!reader.EOF)
+                            return nodeParser(reader);
+                    }
+                }
+                catch (XmlException ex)
+                {
+                    throw new SettingsException(string.Format(CultureInfo.CurrentCulture, "{0} {1}", CommonResources.MalformedRunSettingsFile, ex.Message), ex);
+                }
+            }
+            return default;
         }
     }
 }

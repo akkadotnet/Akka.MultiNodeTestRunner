@@ -2,7 +2,7 @@
   <PropertyGroup>
     <Copyright>Copyright © 2013-2019 Akka.NET Team</Copyright>
     <Authors>Akka.NET Team</Authors>
-    <VersionPrefix>0.1.0</VersionPrefix>
+    <VersionPrefix>0.1.14</VersionPrefix>
     <PackageIconUrl>http://getakka.net/images/akkalogo.png</PackageIconUrl>
     <PackageProjectUrl>https://github.com/akkadotnet/akka.net</PackageProjectUrl>
     <PackageLicenseUrl>https://github.com/akkadotnet/akka.net/blob/master/LICENSE</PackageLicenseUrl>
@@ -12,26 +12,26 @@
     <XunitVersion>2.4.1</XunitVersion>
     <TestSdkVersion>16.11.0</TestSdkVersion>
     <HyperionVersion>0.9.12</HyperionVersion>
-    <CodeDomVersion>4.7.0</CodeDomVersion>
+    <CodeDomVersion>5.0.0</CodeDomVersion>
     <TeamCityVersion>3.0.13</TeamCityVersion>
     <SystemRuntimeLoaderVersion>4.3.0</SystemRuntimeLoaderVersion>
-    <DependencyModelVersion>3.1.1</DependencyModelVersion>
+    <DependencyModelVersion>5.0.0</DependencyModelVersion>
     <NewtonsoftJsonVersion>12.0.3</NewtonsoftJsonVersion>
     <NBenchVersion>1.2.2</NBenchVersion>
     <ProtobufVersion>3.11.2</ProtobufVersion>
     <NetCoreTestVersion>netcoreapp3.1</NetCoreTestVersion>
-    <NetFrameworkTestVersion>net472</NetFrameworkTestVersion>
+    <NetTestVersion>net5.0</NetTestVersion>
     <NetStandardLibVersion>netstandard2.0</NetStandardLibVersion>
     <FluentAssertionsVersion>6.1.0</FluentAssertionsVersion>
     <FsCheckVersion>2.9.0</FsCheckVersion>
-    <AkkaVersion>1.4.13</AkkaVersion>
+    <AkkaVersion>1.4.26</AkkaVersion>
     <AkkaPackageTags>akka;actors;actor model;Akka;concurrency</AkkaPackageTags>
   </PropertyGroup>
   <PropertyGroup>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
   </PropertyGroup>
   <PropertyGroup>
-    <PackageReleaseNotes>First release</PackageReleaseNotes>
+    <PackageReleaseNotes>Temp local nuget</PackageReleaseNotes>
   </PropertyGroup>
   <!-- SourceLink support for all Akka.NET projects -->
   <ItemGroup>

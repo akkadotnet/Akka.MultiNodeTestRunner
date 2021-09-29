@@ -2,8 +2,7 @@
     <Import Project="..\common.props" />
 
     <PropertyGroup>
-        <TargetFrameworks>$(NetFrameworkTestVersion);$(NetCoreTestVersion)</TargetFrameworks>
-        <RootNamespace>Akka.MultiNode.TestAdapter.SampleTests</RootNamespace>
+        <TargetFrameworks>netcoreapp2.1;$(NetCoreTestVersion);$(NetTestVersion)</TargetFrameworks>
     </PropertyGroup>
 
     <ItemGroup>
@@ -11,10 +10,6 @@
         <PackageReference Include="Microsoft.NET.Test.Sdk" Version="$(TestSdkVersion)" />
         <PackageReference Include="FluentAssertions" Version="$(FluentAssertionsVersion)" />
         <PackageReference Include="Microsoft.TestPlatform.ObjectModel" Version="$(TestSdkVersion)" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <None Remove="TestResults\**" />
     </ItemGroup>
 
     <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
