@@ -224,13 +224,7 @@ let overrideVersionSuffix (project:string) =
     | _ -> versionSuffix // add additional matches to publish different versions for different projects in solution
 
 Target "CreateNuget" (fun _ ->    
-    let projects = !! "src/**/*.csproj" 
-                   -- "src/**/*Tests.csproj" // Don't publish unit tests
-                   -- "src/**/*Tests*.csproj"
-                   -- "src/**/*.MultiNode.TestAdapter.csproj"  // Do not publish MNTR nuget packages
-                   -- "src/**/*.MultiNode.NodeRunner.csproj"
-                   -- "src/**/*.MultiNode.Shared.csproj"
-                   -- "src/**/*.MultiNode.TestRunner.Shared.csproj"
+    let projects = !! "src/**/*.MultiNode.TestAdapter.csproj"
 
     let runSingleProject project =
         DotNetCli.Pack
@@ -238,66 +232,11 @@ Target "CreateNuget" (fun _ ->
                 { p with
                     Project = project
                     Configuration = configuration
-                    AdditionalArgs = ["--include-symbols --no-build"]
+                    AdditionalArgs = ["--include-symbols"]
                     VersionSuffix = overrideVersionSuffix project
                     OutputPath = outputNuGet })
 
     projects |> Seq.iter (runSingleProject)
-)
-
-Target "PublishMntr" (fun _ ->
-    let executableProjects = !! "./src/**/Akka.MultiNode.TestAdapter.csproj"
-    let additionalArgs = if versionSuffix.Length > 0 then [sprintf "/p:VersionSuffix=%s" versionSuffix] else []
-    
-    executableProjects |> Seq.iter (fun project ->
-        DotNetCli.Restore
-            (fun p -> 
-                { p with
-                    Project = project                  
-                    AdditionalArgs = additionalArgs })
-    )
-
-    executableProjects |> Seq.iter (fun project ->  
-        DotNetCli.Publish
-            (fun p ->
-                { p with
-                    Project = project
-                    Configuration = configuration
-                    Framework = "netstandard2.0"
-                    VersionSuffix = versionSuffix }))
-)
-
-Target "CreateMntrNuget" (fun _ -> 
-
-    let commonPropsVersionPrefix = XMLRead true "./src/common.props" "" "" "//Project/PropertyGroup/VersionPrefix" |> Seq.head
-    let versionReplacement = List.ofSeq [ "@version@", commonPropsVersionPrefix + (if (not (versionSuffix = "")) then ("-" + versionSuffix) else "") ]
-
-    // uses the template file to create a temporary .nuspec file with the correct version
-    let generateNuspec (nuspecTemplatePath : string) =
-        let nuspecPath = nuspecTemplatePath.Replace(".template", "")
-        CopyFile nuspecPath nuspecTemplatePath
-        TemplateHelper.processTemplates versionReplacement [ nuspecPath ]
-        nuspecPath
-        
-    let nuspecTemplates = [ 
-        "./src/Akka.MultiNode.TestAdapter/Akka.MultiNode.TestAdapter.nuspec.template"
-    ]
-    let nuspecFiles = List.map (generateNuspec) nuspecTemplates
-    
-    let executableProjects = !! "./src/**/Akka.MultiNode.TestAdapter.csproj"
-
-    executableProjects |> Seq.iter (fun project ->  
-        DotNetCli.Pack
-            (fun p -> 
-                { p with
-                    Project = project
-                    Configuration = configuration
-                    AdditionalArgs = ["--include-symbols"]
-                    VersionSuffix = versionSuffix
-                    OutputPath = "\"" + outputNuGet + "\"" } )
-    )
-
-    nuspecFiles |> Seq.iter (DeleteFile)
 )
 
 Target "PublishNuget" (fun _ ->
@@ -377,15 +316,14 @@ Target "All" DoNothing
 Target "Nuget" DoNothing
 
 // build dependencies
-"Clean" ==> "AssemblyInfo" ==> "Build"
-"Build" ==> "PublishMntr" ==> "BuildRelease"
+"Clean" ==> "AssemblyInfo" ==> "Build" ==> "BuildRelease"
 
 // tests dependencies
 "Build" ==> "RunTests"
 "Build" ==> "RunTestsNet"
 
 // nuget dependencies
-"BuildRelease" ==> "CreateMntrNuget" ==> "CreateNuget"
+"Clean" ==> "Build" ==> "CreateNuget"
 "CreateNuget" ==> "SignPackages" ==> "PublishNuget" ==> "Nuget"
 
 // docs
