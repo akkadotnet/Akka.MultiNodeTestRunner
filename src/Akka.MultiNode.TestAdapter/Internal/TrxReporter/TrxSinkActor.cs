@@ -163,7 +163,7 @@ namespace Akka.MultiNode.TestAdapter.Internal.TrxReporter
             DateTime beginTime,
             Dictionary<int, UnitTestResult> nodeResults)
         {
-            var skipReason = begin.Test.SkipReason;
+            var skipReason = begin.TestCase.SkipReason;
             foreach (var node in begin.Nodes)
             {
                 var result = specResult.AddChildResult(node.Role);

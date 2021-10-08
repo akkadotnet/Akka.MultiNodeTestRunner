@@ -153,8 +153,8 @@ namespace Akka.MultiNode.TestAdapter.Internal.Sinks
             });
             Receive<string>(PublishToChildren);
             Receive<NodeCompletedSpecWithSuccess>(PublishToChildren);
-            Receive<MultiNodeTest>(BeginSpec);
-            Receive<EndSpec>(spec => EndSpec(spec.Test, spec.Log));
+            Receive<MultiNodeTestCase>(BeginSpec);
+            Receive<EndSpec>(spec => EndSpec(spec.TestCase, spec.Log));
             Receive<RunnerMessage>(PublishToChildren);
         }
 
@@ -165,16 +165,16 @@ namespace Akka.MultiNode.TestAdapter.Internal.Sinks
         }
 
 
-        private void EndSpec(MultiNodeTest test, SpecLog specLog)
+        private void EndSpec(MultiNodeTestCase testCase, SpecLog specLog)
         {
             foreach (var sink in Sinks)
-                sink.EndTest(test, specLog);
+                sink.EndTest(testCase, specLog);
         }
 
-        private void BeginSpec(MultiNodeTest test)
+        private void BeginSpec(MultiNodeTestCase testCase)
         {
             foreach (var sink in Sinks)
-                sink.BeginTest(test);
+                sink.BeginTest(testCase);
         }
 
         private void PublishToChildren(RunnerMessage message)

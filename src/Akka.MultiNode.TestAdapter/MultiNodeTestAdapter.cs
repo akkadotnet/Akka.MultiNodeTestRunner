@@ -1,12 +1,14 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Reflection;
+using System.Threading;
 using System.Xml;
 using Akka.MultiNode.TestAdapter.Internal;
-using Akka.MultiNode.TestAdapter.Internal.Environment;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel.Adapter;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel.Logging;
@@ -15,6 +17,7 @@ using Microsoft.VisualStudio.TestPlatform.ObjectModel.Utilities;
 
 namespace Akka.MultiNode.TestAdapter
 {
+    /*
     /// <summary>
     /// TestDiscoverer
     /// </summary>
@@ -27,10 +30,7 @@ namespace Akka.MultiNode.TestAdapter
     [ExtensionUri(Constants.ExecutorUriString)]
     public class MultiNodeTestAdapter : ITestDiscoverer, ITestExecutor
     {
-        public MultiNodeTestAdapter()
-        {
-            MultiNodeEnvironment.Initialize();
-        }
+        private static int _printedHeader = 0;
         
         /// <summary>
         /// Discovers the tests available from the provided container.
@@ -41,8 +41,22 @@ namespace Akka.MultiNode.TestAdapter
         /// <param name="discoverySink">Used to send testcases and discovery related events back to Discoverer manager.</param>
         public void DiscoverTests(IEnumerable<string> sources, IDiscoveryContext discoveryContext, IMessageLogger logger, ITestCaseDiscoverySink discoverySink)
         {
+            if (sources == null)
+                throw new ArgumentNullException(nameof(sources));
+            if (logger == null)
+                throw new ArgumentNullException(nameof(logger));
+            if (discoverySink == null)
+                throw new ArgumentNullException(nameof(discoverySink));
+
+            var stopwatch = Stopwatch.StartNew();
+            var loggerHelper = new LoggerHelper(logger, stopwatch);
+            
+            PrintHeader(loggerHelper);
+            
             foreach (var assemblyPath in sources)
             {
+                var assemblyName = Path.GetFileNameWithoutExtension(assemblyPath);
+                loggerHelper.Log($"  Discovering {assemblyName}");
                 var (specs, errors) = MultiNodeTestRunner.DiscoverSpecs(assemblyPath);
 
                 foreach (var discoveryErrorMessage in errors.SelectMany(e => e.Messages))
@@ -52,11 +66,27 @@ namespace Akka.MultiNode.TestAdapter
 
                 foreach (var discoveredSpec in specs)
                 {
-                    discoverySink.SendTestCase(new TestCase(discoveredSpec.TestName, new Uri(Constants.ExecutorUriString), assemblyPath));
+                    var testCase = new TestCase(
+                        discoveredSpec.DisplayName, 
+                        new Uri(Constants.ExecutorUriString),
+                        assemblyPath);
+
+                    discoverySink.SendTestCase(testCase);
                 }
+                loggerHelper.Log($"  Discovered {assemblyName}");
             }
         }
         
+        static void PrintHeader(LoggerHelper loggerHelper)
+        {
+            if (Interlocked.Exchange(ref _printedHeader, 1) == 0)
+            {
+                var platform = System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription;
+                var versionAttribute = typeof(MultiNodeTestAdapter).GetTypeInfo().Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>();
+                loggerHelper.Log($"Akka MultiNode VSTest Adapter v{versionAttribute.InformationalVersion} ({IntPtr.Size * 8}-bit {platform})");
+            }
+        }
+
         /// <summary>
         /// Cancel the execution of the tests.
         /// </summary>
@@ -177,18 +207,18 @@ namespace Akka.MultiNode.TestAdapter
                 localFrameworkHandle.RecordResult(result);
             }
 
-            void TestStarted(MultiNodeTest test)
+            void TestStarted(MultiNodeTestCase test)
             {
-                var result = new TestResult(new TestCase(test.TestName, Constants.ExecutorUri, localAssemblyPath));
-                localTestResults[test.TestName] = result;
+                var result = new TestResult(new TestCase(test.DisplayName, Constants.ExecutorUri, localAssemblyPath));
+                localTestResults[test.DisplayName] = result;
                 
                 result.StartTime = DateTimeOffset.Now;
                 localFrameworkHandle.RecordStart(result.TestCase);
             }
 
-            void TestSkipped(MultiNodeTest test, string reason)
+            void TestSkipped(MultiNodeTestCase test, string reason)
             {
-                var result = localTestResults[test.TestName];
+                var result = localTestResults[test.DisplayName];
                 result.Outcome = TestOutcome.Skipped;
                 result.EndTime = DateTimeOffset.Now;
                 result.Messages.Add(new TestResultMessage(
@@ -198,7 +228,7 @@ namespace Akka.MultiNode.TestAdapter
 
             void TestPassed(MultiNodeTestResult testResult)
             {
-                var result = localTestResults[testResult.Test.TestName];
+                var result = localTestResults[testResult.TestCase.DisplayName];
                 result.Outcome = TestOutcome.Passed;
                 result.EndTime = DateTimeOffset.Now;
                 result.Duration = result.EndTime - result.StartTime;
@@ -209,7 +239,7 @@ namespace Akka.MultiNode.TestAdapter
                 result.Messages.Add(new TestResultMessage(
                     TestResultMessage.StandardOutCategory, testResult.ToString()));
 
-                var attachments = new AttachmentSet(new Uri(Path.GetDirectoryName(testResult.Test.AssemblyPath) ?? ""), "Test logs");
+                var attachments = new AttachmentSet(new Uri(Path.GetDirectoryName(testResult.TestCase.AssemblyPath) ?? ""), "Test logs");
                 result.Attachments.Add(attachments);
                 foreach (var entry in testResult.Attachments)
                 {
@@ -220,7 +250,7 @@ namespace Akka.MultiNode.TestAdapter
 
             void TestFailed(MultiNodeTestResult testResult)
             {
-                var result = localTestResults[testResult.Test.TestName];
+                var result = localTestResults[testResult.TestCase.DisplayName];
                 result.Outcome = TestOutcome.Failed;
                 result.EndTime = DateTimeOffset.Now;
                 result.Duration = result.EndTime - result.StartTime;
@@ -230,7 +260,7 @@ namespace Akka.MultiNode.TestAdapter
                 
                 result.ErrorMessage = testResult.ToString();
                 
-                var attachments = new AttachmentSet(new Uri(Path.GetDirectoryName(testResult.Test.AssemblyPath) ?? ""), "Test logs");
+                var attachments = new AttachmentSet(new Uri(Path.GetDirectoryName(testResult.TestCase.AssemblyPath) ?? ""), "Test logs");
                 result.Attachments.Add(attachments);
                 foreach (var entry in testResult.Attachments)
                 {
@@ -239,9 +269,9 @@ namespace Akka.MultiNode.TestAdapter
                 RecordEnd(result);
             }
 
-            void Exception(MultiNodeTest test, Exception exception)
+            void Exception(MultiNodeTestCase test, Exception exception)
             {
-                var result = localTestResults[test.TestName];
+                var result = localTestResults[test.DisplayName];
 
                 switch (exception)
                 {
@@ -282,14 +312,14 @@ namespace Akka.MultiNode.TestAdapter
             return runner;
         }
         
-        private static List<MultiNodeTest> GetTests(string assemblyPath, IEnumerator<TestCase> cases)
+        private static List<MultiNodeTestCase> GetTests(string assemblyPath, IEnumerator<TestCase> cases)
         {
             var tests = MultiNodeTestRunner.DiscoverSpecs(assemblyPath);
-            var result = new List<MultiNodeTest>();
+            var result = new List<MultiNodeTestCase>();
             while (cases.MoveNext())
             {
                 var c = cases.Current;
-                result.Add(tests.Tests.First(t => t.TestName.Equals(c.FullyQualifiedName))); 
+                result.Add(tests.Tests.First(t => t.DisplayName.Equals(c.FullyQualifiedName))); 
             }
 
             return result;
@@ -405,4 +435,5 @@ namespace Akka.MultiNode.TestAdapter
             return default;
         }
     }
+    */
 }

@@ -55,13 +55,13 @@ namespace Akka.MultiNode.TestAdapter.Internal.Sinks
         /// <summary>
         /// Report that the test runner is moving onto the next test in the testsuite.
         /// </summary>
-        /// <param name="test"></param>
-        void BeginTest(MultiNodeTest test);
+        /// <param name="testCase"></param>
+        void BeginTest(MultiNodeTestCase testCase);
 
         /// <summary>
         /// Report that the test runner is terminating the current test in the suite.
         /// </summary>
-        void EndTest(MultiNodeTest test, SpecLog specLog);
+        void EndTest(MultiNodeTestCase testCase, SpecLog specLog);
 
         /// <summary>
         /// Report that an individual node has passed its test.

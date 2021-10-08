@@ -215,16 +215,16 @@ namespace Akka.MultiNode.TestAdapter.Internal.Sinks
 
         #region Message Handling
 
-        public void BeginTest(MultiNodeTest test)
+        public void BeginTest(MultiNodeTestCase testCase)
         {
             //begin the next spec
-            MessageSinkActorRef.Tell(new BeginNewSpec(test));
+            MessageSinkActorRef.Tell(new BeginNewSpec(testCase));
         }
 
-        public void EndTest(MultiNodeTest test, SpecLog log)
+        public void EndTest(MultiNodeTestCase testCase, SpecLog log)
         {
             //end the current spec
-            MessageSinkActorRef.Tell(new EndSpec(test, log));
+            MessageSinkActorRef.Tell(new EndSpec(testCase, log));
         }
         
         public void Success(int nodeIndex, string nodeRole, string message)

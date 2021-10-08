@@ -13,12 +13,12 @@ namespace Akka.MultiNode.TestAdapter
         /// <summary>
         /// MultiNodeTestResult
         /// </summary>
-        public MultiNodeTestResult(MultiNodeTest test)
+        public MultiNodeTestResult(MultiNodeTestCase testCase)
         {
-            Test = test;
-            if (string.IsNullOrWhiteSpace(Test.SkipReason))
+            TestCase = testCase;
+            if (string.IsNullOrWhiteSpace(TestCase.SkipReason))
             {
-                NodeResults = Test.Nodes.Select(n => new NodeResult
+                NodeResults = TestCase.Nodes.Select(n => new NodeResult
                 {
                     Index = n.Node,
                     Role = n.Role
@@ -33,14 +33,14 @@ namespace Akka.MultiNode.TestAdapter
         /// <summary>
         /// Test name
         /// </summary>
-        public MultiNodeTest Test { get; }
+        public MultiNodeTestCase TestCase { get; }
         /// <summary>
         /// Test result
         /// </summary>
         public TestStatus Status {
             get
             {
-                if (!string.IsNullOrWhiteSpace(Test.SkipReason))
+                if (!string.IsNullOrWhiteSpace(TestCase.SkipReason))
                     return TestStatus.Skipped;
                 return NodeResults.Any(result => result.Result == TestStatus.Failed) ? TestStatus.Failed : TestStatus.Passed;
             } 
@@ -57,9 +57,9 @@ namespace Akka.MultiNode.TestAdapter
         /// <inheritdoc />
         public override string ToString()
         {
-            var sb = new StringBuilder($"Test {Test.TestName}: {Status}");
-            if (Test.SkipReason != null)
-                sb.Append(" Skipped: ").Append(Test.SkipReason);
+            var sb = new StringBuilder($"Test {TestCase.DisplayName}: {Status}");
+            if (TestCase.SkipReason != null)
+                sb.Append(" Skipped: ").Append(TestCase.SkipReason);
             foreach (var node in NodeResults)
             {
                 sb.Append($"\n\tNode {node.Index} [{node.Role}]: {node.Result}");

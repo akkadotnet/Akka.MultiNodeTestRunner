@@ -11,13 +11,13 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "build", "build", "{79D71264
 		build.sh = build.sh
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Akka.MultiNode.TestAdapter", "src\Akka.MultiNode.TestAdapter\Akka.MultiNode.TestAdapter.csproj", "{F3037C62-E780-4619-89B3-BA21C7168DFA}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Akka.MultiNode.TestAdapter", "src\Akka.MultiNode.TestAdapter\Akka.MultiNode.TestAdapter.csproj", "{F3037C62-E780-4619-89B3-BA21C7168DFA}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Akka.MultiNode.SampleMultiNodeTests", "src\Akka.MultiNode.SampleMultiNodeTests\Akka.MultiNode.SampleMultiNodeTests.csproj", "{89D2C131-718F-4C93-9343-72E5BE6F7317}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Akka.MultiNode.SampleMultiNodeTests", "src\Akka.MultiNode.SampleMultiNodeTests\Akka.MultiNode.SampleMultiNodeTests.csproj", "{89D2C131-718F-4C93-9343-72E5BE6F7317}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Akka.MultiNode.TestAdapter.Tests", "src\Akka.MultiNode.TestAdapter.Tests\Akka.MultiNode.TestAdapter.Tests.csproj", "{A66D60EE-714F-4297-A9BD-222CFD868C28}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Akka.MultiNode.TestAdapter.Tests", "src\Akka.MultiNode.TestAdapter.Tests\Akka.MultiNode.TestAdapter.Tests.csproj", "{A66D60EE-714F-4297-A9BD-222CFD868C28}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Akka.MultiNode.RemoteHost", "src\Akka.MultiNode.RemoteHost\Akka.MultiNode.RemoteHost.csproj", "{D59D10BA-E776-4AC6-B8F0-BAB40544439C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Akka.MultiNode.RemoteHost", "src\Akka.MultiNode.RemoteHost\Akka.MultiNode.RemoteHost.csproj", "{D59D10BA-E776-4AC6-B8F0-BAB40544439C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

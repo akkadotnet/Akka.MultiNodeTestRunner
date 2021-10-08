@@ -21,7 +21,6 @@ using Akka.Actor;
 using Akka.IO;
 using Akka.MultiNode.TestAdapter.Helpers;
 using Akka.MultiNode.TestAdapter.Internal;
-using Akka.MultiNode.TestAdapter.Internal.Environment;
 using Akka.MultiNode.TestAdapter.Internal.Persistence;
 using Akka.MultiNode.TestAdapter.Internal.Sinks;
 using Akka.MultiNode.TestAdapter.Internal.TrxReporter;
@@ -46,11 +45,11 @@ namespace Akka.MultiNode.TestAdapter
         protected ActorSystem TestRunSystem;
         protected IActorRef SinkCoordinator;
 
-        public event Action<MultiNodeTest> TestStarted;
+        public event Action<MultiNodeTestCase> TestStarted;
         public event Action<MultiNodeTestResult> TestPassed;
         public event Action<MultiNodeTestResult> TestFailed;
-        public event Action<MultiNodeTest, string> TestSkipped;
-        public event Action<MultiNodeTest, Exception> Exception;
+        public event Action<MultiNodeTestCase, string> TestSkipped;
+        public event Action<MultiNodeTestCase, Exception> Exception;
 
         private void Initialize(string assemblyPath, MultiNodeTestRunnerOptions options)
         {
@@ -98,40 +97,37 @@ namespace Akka.MultiNode.TestAdapter
             TestRunSystem.Tcp().Tell(new Tcp.Bind(_tcpLogger, listenEndpoint), sender: _tcpLogger);
 
             EnableAllSinks(assemblyPath, options);
-
-            // Set MNTR environment for correct tests discovery
-            MultiNodeEnvironment.Initialize();
         }
         
-        public MultiNodeTestResult ExecuteSpec(MultiNodeTest test, MultiNodeTestRunnerOptions options)
+        public MultiNodeTestResult ExecuteSpec(MultiNodeTestCase testCase, MultiNodeTestRunnerOptions options)
         {
-            Initialize(test.AssemblyPath, options);
+            Initialize(testCase.AssemblyPath, options);
             
             // If port was set random, request the actual port from TcpLoggingServer
             var listenPort = options.ListenPort > 0 
                 ? options.ListenPort 
                 : _tcpLogger.Ask<int>(TcpLoggingServer.GetBoundPort.Instance).Result;
 
-            TestStarted?.Invoke(test);
+            TestStarted?.Invoke(testCase);
             try
             {
                 if (options.SpecNames != null &&
-                    options.SpecNames.All(name => test.TestName.IndexOf(name, StringComparison.InvariantCultureIgnoreCase) < 0))
+                    options.SpecNames.All(name => testCase.DisplayName.IndexOf(name, StringComparison.InvariantCultureIgnoreCase) < 0))
                 {
-                    test.SkipReason = "Excluded by filtering";
+                    testCase.SkipReason = "Excluded by filtering";
                 }
                 
-                if (!string.IsNullOrEmpty(test.SkipReason))
+                if (!string.IsNullOrEmpty(testCase.SkipReason))
                 {
-                    PublishRunnerMessage($"Skipping [{test.MethodName}]. Reason: [{test.SkipReason}]");
-                    TestSkipped?.Invoke(test, test.SkipReason);
+                    PublishRunnerMessage($"Skipping [{testCase.MethodName}]. Reason: [{testCase.SkipReason}]");
+                    TestSkipped?.Invoke(testCase, testCase.SkipReason);
                     return null;
                 }
                 
                 // touch test.Nodes to load details
-                var nodes = test.Nodes;
+                var nodes = testCase.Nodes;
 
-                var result = RunSpec(options, test, listenPort);
+                var result = RunSpec(options, testCase, listenPort);
                 if(result.Status == MultiNodeTestResult.TestStatus.Failed)
                     TestFailed?.Invoke(result);
                 else
@@ -140,7 +136,7 @@ namespace Akka.MultiNode.TestAdapter
             }
             catch (Exception e)
             {
-                Exception?.Invoke(test, e);
+                Exception?.Invoke(testCase, e);
                 PublishRunnerMessage(e.Message);
                 return null;
             }
@@ -171,17 +167,15 @@ namespace Akka.MultiNode.TestAdapter
         /// <summary>
         /// Discovers all tests in given assembly
         /// </summary>
-        public static (List<MultiNodeTest> Tests, List<ErrorMessage> Errors) DiscoverSpecs(string assemblyPath)
+        public static (List<MultiNodeTestCase> Tests, List<ErrorMessage> Errors) DiscoverSpecs(string assemblyPath)
         {
-            MultiNodeEnvironment.Initialize();
-
             using (var controller = new XunitFrontController(AppDomainSupport.IfAvailable, assemblyPath))
             {
                 using (var discovery = new Discovery(assemblyPath))
                 {
                     controller.Find(false, discovery, TestFrameworkOptions.ForDiscovery());
                     discovery.Finished.WaitOne();
-                    return (discovery.MultiNodeTests, discovery.Errors);
+                    return (discovery.TestCases, discovery.Errors);
                 }
             }
         }
@@ -208,7 +202,7 @@ namespace Akka.MultiNode.TestAdapter
                 try
                 {
                     if (options.SpecNames != null &&
-                        options.SpecNames.All(name => test.TestName.IndexOf(name, StringComparison.InvariantCultureIgnoreCase) < 0))
+                        options.SpecNames.All(name => test.DisplayName.IndexOf(name, StringComparison.InvariantCultureIgnoreCase) < 0))
                     {
                         test.SkipReason = "Excluded by filtering";
                     }
@@ -243,34 +237,34 @@ namespace Akka.MultiNode.TestAdapter
             return testResults;
         }
 
-        private MultiNodeTestResult RunSpec(MultiNodeTestRunnerOptions options, MultiNodeTest test, int listenPort)
+        private MultiNodeTestResult RunSpec(MultiNodeTestRunnerOptions options, MultiNodeTestCase testCase, int listenPort)
         {
-            PublishRunnerMessage($"Starting test {test.MethodName}");
-            StartNewSpec(test);
+            PublishRunnerMessage($"Starting test {testCase.MethodName}");
+            StartNewSpec(testCase);
 
             var timelineCollector = TestRunSystem.ActorOf(Props.Create(() => new TimelineLogCollectorActor()));
             //TODO: might need to do some validation here to avoid the 260 character max path error on Windows
-            var folder = Directory.CreateDirectory(Path.Combine(options.OutputDirectory, test.TestName));
+            var folder = Directory.CreateDirectory(Path.Combine(options.OutputDirectory, testCase.DisplayName));
             var testOutputDir = folder.FullName;
 
-            var testResult = new MultiNodeTestResult(test);
+            var testResult = new MultiNodeTestResult(testCase);
             
             var nodeProcesses = new List<(NodeTest, Process)>();
-            foreach (var nodeTest in test.Nodes)
+            foreach (var nodeTest in testCase.Nodes)
             {
                 //Loop through each test, work out number of nodes to run on and kick off process
                 var args = new []
                     {
-                        $@"-Dmultinode.test-class=""{nodeTest.Test.TypeName}""",
-                        $@"-Dmultinode.test-method=""{nodeTest.Test.MethodName}""",
-                        $@"-Dmultinode.max-nodes={test.Nodes.Count}",
+                        $@"-Dmultinode.test-class=""{nodeTest.TestCase.TypeName}""",
+                        $@"-Dmultinode.test-method=""{nodeTest.TestCase.MethodName}""",
+                        $@"-Dmultinode.max-nodes={testCase.Nodes.Count}",
                         $@"-Dmultinode.server-host=""{"localhost"}""",
                         $@"-Dmultinode.host=""{"localhost"}""",
                         $@"-Dmultinode.index={nodeTest.Node - 1}",
                         $@"-Dmultinode.role=""{nodeTest.Role}""",
                         $@"-Dmultinode.listen-address={options.ListenAddress}",
                         $@"-Dmultinode.listen-port={listenPort}",
-                        $@"-Dmultinode.test-assembly=""{test.AssemblyPath}"""
+                        $@"-Dmultinode.test-assembly=""{testCase.AssemblyPath}"""
                     };
 
                 // Configure process for node
@@ -290,7 +284,7 @@ namespace Akka.MultiNode.TestAdapter
             // Save timelined logs to file system
             DumpAggregatedSpecLogs(testResult, options, testOutputDir, timelineCollector);
             
-            FinishSpec(test, timelineCollector);
+            FinishSpec(testCase, timelineCollector);
             
             return testResult;
         }
@@ -319,7 +313,7 @@ namespace Akka.MultiNode.TestAdapter
 
             if (result.Status == MultiNodeTestResult.TestStatus.Failed)
             {
-                var failedSpecPath = Path.GetFullPath(Path.Combine(options.OutputDirectory, options.FailedSpecsDirectory, $"{result.Test.TestName}.txt"));
+                var failedSpecPath = Path.GetFullPath(Path.Combine(options.OutputDirectory, options.FailedSpecsDirectory, $"{result.TestCase.DisplayName}.txt"));
                 var dumpFailureArtifactTask = timelineCollector.Ask<Done>(new TimelineLogCollectorActor.DumpToFile(failedSpecPath));
                 dumpTasks.Add(dumpFailureArtifactTask);
                 result.Attachments.Add(new MultiNodeTestResult.Attachment{Title = "Fail log", Path = failedSpecPath});
@@ -366,7 +360,7 @@ namespace Akka.MultiNode.TestAdapter
             var nodeIndex = nodeTest.Node;
             var nodeRole = nodeTest.Role;
             var logFilePath = Path.GetFullPath(Path.Combine(specFolder.FullName, $"node{nodeIndex}__{nodeRole}__{_platformName}.txt"));
-            var nodeInfo = new TimelineLogCollectorActor.NodeInfo(nodeIndex, nodeRole, _platformName, nodeTest.Test.TestName);
+            var nodeInfo = new TimelineLogCollectorActor.NodeInfo(nodeIndex, nodeRole, _platformName, nodeTest.TestCase.DisplayName);
             var fileActor = TestRunSystem.ActorOf(Props.Create(() => new FileSystemAppenderActor(logFilePath)));
             result.Attachments.Add(new MultiNodeTestResult.Attachment{Title = $"Node {nodeIndex} [{nodeRole}]", Path = logFilePath});
 
@@ -377,7 +371,7 @@ namespace Akka.MultiNode.TestAdapter
                 {
                     if (p.ExitCode == 0)
                     {
-                        ReportSpecPassFromExitCode(nodeIndex, nodeRole, closureTest.Test.TestName);
+                        ReportSpecPassFromExitCode(nodeIndex, nodeRole, closureTest.TestCase.DisplayName);
                     }
                 };
                 opt.OutputDataReceived = (sender, eventArgs) =>
@@ -511,9 +505,9 @@ namespace Akka.MultiNode.TestAdapter
             SinkCoordinator?.Tell(new SinkCoordinator.CloseAllSinks());
         }
 
-        private void StartNewSpec(MultiNodeTest test)
+        private void StartNewSpec(MultiNodeTestCase testCase)
         {
-            SinkCoordinator.Tell(test);
+            SinkCoordinator.Tell(testCase);
         }
 
         private void ReportSpecPassFromExitCode(int nodeIndex, string nodeRole, string testName)
@@ -521,10 +515,10 @@ namespace Akka.MultiNode.TestAdapter
             SinkCoordinator.Tell(new NodeCompletedSpecWithSuccess(nodeIndex, nodeRole, testName + " passed."));
         }
 
-        private void FinishSpec(MultiNodeTest test, IActorRef timelineCollector)
+        private void FinishSpec(MultiNodeTestCase testCase, IActorRef timelineCollector)
         {
             var log = timelineCollector.Ask<SpecLog>(new TimelineLogCollectorActor.GetSpecLog(), TimeSpan.FromMinutes(1)).Result;
-            SinkCoordinator.Tell(new EndSpec(test, log));
+            SinkCoordinator.Tell(new EndSpec(testCase, log));
         }
 
         private void PublishRunnerMessage(string message)

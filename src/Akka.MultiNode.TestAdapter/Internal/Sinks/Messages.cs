@@ -18,18 +18,18 @@ namespace Akka.MultiNode.TestAdapter.Internal.Sinks
     /// </summary>
     public class BeginNewSpec
     {
-        public BeginNewSpec(MultiNodeTest test)
+        public BeginNewSpec(MultiNodeTestCase testCase)
         {
-            Test = test;
+            TestCase = testCase;
         }
         
-        public MultiNodeTest Test { get; }
+        public MultiNodeTestCase TestCase { get; }
 
-        public string ClassName => Test.TypeName;
+        public string ClassName => TestCase.TypeName;
 
-        public string MethodName => Test.MethodName;
+        public string MethodName => TestCase.MethodName;
 
-        public IList<NodeTest> Nodes => Test.Nodes;
+        public IList<NodeTest> Nodes => TestCase.Nodes;
     }
 
     /// <summary>
@@ -40,16 +40,16 @@ namespace Akka.MultiNode.TestAdapter.Internal.Sinks
         public EndSpec()
         { }
 
-        public EndSpec(MultiNodeTest test, SpecLog log)
+        public EndSpec(MultiNodeTestCase testCase, SpecLog log)
         {
-            Test = test;
+            TestCase = testCase;
             Log = log;
         }
         
-        public MultiNodeTest Test { get; }
+        public MultiNodeTestCase TestCase { get; }
 
-        public string ClassName => Test?.TypeName;
-        public string MethodName => Test?.MethodName;
+        public string ClassName => TestCase?.TypeName;
+        public string MethodName => TestCase?.MethodName;
         public SpecLog Log { get; }
     }
 

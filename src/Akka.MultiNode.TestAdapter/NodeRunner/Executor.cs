@@ -14,7 +14,6 @@ using System.Runtime.Loader;
 using System.Threading;
 using Akka.Actor;
 using Akka.IO;
-using Akka.MultiNode.TestAdapter.Internal.Environment;
 using Akka.MultiNode.TestAdapter.Internal.Sinks;
 using Akka.Remote.TestKit;
 using Xunit;
@@ -53,8 +52,6 @@ namespace Akka.MultiNode.TestAdapter.NodeRunner
                     var tcpClient = logger = system.ActorOf<RunnerTcpClient>();
                     system.Tcp().Tell(new Tcp.Connect(listenEndpoint), tcpClient);
 
-                    MultiNodeEnvironment.Initialize();
-                    
                     // In NetCore, if the assembly file hasn't been touched, 
                     // XunitFrontController would fail loading external assemblies and its dependencies.
                     
@@ -101,6 +98,7 @@ namespace Akka.MultiNode.TestAdapter.NodeRunner
                          */
                         var assemblyName = Path.GetFileName(assemblyFileName);
                         Console.WriteLine("Running specs for {0} [{1}] ", assemblyName, assemblyFileName);
+                        
                         using (var discovery = new Discovery(assemblyName))
                         {
                             using (var sink = new ExecutorSink(nodeIndex, nodeRole, tcpClient))

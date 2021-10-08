@@ -11,9 +11,9 @@ namespace Akka.MultiNode.TestAdapter.Internal
     {
         public int Node { get; set; }
         public string Role { get; set; }
-        public MultiNodeTest Test { get; set; }
+        public MultiNodeTestCase TestCase { get; set; }
 
-        public string Name => $"{Test.TestName}_node{Node}[{Role}]";
+        public string Name => $"{TestCase.DisplayName}_node{Node}[{Role}]";
     }
 }
 
