@@ -42,7 +42,12 @@ namespace Akka.MultiNode.TestAdapter
             {
                 if (!string.IsNullOrWhiteSpace(Test.SkipReason))
                     return TestStatus.Skipped;
-                return NodeResults.Any(result => result.Result == TestStatus.Failed) ? TestStatus.Failed : TestStatus.Passed;
+                
+                if(NodeResults.Any(result => result.Result == TestStatus.Failed))
+                    return TestStatus.Failed;
+                if (NodeResults.Any(result => result.Result == TestStatus.Skipped))
+                    return TestStatus.Skipped;
+                return TestStatus.Passed;
             } 
         }
         /// <summary>
@@ -57,7 +62,7 @@ namespace Akka.MultiNode.TestAdapter
         /// <inheritdoc />
         public override string ToString()
         {
-            var sb = new StringBuilder($"Test {Test.TestName}: {Status}");
+            var sb = new StringBuilder($"Test {Test.MethodName}: {Status}");
             if (Test.SkipReason != null)
                 sb.Append(" Skipped: ").Append(Test.SkipReason);
             foreach (var node in NodeResults)
