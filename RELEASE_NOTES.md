@@ -1,3 +1,6 @@
+#### 1.0.0-beta2 October 05 2019 ####
+- Fix, [node runner should ignore runs not started by MNTR](https://github.com/akkadotnet/Akka.MultiNodeTestRunner/pull/93) 
+
 #### 1.0.0-beta1 October 05 2019 ####
 First beta release
 
