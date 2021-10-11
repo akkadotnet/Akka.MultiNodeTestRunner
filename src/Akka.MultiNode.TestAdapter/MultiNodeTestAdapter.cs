@@ -6,7 +6,6 @@ using System.IO;
 using System.Linq;
 using System.Xml;
 using Akka.MultiNode.TestAdapter.Internal;
-using Akka.MultiNode.TestAdapter.Internal.Environment;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel.Adapter;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel.Logging;
@@ -27,11 +26,6 @@ namespace Akka.MultiNode.TestAdapter
     [ExtensionUri(Constants.ExecutorUriString)]
     public class MultiNodeTestAdapter : ITestDiscoverer, ITestExecutor
     {
-        public MultiNodeTestAdapter()
-        {
-            MultiNodeEnvironment.Initialize();
-        }
-        
         /// <summary>
         /// Discovers the tests available from the provided container.
         /// </summary>
