@@ -81,10 +81,6 @@ namespace Akka.MultiNode.TestAdapter
             Console.WriteLine($"Platform name: {_platformName}");
             
             _currentAssembly = fileName;
-            // Perform output cleanup before anything is logged
-            if (options.ClearOutputDirectory && Directory.Exists(options.OutputDirectory))
-                Directory.Delete(options.OutputDirectory, true);
-
             TestRunSystem = ActorSystem.Create("TestRunnerLogging");
 
             var suiteName = Path.GetFileNameWithoutExtension(Path.GetFullPath(assemblyPath));
