@@ -76,6 +76,9 @@ namespace Akka.MultiNode.TestAdapter
             var testCases = rawTestCases.ToList();
             var testResults = new ConcurrentDictionary<string, TestResult>();
             var options = BuildOptions(runContext, frameworkHandle);
+            // Perform output cleanup before anything is logged
+            if (options.ClearOutputDirectory && Directory.Exists(options.OutputDirectory))
+                Directory.Delete(options.OutputDirectory, true);
 
             foreach (var group in testCases.GroupBy(t => Path.GetFullPath(t.Source)))
             {
@@ -114,6 +117,9 @@ namespace Akka.MultiNode.TestAdapter
         public void RunTests(IEnumerable<string> sources, IRunContext runContext, IFrameworkHandle frameworkHandle)
         {
             var options = BuildOptions(runContext, frameworkHandle);
+            // Perform output cleanup before anything is logged
+            if (options.ClearOutputDirectory && Directory.Exists(options.OutputDirectory))
+                Directory.Delete(options.OutputDirectory, true);
             var testResults = new ConcurrentDictionary<string, TestResult>();
             
             var testAssemblyPaths = sources.ToList();
