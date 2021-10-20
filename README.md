@@ -1,6 +1,38 @@
-# Akka.MultiNodeTestRunner
+# Akka.MultiNode.TestAdapter
 
-Update this readme file with your details.
+Visual Studio 2019 Test Explorer and .NET CLI Test runner for the Akka.NET MultiNode tests
+
+## Documentation
+`Akka.MultiNode.TestAdapter` is a standalone .NET CLI and VSTest adapter for Akka.NET multi node testkit;
+It allows you to run multinode tests directly inside Visual Studio Text Explorer window and run them
+using the `dotnet test` .NET CLI command.
+
+To use the VSTest test adapter in your multinode spec projects, You will need to add these nuget packages:
+  - [Akka.MultiNode.TestAdapter](https://www.nuget.org/packages/Akka.MultiNode.TestAdapter)
+  - [Microsoft.NET.Test.Sdk](https://www.nuget.org/packages/Microsoft.NET.Test.Sdk/)
+
+Documentation regarding the multinode specs themselves can be read in the Akka.NET documentation pages:
+  - [Using the MultiNode TestKit](https://getakka.net/articles/networking/multi-node-test-kit.html)
+  - [Multi-Node Testing Distributed Akka.NET Applications](https://getakka.net/articles/testing/multi-node-testing.html)
+
+### VSTest .runsettings
+This is the .runsettings XML sub-section `Akka.MultiNode.TestAdapter` can use:
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<RunSettings>
+    <MultiNodeTestRunnerOptions>
+        <ListenAddress>127.0.0.1</ListenAddress>
+        <ListenPort>0</ListenPort>
+        <ClearOutputDirectory>false</ClearOutputDirectory>
+        <UseTeamCityFormatting>false</UseTeamCityFormatting>
+    </MultiNodeTestRunnerOptions>
+</RunSettings>
+```
+
+- **ListenAddress**: Determines the address that this multi-node test runner will use to listen for log messages from individual spec.
+- **ListenPort**: Determines the port number that this multi-node test runner will use to listen for log messages from individual spec.
+- **ClearOutputDirectory**: Clear the output directory before running the test session. If set to false, all test logs are appended to the out file.
+- **UseTeamCityFormatting**: Use TeamCity formatting on the log outputs.
 
 ## Building this solution
 To run the build script associated with this solution, execute the following:
