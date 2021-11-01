@@ -11,6 +11,7 @@ using Xunit.Sdk;
 
 namespace Akka.MultiNode.TestAdapter
 {
+    // TODO: Move this attribute to Akka.Remote.Testkit
     [XunitTestCaseDiscoverer("Akka.MultiNode.TestAdapter.MultiNodeFactDiscoverer", "Akka.MultiNode.TestAdapter")]
     [AttributeUsage(AttributeTargets.Method, AllowMultiple = false)]
     public class MultiNodeFactAttribute : FactAttribute

@@ -79,6 +79,7 @@ namespace Akka.MultiNode.TestAdapter.Internal
             catch (Exception e)
             {
                 InitializationException = e;
+                DisplayName = $"{BaseDisplayName}(???)";
             }
         }
 
@@ -90,73 +91,80 @@ namespace Akka.MultiNode.TestAdapter.Internal
         public override async Task<RunSummary> RunAsync(IMessageSink diagnosticMessageSink, IMessageBus messageBus, object[] constructorArguments,
             ExceptionAggregator aggregator, CancellationTokenSource cancellationTokenSource)
         {
+            
             Environment.SetEnvironmentVariable(MultiNodeFactAttribute.MultiNodeTestEnvironmentName, "1");
             var summary = new RunSummary();
             
             if (!messageBus.QueueMessage(new TestCaseStarting(this)))
-                return summary;
-
-            try
+                cancellationTokenSource.Cancel();
+            else
             {
-                #region XunitTestRunner.RunAsync()
-
-                var test = new XunitTest(this, DisplayName);
-                var testSummary = new RunSummary {Total = 1};
-                var output = string.Empty;
-
-                if (!messageBus.QueueMessage(new TestStarting(test)))
+                try
                 {
-                    // return testSummary
-                }
-                else
-                {
-                    if (!string.IsNullOrEmpty(SkipReason))
+                    #region XunitTestRunner.RunAsync(), TestRunner.RunAsync()
+
+                    var test = new XunitTest(this, DisplayName);
+                    var runSummary = new RunSummary {Total = 1};
+                    var output = string.Empty;
+
+                    if (!messageBus.QueueMessage(new TestStarting(test)))
                     {
-                        testSummary.Skipped++;
-                        messageBus.QueueMessage(new TestSkipped(test, SkipReason));
+                        cancellationTokenSource.Cancel();
                     }
                     else
                     {
-                        var testAggregator = new ExceptionAggregator(aggregator);
-                        if (!testAggregator.HasExceptions)
+                        if (!string.IsNullOrEmpty(SkipReason))
                         {
-                            var tuple = await testAggregator.RunAsync(async () =>
-                            {
-                                // Actual test goes here?
-                                await Task.Delay(200);
-                                return new Tuple<decimal, string>( new decimal(0.2), "TestResult");
-                            });
-                            if (tuple != null)
-                            {
-                                testSummary.Time = tuple.Item1;
-                                output = tuple.Item2;
-                            }
+                            runSummary.Skipped++;
+                            if(!messageBus.QueueMessage(new TestSkipped(test, SkipReason)))
+                                cancellationTokenSource.Cancel();
                         }
-
-                        var exception = testAggregator.ToException();
-                        TestResultMessage testResult;
-                        if (exception == null)
-                            testResult = new TestPassed(test, testSummary.Time, output);
                         else
                         {
-                            testResult = new TestFailed(test, testSummary.Time, output, exception);
-                            testSummary.Failed++;
+                            var testAggregator = new ExceptionAggregator(aggregator);
+                            if (!testAggregator.HasExceptions)
+                            {
+                                var tuple = await testAggregator.RunAsync(async () =>
+                                {
+                                    // TODO: Actual test goes here?
+                                    await Task.Delay(200);
+                                    return new Tuple<decimal, string>( new decimal(0.2), "TestResult");
+                                });
+                                if (tuple != null)
+                                {
+                                    runSummary.Time = tuple.Item1;
+                                    output = tuple.Item2;
+                                }
+                            }
+
+                            var exception = testAggregator.ToException();
+                            TestResultMessage testResult;
+                            if (exception == null)
+                                testResult = new TestPassed(test, runSummary.Time, output);
+                            else
+                            {
+                                testResult = new TestFailed(test, runSummary.Time, output, exception);
+                                runSummary.Failed++;
+                            }
+
+                            if (!cancellationTokenSource.IsCancellationRequested)
+                                if (!messageBus.QueueMessage(testResult))
+                                    cancellationTokenSource.Cancel();
                         }
 
-                        messageBus.QueueMessage(testResult);
+                        if(!messageBus.QueueMessage(new TestFinished(test, runSummary.Time, output)))
+                            cancellationTokenSource.Cancel();
                     }
-
-                    messageBus.QueueMessage(new TestFinished(test, testSummary.Time, output));
+                    #endregion
+                    
+                    //summary = await base.RunAsync(diagnosticMessageSink, messageBus, constructorArguments, aggregator, cancellationTokenSource);
+                    summary.Aggregate(runSummary);
                 }
-                #endregion
-                
-                //summary = await base.RunAsync(diagnosticMessageSink, messageBus, constructorArguments, aggregator, cancellationTokenSource);
-                summary.Aggregate(testSummary);
-            }
-            finally
-            {
-                messageBus.QueueMessage(new TestCaseFinished(this, summary.Time, summary.Total, summary.Failed,
-                    summary.Skipped));
+                finally
+                {
+                    if(!messageBus.QueueMessage(new TestCaseFinished(this, summary.Time, summary.Total, summary.Failed, summary.Skipped)))
+                        cancellationTokenSource.Cancel();
+                }
             }
             
             return summary;
@@ -214,7 +222,7 @@ namespace Akka.MultiNode.TestAdapter.Internal
             }
             catch (Exception e)
             {
-                throw new TestConfigurationException(specType, e);
+                throw new TestConfigurationConstructorException(specType, e);
             }
         }
         

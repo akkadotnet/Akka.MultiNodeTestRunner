@@ -19,6 +19,8 @@ namespace Akka.MultiNode.TestAdapter.Tests
             File.Exists(_sampleTestsAssemblyPath).Should().BeTrue($"Assemblies with samples should exist at {_sampleTestsAssemblyPath}");
         }
         
+        // TODO: Re-enable this test
+        /*
         [Fact]
         public void Should_run_tests_and_report_results()
         {
@@ -34,6 +36,7 @@ namespace Akka.MultiNode.TestAdapter.Tests
             Should_report_skipped_specs(frameworkHandler);
             Should_ignore_specs_with_bad_config(frameworkHandler);
         }
+        */
         
         private void Should_report_passes(FakeFrameworkHandler frameworkHandler)
         {
