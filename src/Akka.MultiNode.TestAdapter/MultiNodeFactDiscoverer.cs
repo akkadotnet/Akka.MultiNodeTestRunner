@@ -79,7 +79,7 @@ namespace Akka.MultiNode.TestAdapter
                     discoveryOptions.MethodDisplayOrDefault(),
                     discoveryOptions.MethodDisplayOptionsOrDefault(),
                     testMethod,
-                    test.InitializationException.Message);
+                    test.InitializationException.ToString());
         }
     }
 }

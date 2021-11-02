@@ -174,12 +174,14 @@ namespace Akka.MultiNode.TestAdapter.Internal
         {
             base.Serialize(data);
             data.AddValue(nameof(AssemblyPath), AssemblyPath);
+            data.AddValue(nameof(_skipReason), _skipReason);
         }
 
         public override void Deserialize(IXunitSerializationInfo data)
         {
             base.Deserialize(data);
             AssemblyPath = data.GetValue<string>(nameof(AssemblyPath));
+            _skipReason = data.GetValue<string>(nameof(_skipReason));
         }
 
         /// <exception cref="TestBaseTypeException">Spec did not inherit from <see cref="MultiNodeSpec"/></exception>
@@ -193,13 +195,8 @@ namespace Akka.MultiNode.TestAdapter.Internal
             }
             
             var roles = RoleNames(specType);
-            
-            return roles.Select((r, i) => new NodeTest
-            {
-                Node = i + 1,
-                Role = r.Name,
-                TestCase = this
-            }).ToList();
+
+            return roles.Select((r, i) => new NodeTest(this, i + i, r.Name)).ToList();
         }
         
         private IEnumerable<RoleName> RoleNames(Type specType)
