@@ -18,6 +18,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Akka.Actor;
+using Akka.Configuration;
 using Akka.IO;
 using Akka.MultiNode.TestAdapter.Internal;
 using Akka.MultiNode.TestAdapter.Internal.Persistence;
@@ -35,6 +36,9 @@ namespace Akka.MultiNode.TestAdapter
     /// </summary>
     public class MultiNodeTestRunner : IDisposable
     {
+        // Fixed TCP buffer size
+        public const int TcpBufferSize = 10240;
+        
         private string _platformName;
 
         private string _currentAssembly;
@@ -81,7 +85,14 @@ namespace Akka.MultiNode.TestAdapter
             Console.WriteLine($"Platform name: {_platformName}");
             
             _currentAssembly = fileName;
-            TestRunSystem = ActorSystem.Create("TestRunnerLogging");
+
+            var config = ConfigurationFactory.ParseString($@"
+akka.io.tcp {{
+    buffer-pool = ""akka.io.tcp.disabled-buffer-pool""
+    disabled-buffer-pool.buffer-size = {TcpBufferSize}
+}}
+");
+            TestRunSystem = ActorSystem.Create("TestRunnerLogging", config);
 
             var suiteName = Path.GetFileNameWithoutExtension(Path.GetFullPath(assemblyPath));
             SinkCoordinator = CreateSinkCoordinator(options, suiteName);

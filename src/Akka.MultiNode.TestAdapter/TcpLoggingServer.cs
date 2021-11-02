@@ -18,7 +18,6 @@ namespace Akka.MultiNode.TestAdapter
         private Option<int> _boundPort;
         private IImmutableSet<IActorRef> _boundPortSubscribers = ImmutableHashSet<IActorRef>.Empty;
 
-        private const int BufferSize = 512; 
         private string _buffer = string.Empty;
 
         public TcpLoggingServer(IActorRef sinkCoordinator)
@@ -52,7 +51,12 @@ namespace Akka.MultiNode.TestAdapter
 
             Receive<Tcp.Received>(received =>
             {
-                if (received.Data.Count >= BufferSize)
+                // It should be unlikely that a single stack trace be bigger than 10 Kib,
+                // but we should buffer this anyway, just in case.
+                //
+                // An edge case would be when a message is __exactly__ 10240 bytes in size,
+                // but that should be extremely unlikely
+                if (received.Data.Count >= MultiNodeTestRunner.TcpBufferSize)
                 {
                     _buffer += received.Data;
                     return;
