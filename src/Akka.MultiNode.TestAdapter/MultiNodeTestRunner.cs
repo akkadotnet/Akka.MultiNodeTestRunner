@@ -529,7 +529,6 @@ akka.io.tcp {{
                 return new FileSystemMessageSink(visualizerProps);
             }
 
-            SinkCoordinator.Tell(new SinkCoordinator.EnableSink(new FrameworkHandleMessageSink(options.FrameworkHandle)));
             SinkCoordinator.Tell(new SinkCoordinator.EnableSink(CreateJsonFileSink()));
             SinkCoordinator.Tell(new SinkCoordinator.EnableSink(CreateVisualizerFileSink()));
         }

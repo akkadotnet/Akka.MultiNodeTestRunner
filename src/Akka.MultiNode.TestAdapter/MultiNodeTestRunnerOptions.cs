@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using Microsoft.VisualStudio.TestPlatform.ObjectModel.Adapter;
 
 namespace Akka.MultiNode.TestAdapter
 {
@@ -12,10 +11,9 @@ namespace Akka.MultiNode.TestAdapter
         /// Default options
         /// </summary>
         public static readonly MultiNodeTestRunnerOptions Default = new MultiNodeTestRunnerOptions(
-            null, null, null, null, 0, null, null, null, false, false, false);
+            null, null, null, 0, null, null, null, false, false, false);
 
         public MultiNodeTestRunnerOptions(
-            IFrameworkHandle frameworkHandle,
             string outputDirectory,
             string failedSpecsDirectory, 
             string listenAddress,
@@ -37,11 +35,8 @@ namespace Akka.MultiNode.TestAdapter
             ClearOutputDirectory = clearOutputDirectory;
             TeamCityFormattingOn = teamCityFormattingOn;
             DesignMode = designMode;
-            FrameworkHandle = frameworkHandle;
         }
        
-        public IFrameworkHandle FrameworkHandle { get; }
-        
         /// <summary>
         /// File output directory
         /// </summary>
@@ -79,9 +74,6 @@ namespace Akka.MultiNode.TestAdapter
         
         public bool DesignMode { get; }
 
-        public MultiNodeTestRunnerOptions WithFrameworkHandle(IFrameworkHandle frameworkHandle)
-            => Copy(frameworkHandle: frameworkHandle);
-        
         public MultiNodeTestRunnerOptions WithOutputDirectory(string outputDirectory)
             => Copy(outputDirectory: outputDirectory);
 
@@ -113,7 +105,6 @@ namespace Akka.MultiNode.TestAdapter
             => Copy(designMode: designMode);
 
         private MultiNodeTestRunnerOptions Copy(
-            IFrameworkHandle frameworkHandle = null,
             string outputDirectory = null,
             string failedSpecsDirectory = null,
             string listenAddress = null,
@@ -125,7 +116,6 @@ namespace Akka.MultiNode.TestAdapter
             bool? teamCityFormattingOn = null,
             bool? designMode = null)
             => new MultiNodeTestRunnerOptions(
-                frameworkHandle: frameworkHandle ?? FrameworkHandle,
                 outputDirectory: outputDirectory ?? OutputDirectory,
                 failedSpecsDirectory: failedSpecsDirectory ?? FailedSpecsDirectory,
                 listenAddress: listenAddress ?? ListenAddress,

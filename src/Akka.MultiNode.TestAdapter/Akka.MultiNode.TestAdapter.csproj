@@ -7,9 +7,6 @@
     <IncludeSource>true</IncludeSource>
     <IncludeSymbols>true</IncludeSymbols>
     <LangVersion>8.0</LangVersion>
-    <!-- <EnableDefaultCompileItems>false</EnableDefaultCompileItems> -->
-    <!-- <GenerateAssemblyInfo>false</GenerateAssemblyInfo> -->
-    <!-- <NuspecFile>Akka.MultiNode.TestAdapter.nuspec</NuspecFile> -->
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
@@ -18,11 +15,9 @@
 
   <ItemGroup>
     <PackageReference Include="Akka.Cluster.TestKit" Version="$(AkkaVersion)" />
-    <PackageReference Include="Microsoft.TestPlatform.ObjectModel" Version="$(TestSdkVersion)" />
     <PackageReference Include="TeamCity.ServiceMessages" Version="$(TeamCityVersion)" />
     <PackageReference Include="System.CodeDom" Version="$(CodeDomVersion)" />
     <PackageReference Include="System.Runtime.Loader" Version="$(SystemRuntimeLoaderVersion)" />
-    <PackageReference Include="Microsoft.Extensions.DependencyModel" Version="$(DependencyModelVersion)" />
     <PackageReference Include="xunit.runner.utility" Version="$(XunitVersion)" />
   </ItemGroup>
 

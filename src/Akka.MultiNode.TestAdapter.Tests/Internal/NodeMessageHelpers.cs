@@ -213,12 +213,7 @@ namespace Akka.MultiNode.TestAdapter.Tests.Internal
 
             protected override List<NodeTest> LoadDetails()
             {
-                return _indices.Select(i => new NodeTest
-                {
-                    Node = i,
-                    Role = DummyRoleFor + i,
-                    TestCase = this
-                }).ToList();
+                return _indices.Select(i => new NodeTest(this, i, DummyRoleFor + i)).ToList();
             }
         }
         
