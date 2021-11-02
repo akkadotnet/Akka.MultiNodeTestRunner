@@ -147,7 +147,7 @@ namespace Akka.MultiNode.TestAdapter
             var runSettings = runContext.RunSettings;
             if (runSettings == null)
             {
-                return MultiNodeTestRunnerOptions.Default;
+                return MultiNodeTestRunnerOptions.Default.WithFrameworkHandle(frameworkHandle);
             }
             
             var runConfiguration = XmlRunSettingsUtilities.GetRunConfigurationNode(runSettings.SettingsXml);
@@ -158,7 +158,7 @@ namespace Akka.MultiNode.TestAdapter
             if (runConfiguration.ResultsDirectorySet)
                 options = options.WithOutputDirectory(runConfiguration.ResultsDirectory);
             
-            return options;
+            return options.WithFrameworkHandle(frameworkHandle);
         }
 
         private static MultiNodeTestRunner CreateRunner(

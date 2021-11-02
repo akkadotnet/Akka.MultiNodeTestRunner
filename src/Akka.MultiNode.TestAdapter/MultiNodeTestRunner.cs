@@ -18,6 +18,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Akka.Actor;
+using Akka.Configuration;
 using Akka.IO;
 using Akka.MultiNode.TestAdapter.Internal;
 using Akka.MultiNode.TestAdapter.Internal.Persistence;
@@ -35,6 +36,9 @@ namespace Akka.MultiNode.TestAdapter
     /// </summary>
     public class MultiNodeTestRunner : IDisposable
     {
+        // Fixed TCP buffer size
+        public const int TcpBufferSize = 10240;
+        
         private string _platformName;
 
         private string _currentAssembly;
@@ -81,7 +85,14 @@ namespace Akka.MultiNode.TestAdapter
             Console.WriteLine($"Platform name: {_platformName}");
             
             _currentAssembly = fileName;
-            TestRunSystem = ActorSystem.Create("TestRunnerLogging");
+
+            var config = ConfigurationFactory.ParseString($@"
+akka.io.tcp {{
+    buffer-pool = ""akka.io.tcp.disabled-buffer-pool""
+    disabled-buffer-pool.buffer-size = {TcpBufferSize}
+}}
+");
+            TestRunSystem = ActorSystem.Create("TestRunnerLogging", config);
 
             var suiteName = Path.GetFileNameWithoutExtension(Path.GetFullPath(assemblyPath));
             SinkCoordinator = CreateSinkCoordinator(options, suiteName);
@@ -395,6 +406,21 @@ namespace Akka.MultiNode.TestAdapter
             result.Attachments.Add(new MultiNodeTestResult.Attachment{Title = $"Node {nodeIndex} [{nodeRole}]", Path = logFilePath});
 
             var runner = new Executor();
+
+            void OutputHandler(object sender, DataReceivedEventArgs eventArgs)
+            {
+                if (eventArgs?.Data != null)
+                {
+                    fileActor.Tell(eventArgs.Data);
+                    timelineCollector.Tell(new TimelineLogCollectorActor.LogMessage(nodeInfo, eventArgs.Data));
+                    Console.WriteLine(eventArgs.Data);
+                    if (options.TeamCityFormattingOn)
+                    {
+                        // teamCityTest.WriteStdOutput(eventArgs.Data); TODO: open flood gates
+                    }
+                }
+            }
+            
             var process = RemoteHost.RemoteHost.Start(runner.Execute, args, opt =>
             {
                 opt.OnExit = p =>
@@ -404,19 +430,8 @@ namespace Akka.MultiNode.TestAdapter
                         ReportSpecPassFromExitCode(nodeIndex, nodeRole, closureTest.Test.MethodName);
                     }
                 };
-                opt.OutputDataReceived = (sender, eventArgs) =>
-                {
-                    if (eventArgs?.Data != null)
-                    {
-                        fileActor.Tell(eventArgs.Data);
-                        timelineCollector.Tell(new TimelineLogCollectorActor.LogMessage(nodeInfo, eventArgs.Data));
-                        Console.WriteLine(eventArgs.Data);
-                        if (options.TeamCityFormattingOn)
-                        {
-                            // teamCityTest.WriteStdOutput(eventArgs.Data); TODO: open flood gates
-                        }
-                    }
-                };
+                opt.OutputDataReceived = OutputHandler;
+                opt.ErrorDataReceived = OutputHandler;
             });
             
             PublishRunnerMessage($"Started node {nodeIndex} : {nodeRole} on pid {process.Id}");
@@ -517,6 +532,7 @@ namespace Akka.MultiNode.TestAdapter
                 return new FileSystemMessageSink(visualizerProps);
             }
 
+            SinkCoordinator.Tell(new SinkCoordinator.EnableSink(new FrameworkHandleMessageSink(options.FrameworkHandle)));
             SinkCoordinator.Tell(new SinkCoordinator.EnableSink(CreateJsonFileSink()));
             SinkCoordinator.Tell(new SinkCoordinator.EnableSink(CreateVisualizerFileSink()));
         }
