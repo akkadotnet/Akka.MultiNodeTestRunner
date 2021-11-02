@@ -10,7 +10,7 @@
   </PropertyGroup>
   <PropertyGroup>
     <XunitVersion>2.4.1</XunitVersion>
-    <TestSdkVersion>16.11.0</TestSdkVersion>
+    <TestSdkVersion>17.0.0</TestSdkVersion>
     <HyperionVersion>0.9.12</HyperionVersion>
     <CodeDomVersion>5.0.0</CodeDomVersion>
     <TeamCityVersion>3.0.13</TeamCityVersion>
@@ -22,9 +22,9 @@
     <NetCoreTestVersion>netcoreapp3.1</NetCoreTestVersion>
     <NetTestVersion>net5.0</NetTestVersion>
     <NetStandardLibVersion>netstandard2.0</NetStandardLibVersion>
-    <FluentAssertionsVersion>6.1.0</FluentAssertionsVersion>
+    <FluentAssertionsVersion>6.2.0</FluentAssertionsVersion>
     <FsCheckVersion>2.9.0</FsCheckVersion>
-    <AkkaVersion>1.4.26</AkkaVersion>
+    <AkkaVersion>1.4.27</AkkaVersion>
     <AkkaPackageTags>akka;actors;actor model;Akka;concurrency</AkkaPackageTags>
   </PropertyGroup>
   <PropertyGroup>

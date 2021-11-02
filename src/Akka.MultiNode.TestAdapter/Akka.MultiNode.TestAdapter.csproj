@@ -6,6 +6,7 @@
     <TargetFramework>$(NetStandardLibVersion)</TargetFramework>
     <IncludeSource>true</IncludeSource>
     <IncludeSymbols>true</IncludeSymbols>
+    <LangVersion>8.0</LangVersion>
     <!-- <EnableDefaultCompileItems>false</EnableDefaultCompileItems> -->
     <!-- <GenerateAssemblyInfo>false</GenerateAssemblyInfo> -->
     <!-- <NuspecFile>Akka.MultiNode.TestAdapter.nuspec</NuspecFile> -->

@@ -5,6 +5,7 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -85,13 +86,15 @@ namespace Akka.MultiNode.TestAdapter.Internal.Sinks
         protected int TotalReceiveClosedConfirmations = 0;
         protected int ReceivedSinkCloseConfirmations = 0;
 
+        protected ILoggingAdapter Log { get; }
+
         /// <summary>
         /// Leave the console message sink enabled by default
         /// </summary>
         public SinkCoordinator()
             : this(new[] { new ConsoleMessageSink() })
         {
-
+            Log = Context.GetLogger();
         }
 
         public SinkCoordinator(IEnumerable<MessageSink> defaultSinks)
@@ -192,7 +195,18 @@ namespace Akka.MultiNode.TestAdapter.Internal.Sinks
         private void PublishToChildren(string message)
         {
             foreach (var sink in Sinks)
-                sink.Offer(message);
+            {
+                try
+                {
+                    sink.Offer(message);
+                }
+                catch (Exception e)
+                {
+                    // This message might never make it to console, due to the way dotnet test is being set,
+                    // but at least this catch would not cause the SinkCoordinator to die mid test because of an exception
+                    Log.Error(e, "Sink {0} failed to process message {1}: {2}", sink.GetType(), message, e.Message);
+                }
+            }
         }
 
         #endregion

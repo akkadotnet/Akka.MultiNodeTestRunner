@@ -18,15 +18,14 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Akka.Actor;
+using Akka.Configuration;
 using Akka.IO;
-using Akka.MultiNode.TestAdapter.Helpers;
 using Akka.MultiNode.TestAdapter.Internal;
 using Akka.MultiNode.TestAdapter.Internal.Persistence;
 using Akka.MultiNode.TestAdapter.Internal.Sinks;
 using Akka.MultiNode.TestAdapter.Internal.TrxReporter;
 using Akka.MultiNode.TestAdapter.NodeRunner;
 using Akka.Remote.TestKit;
-using Akka.Util;
 using Xunit;
 using ErrorMessage = Xunit.Sdk.ErrorMessage;
 
@@ -37,6 +36,9 @@ namespace Akka.MultiNode.TestAdapter
     /// </summary>
     public class MultiNodeTestRunner : IDisposable
     {
+        // Fixed TCP buffer size
+        public const int TcpBufferSize = 10240;
+        
         private string _platformName;
 
         private string _currentAssembly;
@@ -83,11 +85,14 @@ namespace Akka.MultiNode.TestAdapter
             Console.WriteLine($"Platform name: {_platformName}");
             
             _currentAssembly = fileName;
-            // Perform output cleanup before anything is logged
-            if (options.ClearOutputDirectory && Directory.Exists(options.OutputDirectory))
-                Directory.Delete(options.OutputDirectory, true);
 
-            TestRunSystem = ActorSystem.Create("TestRunnerLogging");
+            var config = ConfigurationFactory.ParseString($@"
+akka.io.tcp {{
+    buffer-pool = ""akka.io.tcp.disabled-buffer-pool""
+    disabled-buffer-pool.buffer-size = {TcpBufferSize}
+}}
+");
+            TestRunSystem = ActorSystem.Create("TestRunnerLogging", config);
 
             var suiteName = Path.GetFileNameWithoutExtension(Path.GetFullPath(assemblyPath));
             SinkCoordinator = CreateSinkCoordinator(options, suiteName);
@@ -109,6 +114,7 @@ namespace Akka.MultiNode.TestAdapter
                 : _tcpLogger.Ask<int>(TcpLoggingServer.GetBoundPort.Instance).Result;
 
             TestStarted?.Invoke(testCase);
+            Environment.SetEnvironmentVariable(MultiNodeFactAttribute.MultiNodeTestEnvironmentName, "1");
             try
             {
                 if (options.SpecNames != null &&
@@ -128,10 +134,18 @@ namespace Akka.MultiNode.TestAdapter
                 var nodes = testCase.Nodes;
 
                 var result = RunSpec(options, testCase, listenPort);
-                if(result.Status == MultiNodeTestResult.TestStatus.Failed)
-                    TestFailed?.Invoke(result);
-                else
-                    TestPassed?.Invoke(result);
+                switch (result.Status)
+                {
+                    case MultiNodeTestResult.TestStatus.Passed:
+                        TestPassed?.Invoke(result);
+                        return result;
+                    case MultiNodeTestResult.TestStatus.Failed:
+                        TestFailed?.Invoke(result);
+                        return result;
+                    case MultiNodeTestResult.TestStatus.Skipped:
+                        TestSkipped?.Invoke(testCase, "Must be run using Akka.MultiNode.TestAdapter");
+                        return null;
+                }
                 return result;
             }
             catch (Exception e)
@@ -139,6 +153,10 @@ namespace Akka.MultiNode.TestAdapter
                 Exception?.Invoke(testCase, e);
                 PublishRunnerMessage(e.Message);
                 return null;
+            }
+            finally
+            {
+                Environment.SetEnvironmentVariable(MultiNodeFactAttribute.MultiNodeTestEnvironmentName, null);
             }
         }
         
@@ -169,14 +187,22 @@ namespace Akka.MultiNode.TestAdapter
         /// </summary>
         public static (List<MultiNodeTestCase> Tests, List<ErrorMessage> Errors) DiscoverSpecs(string assemblyPath)
         {
-            using (var controller = new XunitFrontController(AppDomainSupport.IfAvailable, assemblyPath))
+            Environment.SetEnvironmentVariable(MultiNodeFactAttribute.MultiNodeTestEnvironmentName, "1");
+            try
             {
-                using (var discovery = new Discovery(assemblyPath))
+                using (var controller = new XunitFrontController(AppDomainSupport.IfAvailable, assemblyPath))
                 {
-                    controller.Find(false, discovery, TestFrameworkOptions.ForDiscovery());
-                    discovery.Finished.WaitOne();
-                    return (discovery.TestCases, discovery.Errors);
+                    using (var discovery = new Discovery(assemblyPath))
+                    {
+                        controller.Find(false, discovery, TestFrameworkOptions.ForDiscovery());
+                        discovery.Finished.WaitOne();
+                        return (discovery.TestCases, discovery.Errors);
+                    }
                 }
+            }
+            finally
+            {
+                Environment.SetEnvironmentVariable(MultiNodeFactAttribute.MultiNodeTestEnvironmentName, null);
             }
         }
 
@@ -220,12 +246,20 @@ namespace Akka.MultiNode.TestAdapter
 
                     // Run test on several nodes and report results
                     var result = RunSpec(options, test, listenPort);
-                    if(result.Status == MultiNodeTestResult.TestStatus.Failed)
-                        TestFailed?.Invoke(result);
-                    else
-                        TestPassed?.Invoke(result);
-                
-                    testResults.Add(result);
+                    switch (result.Status)
+                    {
+                        case MultiNodeTestResult.TestStatus.Failed:
+                            TestFailed?.Invoke(result);
+                            testResults.Add(result);
+                            break;
+                        case MultiNodeTestResult.TestStatus.Passed:
+                            TestPassed?.Invoke(result);
+                            testResults.Add(result);
+                            break;
+                        case MultiNodeTestResult.TestStatus.Skipped:
+                            TestSkipped?.Invoke(test, test.SkipReason);
+                            continue;
+                    }
                 }
                 catch (Exception e)
                 {
@@ -264,7 +298,8 @@ namespace Akka.MultiNode.TestAdapter
                         $@"-Dmultinode.role=""{nodeTest.Role}""",
                         $@"-Dmultinode.listen-address={options.ListenAddress}",
                         $@"-Dmultinode.listen-port={listenPort}",
-                        $@"-Dmultinode.test-assembly=""{testCase.AssemblyPath}"""
+                        $@"-Dmultinode.test-assembly=""{testCase.AssemblyPath}""",
+                        "-Dmultinode.test-runner=\"multinode\""
                     };
 
                 // Configure process for node
@@ -333,9 +368,12 @@ namespace Akka.MultiNode.TestAdapter
                     process.WaitForExit();
                     Console.WriteLine($"Process for test {test.Name} finished with code {process.ExitCode}");
                     var nodeResult = result.NodeResults.First(n => n.Index == test.Node); 
-                    nodeResult.Result = process.ExitCode == 0
-                        ? MultiNodeTestResult.TestStatus.Passed
-                        : MultiNodeTestResult.TestStatus.Failed;
+                    nodeResult.Result = process.ExitCode switch
+                    {
+                        0 => MultiNodeTestResult.TestStatus.Passed,
+                        2 => MultiNodeTestResult.TestStatus.Skipped,
+                        _ => MultiNodeTestResult.TestStatus.Failed
+                    };
                 }
             }
             finally
@@ -365,28 +403,32 @@ namespace Akka.MultiNode.TestAdapter
             result.Attachments.Add(new MultiNodeTestResult.Attachment{Title = $"Node {nodeIndex} [{nodeRole}]", Path = logFilePath});
 
             var runner = new Executor();
+
+            void OutputHandler(object sender, DataReceivedEventArgs eventArgs)
+            {
+                if (eventArgs?.Data != null)
+                {
+                    fileActor.Tell(eventArgs.Data);
+                    timelineCollector.Tell(new TimelineLogCollectorActor.LogMessage(nodeInfo, eventArgs.Data));
+                    Console.WriteLine(eventArgs.Data);
+                    if (options.TeamCityFormattingOn)
+                    {
+                        // teamCityTest.WriteStdOutput(eventArgs.Data); TODO: open flood gates
+                    }
+                }
+            }
+            
             var process = RemoteHost.RemoteHost.Start(runner.Execute, args, opt =>
             {
                 opt.OnExit = p =>
                 {
                     if (p.ExitCode == 0)
                     {
-                        ReportSpecPassFromExitCode(nodeIndex, nodeRole, closureTest.TestCase.DisplayName);
+                        ReportSpecPassFromExitCode(nodeIndex, nodeRole, closureTest.TestCase.MethodName);
                     }
                 };
-                opt.OutputDataReceived = (sender, eventArgs) =>
-                {
-                    if (eventArgs?.Data != null)
-                    {
-                        fileActor.Tell(eventArgs.Data);
-                        timelineCollector.Tell(new TimelineLogCollectorActor.LogMessage(nodeInfo, eventArgs.Data));
-                        Console.WriteLine(eventArgs.Data);
-                        if (options.TeamCityFormattingOn)
-                        {
-                            // teamCityTest.WriteStdOutput(eventArgs.Data); TODO: open flood gates
-                        }
-                    }
-                };
+                opt.OutputDataReceived = OutputHandler;
+                opt.ErrorDataReceived = OutputHandler;
             });
             
             PublishRunnerMessage($"Started node {nodeIndex} : {nodeRole} on pid {process.Id}");
@@ -487,12 +529,9 @@ namespace Akka.MultiNode.TestAdapter
                 return new FileSystemMessageSink(visualizerProps);
             }
 
-            var fileSystemSink = CommandLine.GetProperty("multinode.enable-filesink");
-            if (!string.IsNullOrEmpty(fileSystemSink))
-            {
-                SinkCoordinator.Tell(new SinkCoordinator.EnableSink(CreateJsonFileSink()));
-                SinkCoordinator.Tell(new SinkCoordinator.EnableSink(CreateVisualizerFileSink()));
-            }
+            SinkCoordinator.Tell(new SinkCoordinator.EnableSink(new FrameworkHandleMessageSink(options.FrameworkHandle)));
+            SinkCoordinator.Tell(new SinkCoordinator.EnableSink(CreateJsonFileSink()));
+            SinkCoordinator.Tell(new SinkCoordinator.EnableSink(CreateVisualizerFileSink()));
         }
 
         private void AbortTcpLoggingServer()

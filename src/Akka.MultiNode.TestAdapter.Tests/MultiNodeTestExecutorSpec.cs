@@ -2,6 +2,7 @@ using System.IO;
 using Akka.MultiNode.TestAdapter.SampleTests;
 using Akka.MultiNode.TestAdapter.SampleTests.Metadata;
 using Akka.MultiNode.TestAdapter.Tests.Helpers;
+using Akka.Remote.TestKit;
 using FluentAssertions;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel;
 using Xunit;
@@ -17,6 +18,7 @@ namespace Akka.MultiNode.TestAdapter.Tests
         {
             _sampleTestsAssemblyPath = Path.GetFullPath(SampleTestsMetadata.AssemblyFileName);
             File.Exists(_sampleTestsAssemblyPath).Should().BeTrue($"Assemblies with samples should exist at {_sampleTestsAssemblyPath}");
+            CommandLine.Initialize(new []{"-Dmultinode.test-runner=\"multinode\""});
         }
         
         // TODO: Re-enable this test

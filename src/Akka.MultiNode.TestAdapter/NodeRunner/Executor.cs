@@ -31,10 +31,15 @@ namespace Akka.MultiNode.TestAdapter.NodeRunner
             var maxProcessWaitTimeout = TimeSpan.FromMinutes(5);
             IActorRef logger = null;
 
+            Environment.SetEnvironmentVariable(MultiNodeFactAttribute.MultiNodeTestEnvironmentName, "1");
             try
             {
                 CommandLine.Initialize(args);
                 
+                var runner = CommandLine.GetPropertyOrDefault("multinode.test-runner", null);
+                if (runner != "multinode")
+                    return 2;
+
                 var nodeIndex = CommandLine.GetInt32("multinode.index");
                 var nodeRole = CommandLine.GetProperty("multinode.role");
                 var assemblyFileName = CommandLine.GetProperty("multinode.test-assembly");
@@ -179,6 +184,10 @@ namespace Akka.MultiNode.TestAdapter.NodeRunner
                 Console.WriteLine($"Unexpected FATAL exception: {ex}");
                 Environment.Exit(1); //signal failure
                 return 1;
+            }
+            finally
+            {
+                Environment.SetEnvironmentVariable(MultiNodeFactAttribute.MultiNodeTestEnvironmentName, null);
             }
             
             void FlushLogMessages()

@@ -42,7 +42,12 @@ namespace Akka.MultiNode.TestAdapter
             {
                 if (!string.IsNullOrWhiteSpace(TestCase.SkipReason))
                     return TestStatus.Skipped;
-                return NodeResults.Any(result => result.Result == TestStatus.Failed) ? TestStatus.Failed : TestStatus.Passed;
+                
+                if(NodeResults.Any(result => result.Result == TestStatus.Failed))
+                    return TestStatus.Failed;
+                if (NodeResults.Any(result => result.Result == TestStatus.Skipped))
+                    return TestStatus.Skipped;
+                return TestStatus.Passed;
             } 
         }
         /// <summary>
