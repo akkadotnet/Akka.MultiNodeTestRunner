@@ -16,6 +16,11 @@ using Microsoft.VisualStudio.TestPlatform.Utilities;
 
 namespace Akka.MultiNode.TestAdapter.Internal.Sinks
 {
+    /// <summary>
+    /// <see cref="MessageSinkActor"/> implementation that redirects all logs to the <see cref="IFrameworkHandle"/> VSTest adapter.
+    /// 
+    /// Has no persistence capabilities. Can optionally use a <see cref="TestRunCoordinator"/> to provide total "end of test" reporting.
+    /// </summary>
     public class FrameworkHandleMessageSinkActor: TestCoordinatorEnabledMessageSink
     {
         private readonly IFrameworkHandle _frameworkHandle;
@@ -192,7 +197,7 @@ namespace Akka.MultiNode.TestAdapter.Internal.Sinks
     }
     
     /// <summary>
-    /// <see cref="IMessageSink"/> implementation that writes directly to the console.
+    /// <see cref="IMessageSink"/> implementation that redirects outputs to <see cref="IFrameworkHandle"/>.
     /// </summary>
     public class FrameworkHandleMessageSink : MessageSink
     {
