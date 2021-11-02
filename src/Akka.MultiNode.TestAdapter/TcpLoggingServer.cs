@@ -18,12 +18,15 @@ namespace Akka.MultiNode.TestAdapter
         private Option<int> _boundPort;
         private IImmutableSet<IActorRef> _boundPortSubscribers = ImmutableHashSet<IActorRef>.Empty;
 
+        private const int BufferSize = 512; 
+        private string _buffer = string.Empty;
+
         public TcpLoggingServer(IActorRef sinkCoordinator)
         {
             Receive<Tcp.Bound>(bound =>
             {
                 // When bound, save port and notify requestors if any
-                _boundPort = (bound.LocalAddress as IPEndPoint).Port;
+                _boundPort = ((IPEndPoint)bound.LocalAddress).Port;
                 _boundPortSubscribers.ForEach(s => s.Tell(_boundPort.Value));
                 
                 _tcpManager = Sender;
@@ -49,8 +52,14 @@ namespace Akka.MultiNode.TestAdapter
 
             Receive<Tcp.Received>(received =>
             {
-                var message = received.Data.ToString();
-                sinkCoordinator.Tell(message);
+                if (received.Data.Count >= BufferSize)
+                {
+                    _buffer += received.Data;
+                    return;
+                }
+
+                sinkCoordinator.Tell(_buffer + received.Data);
+                _buffer = string.Empty;
             });
 
             Receive<StopListener>(_ =>

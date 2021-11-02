@@ -395,6 +395,21 @@ namespace Akka.MultiNode.TestAdapter
             result.Attachments.Add(new MultiNodeTestResult.Attachment{Title = $"Node {nodeIndex} [{nodeRole}]", Path = logFilePath});
 
             var runner = new Executor();
+
+            void OutputHandler(object sender, DataReceivedEventArgs eventArgs)
+            {
+                if (eventArgs?.Data != null)
+                {
+                    fileActor.Tell(eventArgs.Data);
+                    timelineCollector.Tell(new TimelineLogCollectorActor.LogMessage(nodeInfo, eventArgs.Data));
+                    Console.WriteLine(eventArgs.Data);
+                    if (options.TeamCityFormattingOn)
+                    {
+                        // teamCityTest.WriteStdOutput(eventArgs.Data); TODO: open flood gates
+                    }
+                }
+            }
+            
             var process = RemoteHost.RemoteHost.Start(runner.Execute, args, opt =>
             {
                 opt.OnExit = p =>
@@ -404,19 +419,8 @@ namespace Akka.MultiNode.TestAdapter
                         ReportSpecPassFromExitCode(nodeIndex, nodeRole, closureTest.Test.MethodName);
                     }
                 };
-                opt.OutputDataReceived = (sender, eventArgs) =>
-                {
-                    if (eventArgs?.Data != null)
-                    {
-                        fileActor.Tell(eventArgs.Data);
-                        timelineCollector.Tell(new TimelineLogCollectorActor.LogMessage(nodeInfo, eventArgs.Data));
-                        Console.WriteLine(eventArgs.Data);
-                        if (options.TeamCityFormattingOn)
-                        {
-                            // teamCityTest.WriteStdOutput(eventArgs.Data); TODO: open flood gates
-                        }
-                    }
-                };
+                opt.OutputDataReceived = OutputHandler;
+                opt.ErrorDataReceived = OutputHandler;
             });
             
             PublishRunnerMessage($"Started node {nodeIndex} : {nodeRole} on pid {process.Id}");
@@ -517,6 +521,7 @@ namespace Akka.MultiNode.TestAdapter
                 return new FileSystemMessageSink(visualizerProps);
             }
 
+            SinkCoordinator.Tell(new SinkCoordinator.EnableSink(new FrameworkHandleMessageSink(options.FrameworkHandle)));
             SinkCoordinator.Tell(new SinkCoordinator.EnableSink(CreateJsonFileSink()));
             SinkCoordinator.Tell(new SinkCoordinator.EnableSink(CreateVisualizerFileSink()));
         }

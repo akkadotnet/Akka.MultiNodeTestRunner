@@ -12,6 +12,10 @@
         <PackageReference Include="Microsoft.TestPlatform.ObjectModel" Version="$(TestSdkVersion)" />
     </ItemGroup>
 
+    <ItemGroup>
+      <ProjectReference Include="..\Akka.MultiNode.TestAdapter\Akka.MultiNode.TestAdapter.csproj" />
+    </ItemGroup>
+
     <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
         <DefineConstants>$(DefineConstants);RELEASE</DefineConstants>
     </PropertyGroup>
