@@ -208,7 +208,7 @@ namespace Akka.MultiNode.TestAdapter.Tests.Internal
 
             protected override void Initialize()
             {
-                LoadDetails();
+                InternalNodes = LoadDetails();
             }
 
             protected override List<NodeTest> LoadDetails()

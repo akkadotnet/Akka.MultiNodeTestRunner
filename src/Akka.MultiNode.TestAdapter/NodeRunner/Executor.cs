@@ -9,37 +9,31 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Net;
-using System.Reflection;
-using System.Runtime.Loader;
-using System.Threading;
+using System.Threading.Tasks;
 using Akka.Actor;
 using Akka.IO;
+using Akka.MultiNode.TestAdapter.Internal;
 using Akka.MultiNode.TestAdapter.Internal.Sinks;
 using Akka.Remote.TestKit;
 using Xunit;
 
 namespace Akka.MultiNode.TestAdapter.NodeRunner
 {
-    public class Executor
+    internal class Executor
     {
         /// <summary>
         /// If it takes longer than this value for the <see cref="ExecutorSink"/> to get back to us
         /// about a particular test passing or failing, throw loudly.
         /// </summary>
-        public int Execute(string[] args)
+        public async Task<int> Execute(string[] args)
         {
             var maxProcessWaitTimeout = TimeSpan.FromMinutes(5);
             IActorRef logger = null;
 
-            Environment.SetEnvironmentVariable(MultiNodeFactAttribute.MultiNodeTestEnvironmentName, "1");
             try
             {
                 CommandLine.Initialize(args);
                 
-                var runner = CommandLine.GetPropertyOrDefault("multinode.test-runner", null);
-                if (runner != "multinode")
-                    return 2;
-
                 var nodeIndex = CommandLine.GetInt32("multinode.index");
                 var nodeRole = CommandLine.GetProperty("multinode.role");
                 var assemblyFileName = CommandLine.GetProperty("multinode.test-assembly");
@@ -54,46 +48,9 @@ namespace Akka.MultiNode.TestAdapter.NodeRunner
                 try
                 {
                     var system = ActorSystem.Create("NoteTestRunner-" + nodeIndex);
-                    var tcpClient = logger = system.ActorOf<RunnerTcpClient>();
-                    system.Tcp().Tell(new Tcp.Connect(listenEndpoint), tcpClient);
+                    logger = system.ActorOf<RunnerTcpClient>();
+                    system.Tcp().Tell(new Tcp.Connect(listenEndpoint), logger);
 
-                    // In NetCore, if the assembly file hasn't been touched, 
-                    // XunitFrontController would fail loading external assemblies and its dependencies.
-                    
-                    var assembly = AssemblyLoadContext.Default.LoadFromAssemblyPath(assemblyFileName);
-                    var asms = assembly.GetReferencedAssemblies();
-                    var basePath = Path.GetDirectoryName(assemblyFileName) ?? "";
-                    var loadContext = AssemblyLoadContext.GetLoadContext(assembly);
-                    foreach (var asm in asms)
-                    {
-                        try
-                        {
-                            Assembly.Load(new AssemblyName(asm.FullName));
-                        }
-                        catch (Exception)
-                        {
-                            var path = Path.Combine(basePath, asm.Name + ".dll");
-                            try
-                            {
-                                loadContext.LoadFromAssemblyPath(path);
-                            }
-                            catch 
-                            {
-                                try
-                                {
-                                    var name = AssemblyLoadContext.GetAssemblyName(path);
-                                    loadContext.LoadFromAssemblyName(name);
-                                }
-                                catch (Exception e)
-                                {
-                                    Console.Out.WriteLine($"Failed to load dll [{path}]: {e}");
-                                }
-                            }
-                        }
-                    }
-                    
-                    Thread.Sleep(TimeSpan.FromSeconds(10));
-                    
                     using (var controller = new XunitFrontController(AppDomainSupport.IfAvailable, assemblyFileName))
                     {
                         /* need to pass in just the assembly name to Discovery, not the full path
@@ -106,12 +63,15 @@ namespace Akka.MultiNode.TestAdapter.NodeRunner
                         
                         using (var discovery = new Discovery(assemblyName))
                         {
-                            using (var sink = new ExecutorSink(nodeIndex, nodeRole, tcpClient))
+                            using (var sink = new ExecutorSink(nodeIndex, nodeRole, logger))
                             {
                                 controller.Find(true, discovery, TestFrameworkOptions.ForDiscovery());
                                 discovery.Finished.WaitOne();
                                 var tests = discovery.TestCases
                                     .Where(t => t.TestMethod.Method.Name == testName && t.TestMethod.TestClass.Class.Name == typeName).ToList();
+                                Assert.Single(tests);
+                                tests[0].InExecutionMode = true;
+                                
                                 controller.RunTests(tests, sink, TestFrameworkOptions.ForExecution());
 
                                 var timedOut = false;
@@ -124,12 +84,12 @@ namespace Akka.MultiNode.TestAdapter.NodeRunner
                                     timedOut = true;
                                 }
 
-                                FlushLogMessages();
-                                system.Terminate().Wait();
+                                await FlushLogMessages();
 
-                                var retCode = sink.Passed && !timedOut ? 0 : 1;
-                                Environment.Exit(retCode);
-                                return retCode;
+                                var shutdown = CoordinatedShutdown.Get(system);
+                                await shutdown.Run(CoordinatedShutdown.ActorSystemTerminateReason.Instance);
+
+                                return sink.Passed && !timedOut ? 0 : 1;
                             }
                         }
                     }
@@ -151,8 +111,7 @@ namespace Akka.MultiNode.TestAdapter.NodeRunner
                     Console.WriteLine(specFail);
 
                     //make sure message is send over the wire
-                    FlushLogMessages();
-                    Environment.Exit(1); //signal failure
+                    await FlushLogMessages();
                     return 1;
                 }
                 catch (Exception ex)
@@ -174,27 +133,22 @@ namespace Akka.MultiNode.TestAdapter.NodeRunner
                     Console.WriteLine(specFail);
 
                     //make sure message is send over the wire
-                    FlushLogMessages();
-                    Environment.Exit(1); //signal failure
+                    await FlushLogMessages();
                     return 1;
                 }
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Unexpected FATAL exception: {ex}");
-                Environment.Exit(1); //signal failure
                 return 1;
             }
-            finally
-            {
-                Environment.SetEnvironmentVariable(MultiNodeFactAttribute.MultiNodeTestEnvironmentName, null);
-            }
             
-            void FlushLogMessages()
+            async Task FlushLogMessages()
             {
                 try
                 {
-                    logger?.GracefulStop(TimeSpan.FromSeconds(2)).Wait();
+                    if(logger != null)
+                        await logger.GracefulStop(TimeSpan.FromSeconds(2));
                 }
                 catch
                 {

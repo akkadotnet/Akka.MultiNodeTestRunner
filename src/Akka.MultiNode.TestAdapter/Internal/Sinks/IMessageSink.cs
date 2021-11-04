@@ -15,7 +15,7 @@ namespace Akka.MultiNode.TestAdapter.Internal.Sinks
     /// <summary>
     /// Interface used to define destinations for MultiNodeTest messages
     /// </summary>
-    public interface IMessageSink
+    internal interface IMessageSink
     {
 
         #region Flow Control

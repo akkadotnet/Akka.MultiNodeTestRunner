@@ -18,7 +18,7 @@ namespace Akka.MultiNode.TestAdapter.Internal.Sinks
     /// that this class produces, so do not remove or refactor it.
     /// </remarks>
     /// </summary>
-    public class SpecPass
+    internal class SpecPass
     {
         public SpecPass(int nodeIndex, string nodeRole, string testDisplayName)
         {
@@ -46,7 +46,7 @@ namespace Akka.MultiNode.TestAdapter.Internal.Sinks
     /// that this class produces, so do not remove or refactor it.
     /// </remarks>
     /// </summary>
-    public class SpecFail : SpecPass
+    internal class SpecFail : SpecPass
     {
         public SpecFail(int nodeIndex, string nodeRole, string testDisplayName) : base(nodeIndex, nodeRole, testDisplayName)
         {

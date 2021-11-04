@@ -8,7 +8,7 @@ namespace Akka.MultiNode.TestAdapter.Helpers
     /// <summary>
     /// RuntimeConfigGenerator
     /// </summary>
-    public static class RuntimeConfigGenerator
+    internal static class RuntimeConfigGenerator
     {
         /// <summary>
         /// Generates .NET Core runtimeconfig.json content for current target framework and runtime

@@ -18,7 +18,7 @@ namespace Akka.MultiNode.TestAdapter.Internal.Persistence
     /// <summary>
     /// JavaScript Object Notation (JSON) implementation of the <see cref="IRetrievableTestRunStore"/>
     /// </summary>
-    public class JsonPersistentTestRunStore : IRetrievableTestRunStore
+    internal class JsonPersistentTestRunStore : IRetrievableTestRunStore
     {
         //Internal version of the contract resolver
         private class AkkaContractResolver : DefaultContractResolver

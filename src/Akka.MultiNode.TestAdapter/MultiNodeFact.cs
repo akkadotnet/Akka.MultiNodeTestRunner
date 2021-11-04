@@ -11,33 +11,11 @@ using Xunit.Sdk;
 
 namespace Akka.MultiNode.TestAdapter
 {
-    // TODO: Move this attribute to Akka.Remote.Testkit
+    // TODO: Remember to remove this in Akka.Remote.Testkit
     [XunitTestCaseDiscoverer("Akka.MultiNode.TestAdapter.MultiNodeFactDiscoverer", "Akka.MultiNode.TestAdapter")]
     [AttributeUsage(AttributeTargets.Method, AllowMultiple = false)]
     public class MultiNodeFactAttribute : FactAttribute
     {
-        /// <summary>
-        /// Set by MultiNodeTestRunner when running multi-node tests
-        /// </summary>
-        public const string MultiNodeTestEnvironmentName = "__AKKA_MULTI_NODE_ENVIRONMENT";
-
-        /*
-        private bool? _executedByMultiNodeRunner;
-
-        public override string Skip
-        {
-            get
-            {
-                if (_executedByMultiNodeRunner == null)
-                    _executedByMultiNodeRunner =
-                        Environment.GetEnvironmentVariable(MultiNodeTestEnvironmentName) != null;
-                return _executedByMultiNodeRunner != null && _executedByMultiNodeRunner.Value
-                    ? base.Skip
-                    : "Must be executed by multi-node test runner";
-            }
-            set => base.Skip = value;
-        }
-        */
     }
 }
 

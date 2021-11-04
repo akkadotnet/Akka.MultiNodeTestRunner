@@ -9,7 +9,7 @@ using System.Xml.Linq;
 
 namespace Akka.MultiNode.TestAdapter.Internal.TrxReporter.Models
 {
-    public interface ITestEntity
+    internal interface ITestEntity
     {
         XElement Serialize();
     }

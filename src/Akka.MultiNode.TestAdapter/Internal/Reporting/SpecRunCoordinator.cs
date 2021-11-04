@@ -16,9 +16,9 @@ namespace Akka.MultiNode.TestAdapter.Internal.Reporting
     /// <summary>
     /// Actor responsible for organizing the results of an individual spec
     /// </summary>
-    public class SpecRunCoordinator : ReceiveActor
+    internal class SpecRunCoordinator : ReceiveActor
     {
-        public SpecRunCoordinator(string className, string methodName, IList<NodeTest> nodes)
+        internal SpecRunCoordinator(string className, string methodName, IList<NodeTest> nodes)
         {
             Nodes = nodes;
             MethodName = methodName;

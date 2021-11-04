@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Akka.MultiNode.RemoteHost
@@ -11,159 +12,76 @@ namespace Akka.MultiNode.RemoteHost
     public static class RemoteHost
     {
         #region Static functions
-
-        public static Process Start(Action action, Action<RemoteHostOptions> configure = null)
-            => Start(GetMethodInfo(action), Array.Empty<string>(), configure).process;
-
-        public static Process Start(Action<string[]> action, string[] args, Action<RemoteHostOptions> configure = null)
-            => Start(GetMethodInfo(action), args ?? throw new ArgumentNullException(nameof(args)), configure).process;
-
-        public static Process Start(Func<int> action, Action<RemoteHostOptions> configure = null)
-            => Start(GetMethodInfo(action), Array.Empty<string>(), configure).process;
-
-        public static Process Start(Func<string[], int> action, string[] args, Action<RemoteHostOptions> configure = null)
-            => Start(GetMethodInfo(action), args ?? throw new ArgumentNullException(nameof(args)), configure).process;
-
-        public static Process Start(Func<Task> action, Action<RemoteHostOptions> configure = null)
-            => Start(GetMethodInfo(action), Array.Empty<string>(), configure).process;
-
-        public static Process Start(Func<string[], Task> action, string[] args, Action<RemoteHostOptions> configure = null)
-            => Start(GetMethodInfo(action), args ?? throw new ArgumentNullException(nameof(args)), configure).process;
-
-        public static Process Start(Func<Task<int>> action, Action<RemoteHostOptions> configure = null)
-            => Start(GetMethodInfo(action), Array.Empty<string>(), configure).process;
-
-        public static Process Start(Func<string[], Task<int>> action, string[] args, Action<RemoteHostOptions> configure = null)
-            => Start(GetMethodInfo(action), args ?? throw new ArgumentNullException(nameof(args)), configure).process;
-
-        public static void Run(Action action, Action<RemoteHostOptions> configure = null)
-            => Start(GetMethodInfo(action), Array.Empty<string>(), configure, waitForExit: true);
-
-        public static void Run(Action<string[]> action, string[] args, Action<RemoteHostOptions> configure = null)
-            => Start(GetMethodInfo(action), args ?? throw new ArgumentNullException(nameof(args)), configure, waitForExit: true);
-
-        public static void Run(Func<int> action, Action<RemoteHostOptions> configure = null)
-            => Start(GetMethodInfo(action), Array.Empty<string>(), configure, waitForExit: true);
-
-        public static void Run(Func<string[], int> action, string[] args, Action<RemoteHostOptions> configure = null)
-            => Start(GetMethodInfo(action), args ?? throw new ArgumentNullException(nameof(args)), configure, waitForExit: true);
-
-        public static void Run(Func<Task> action, Action<RemoteHostOptions> configure = null)
-            => Start(GetMethodInfo(action), Array.Empty<string>(), configure, waitForExit: true);
-
-        public static void Run(Func<string[], Task> action, string[] args, Action<RemoteHostOptions> configure = null)
-            => Start(GetMethodInfo(action), args ?? throw new ArgumentNullException(nameof(args)), configure, waitForExit: true);
-
-        public static void Run(Func<Task<int>> action, Action<RemoteHostOptions> configure = null)
-            => Start(GetMethodInfo(action), Array.Empty<string>(), configure, waitForExit: true);
-
-        public static void Run(Func<string[], Task<int>> action, string[] args, Action<RemoteHostOptions> configure = null)
-            => Start(GetMethodInfo(action), args ?? throw new ArgumentNullException(nameof(args)), configure, waitForExit: true);
-
-        public static Task RunAsync(Action action, Action<RemoteHostOptions> configure = null)
-            => Start(GetMethodInfo(action), Array.Empty<string>(), configure, returnTask: true).exitedTask;
-
-        public static Task RunAsync(Action<string[]> action, string[] args, Action<RemoteHostOptions> configure = null)
-            => Start(GetMethodInfo(action), args ?? throw new ArgumentNullException(nameof(args)), configure, returnTask: true).exitedTask;
-
-        public static Task RunAsync(Func<int> action, Action<RemoteHostOptions> configure = null)
-            => Start(GetMethodInfo(action), Array.Empty<string>(), configure, returnTask: true).exitedTask;
-
-        public static Task RunAsync(Func<string[], int> action, string[] args, Action<RemoteHostOptions> configure = null)
-            => Start(GetMethodInfo(action), args ?? throw new ArgumentNullException(nameof(args)), configure, returnTask: true).exitedTask;
-
-        public static Task RunAsync(Func<Task> action, Action<RemoteHostOptions> configure = null)
-            => Start(GetMethodInfo(action), Array.Empty<string>(), configure, returnTask: true).exitedTask;
-
-        public static Task RunAsync(Func<string[], Task> action, string[] args, Action<RemoteHostOptions> configure = null)
-            => Start(GetMethodInfo(action), args ?? throw new ArgumentNullException(nameof(args)), configure, returnTask: true).exitedTask;
-
-        public static Task RunAsync(Func<Task<int>> action, Action<RemoteHostOptions> configure = null)
-            => Start(GetMethodInfo(action), Array.Empty<string>(), configure, returnTask: true).exitedTask;
-
-        public static Task RunAsync(Func<string[], Task<int>> action, string[] args, Action<RemoteHostOptions> configure = null)
-            => Start(GetMethodInfo(action), args ?? throw new ArgumentNullException(nameof(args)), configure, returnTask: true).exitedTask;
+        public static (Process, Task) RunProcessAsync(
+            Func<string[], Task<int>> action, 
+            string[] args, 
+            Action<RemoteHostOptions> configure = null,
+            CancellationToken token = default)
+            => Start(GetMethodInfo(action), args ?? throw new ArgumentNullException(nameof(args)), configure, token);
 
         private static (Process process, Task exitedTask) Start(
             MethodInfo method,
             string[] args,
             Action<RemoteHostOptions> configure,
-            bool waitForExit = false,
-            bool returnTask = false)
+            CancellationToken token = default)
         {
-            Process process = null;
+            var process = new Process();
+            RemoteHostOptions options;
             try
             {
-                process = new Process();
-
-                var options = new RemoteHostOptions(process.StartInfo);
+                options = new RemoteHostOptions(process.StartInfo);
                 ConfigureProcessStartInfoForMethodInvocation(method, args, options.StartInfo);
                 configure?.Invoke(options);
-
-                TaskCompletionSource<bool> tcs = null;
-                if (returnTask)
-                {
-                    tcs = new TaskCompletionSource<bool>();
-                }
-
-                if (options.OnExit != null || tcs != null)
-                {
-                    process.EnableRaisingEvents = true;
-                    process.Exited += (_1, _2) =>
-                    {
-                        options.OnExit(process);
-
-                        if (tcs != null)
-                        {
-                            tcs?.SetResult(true);
-                            process.Dispose();
-                        }
-                    };
-                }
-
-                if (options.OutputDataReceived != null)
-                {
-                    process.OutputDataReceived += options.OutputDataReceived;
-                    options.StartInfo.RedirectStandardOutput = true;
-                }
-
-                if (options.ErrorDataReceived != null)
-                {
-                    process.ErrorDataReceived += options.ErrorDataReceived;
-                    options.StartInfo.RedirectStandardError = true;
-                }
-
-                process.Start();
-                
-                if (options.OutputDataReceived != null)
-                {
-                    process.BeginOutputReadLine();
-                }
-
-                if (options.ErrorDataReceived != null)
-                {
-                    process.BeginErrorReadLine();
-                }
-
-                if (waitForExit)
-                {
-                    process.WaitForExit();
-                }
-
-                return (process, tcs?.Task);
             }
             catch
             {
-                process?.Dispose();
+                process.Dispose();
                 throw;
             }
-            finally
+            
+            var tcs = new TaskCompletionSource<bool>();
+            if (token != default)
             {
-                if (waitForExit)
+                token.Register(() =>
                 {
-                    process?.Dispose();
-                }
+                    process.Kill();
+                });
             }
+
+            process.EnableRaisingEvents = true;
+            process.Exited += (_1, _2) =>
+            {
+                options.OnExit(process);
+
+                tcs.SetResult(true);
+                process.Dispose();
+            };
+
+            if (options.OutputDataReceived != null)
+            {
+                process.OutputDataReceived += options.OutputDataReceived;
+                options.StartInfo.RedirectStandardOutput = true;
+            }
+
+            if (options.ErrorDataReceived != null)
+            {
+                process.ErrorDataReceived += options.ErrorDataReceived;
+                options.StartInfo.RedirectStandardError = true;
+            }
+
+            process.Start();
+                
+            if (options.OutputDataReceived != null)
+            {
+                process.BeginOutputReadLine();
+            }
+
+            if (options.ErrorDataReceived != null)
+            {
+                process.BeginErrorReadLine();
+            }
+
+            return (process, tcs.Task);            
         }
 
         private static void ConfigureProcessStartInfoForMethodInvocation(

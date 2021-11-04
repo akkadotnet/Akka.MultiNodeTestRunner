@@ -16,7 +16,7 @@ namespace Akka.MultiNode.TestAdapter.Internal.Sinks
     /// <summary>
     /// Message type for signaling that a new spec is ready to be run
     /// </summary>
-    public class BeginNewSpec
+    internal class BeginNewSpec
     {
         public BeginNewSpec(MultiNodeTestCase testCase)
         {
@@ -35,7 +35,7 @@ namespace Akka.MultiNode.TestAdapter.Internal.Sinks
     /// <summary>
     /// Message type for indicating that the current spec has ended.
     /// </summary>
-    public class EndSpec
+    internal class EndSpec
     {
         public EndSpec()
         { }

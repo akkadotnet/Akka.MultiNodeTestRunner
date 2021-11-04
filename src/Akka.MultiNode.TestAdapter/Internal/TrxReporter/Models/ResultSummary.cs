@@ -13,7 +13,7 @@ using static Akka.MultiNode.TestAdapter.Internal.TrxReporter.Models.XmlHelper;
 
 namespace Akka.MultiNode.TestAdapter.Internal.TrxReporter.Models
 {
-    public class ResultSummary : ITestEntity
+    internal class ResultSummary : ITestEntity
     {
         public ResultSummary(IEnumerable<UnitTest> unitTests, Output output)
         {

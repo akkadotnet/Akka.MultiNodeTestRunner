@@ -9,14 +9,12 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
-using Akka.MultiNode.TestAdapter.Internal;
-using Akka.Remote.TestKit;
 using Xunit.Abstractions;
 using Xunit.Sdk;
 
-namespace Akka.MultiNode.TestAdapter
+namespace Akka.MultiNode.TestAdapter.Internal
 {
-    public class Discovery : IMessageSink, IDisposable
+    internal class Discovery : IMessageSink, IDisposable
     {
         // There can be multiple fact attributes in a single class, but our convention
         // limits them to 1 fact attribute per test class

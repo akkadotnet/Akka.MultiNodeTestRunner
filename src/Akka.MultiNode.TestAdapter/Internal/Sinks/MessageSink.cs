@@ -17,7 +17,7 @@ namespace Akka.MultiNode.TestAdapter.Internal.Sinks
     /// Abstract base class for all <see cref="IMessageSink"/> implementations. Includes some methods
     /// for parsing log messages into structured formats.
     /// </summary>
-    public abstract class MessageSink : IMessageSink
+    internal abstract class MessageSink : IMessageSink
     {
         /// <summary>
         /// ActorRef for the actor who coordinates all of reporting for each test run

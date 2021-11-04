@@ -17,7 +17,7 @@ namespace Akka.MultiNode.TestAdapter.Internal.Reporting
     /// <summary>
     /// Actor responsible for organizing all of the data for each test run
     /// </summary>
-    public class TestRunCoordinator : ReceiveActor
+    internal class TestRunCoordinator : ReceiveActor
     {
         #region Internal message classes
 

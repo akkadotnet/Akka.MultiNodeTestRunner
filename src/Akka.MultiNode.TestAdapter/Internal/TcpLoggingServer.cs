@@ -7,7 +7,7 @@ using Akka.IO;
 using Akka.Util;
 using Akka.Util.Internal;
 
-namespace Akka.MultiNode.TestAdapter
+namespace Akka.MultiNode.TestAdapter.Internal
 {
     internal class TcpLoggingServer : ReceiveActor
     {
@@ -56,7 +56,7 @@ namespace Akka.MultiNode.TestAdapter
                 //
                 // An edge case would be when a message is __exactly__ 10240 bytes in size,
                 // but that should be extremely unlikely
-                if (received.Data.Count >= MultiNodeTestRunner.TcpBufferSize)
+                if (received.Data.Count >= MultiNodeTestCaseRunner.TcpBufferSize)
                 {
                     _buffer += received.Data;
                     return;

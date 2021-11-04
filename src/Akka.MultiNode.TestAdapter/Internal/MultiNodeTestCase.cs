@@ -7,20 +7,12 @@ using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Akka.Remote.TestKit;
-using Xunit;
 using Xunit.Abstractions;
 using Xunit.Sdk;
-using TestCaseFinished = Xunit.Sdk.TestCaseFinished;
-using TestCaseStarting = Xunit.Sdk.TestCaseStarting;
 using TestMethodDisplay = Xunit.Sdk.TestMethodDisplay;
 using TestMethodDisplayOptions = Xunit.Sdk.TestMethodDisplayOptions;
-using TestResultMessage = Xunit.Sdk.TestResultMessage;
-using TestSkipped = Xunit.Sdk.TestSkipped;
-using TestStarting = Xunit.Sdk.TestStarting;
-using TestPassed = Xunit.Sdk.TestPassed;
-using TestFailed = Xunit.Sdk.TestFailed;
-using TestFinished = Xunit.Sdk.TestFinished;
 
+#nullable enable
 namespace Akka.MultiNode.TestAdapter.Internal
 {
     public class MultiNodeTestCase : XunitTestCase
@@ -34,22 +26,20 @@ namespace Akka.MultiNode.TestAdapter.Internal
             TestMethodDisplay defaultMethodDisplay,
             TestMethodDisplayOptions defaultMethodDisplayOptions,
             ITestMethod testMethod,
-            object[] testMethodArguments = null)
+            object[]? testMethodArguments = null)
             : base(
                 diagnosticMessageSink,
                 defaultMethodDisplay,
                 defaultMethodDisplayOptions,
                 testMethod,
                 testMethodArguments)
-        {
-            AssemblyPath = Path.GetFullPath(testMethod.TestClass.Class.Assembly.AssemblyPath);
-        }
+        { }
         
         public virtual string AssemblyPath { get; protected set; }
         public virtual string TypeName => TestMethod.TestClass.Class.Name;
         public virtual string MethodName => TestMethod.Method.Name;
 
-        private List<NodeTest> _nodes;
+        protected List<NodeTest>? InternalNodes;
 
         /// <exception cref="TestBaseTypeException">Spec did not inherit from <see cref="MultiNodeSpec"/></exception>
         /// <exception cref="TestConfigurationException">Invalid configuration class</exception>
@@ -58,27 +48,31 @@ namespace Akka.MultiNode.TestAdapter.Internal
             get
             {
                 EnsureInitialized();
-                return _nodes;
+                return InternalNodes ?? new List<NodeTest>();
             }
         }
 
-        private string _skipReason;
-        public new string SkipReason
+        private string? _skipReason;
+        public new string? SkipReason
         {
             get => _skipReason ?? base.SkipReason;
             set => _skipReason = value;
         }
+        
+        public bool InExecutionMode { get; set; }
 
         protected override void Initialize()
         {
             base.Initialize();
             try
             {
-                _nodes = LoadDetails();
+                AssemblyPath = Path.GetFullPath(TestMethod.TestClass.Class.Assembly.AssemblyPath);
+                InternalNodes = LoadDetails();
             }
             catch (Exception e)
             {
-                InitializationException = e;
+                SkipReason = e.ToString();
+                //InitializationException = e;
                 DisplayName = $"{BaseDisplayName}(???)";
             }
         }
@@ -88,86 +82,19 @@ namespace Akka.MultiNode.TestAdapter.Internal
             EnsureInitialized();
         }
 
-        public override async Task<RunSummary> RunAsync(IMessageSink diagnosticMessageSink, IMessageBus messageBus, object[] constructorArguments,
-            ExceptionAggregator aggregator, CancellationTokenSource cancellationTokenSource)
+        public override Task<RunSummary> RunAsync(
+            IMessageSink diagnosticMessageSink,
+            IMessageBus messageBus,
+            object[] constructorArguments,
+            ExceptionAggregator aggregator,
+            CancellationTokenSource cancellationTokenSource)
         {
-            
-            Environment.SetEnvironmentVariable(MultiNodeFactAttribute.MultiNodeTestEnvironmentName, "1");
-            var summary = new RunSummary();
-            
-            if (!messageBus.QueueMessage(new TestCaseStarting(this)))
-                cancellationTokenSource.Cancel();
-            else
+            if (!InExecutionMode)
             {
-                try
-                {
-                    #region XunitTestRunner.RunAsync(), TestRunner.RunAsync()
-
-                    var test = new XunitTest(this, DisplayName);
-                    var runSummary = new RunSummary {Total = 1};
-                    var output = string.Empty;
-
-                    if (!messageBus.QueueMessage(new TestStarting(test)))
-                    {
-                        cancellationTokenSource.Cancel();
-                    }
-                    else
-                    {
-                        if (!string.IsNullOrEmpty(SkipReason))
-                        {
-                            runSummary.Skipped++;
-                            if(!messageBus.QueueMessage(new TestSkipped(test, SkipReason)))
-                                cancellationTokenSource.Cancel();
-                        }
-                        else
-                        {
-                            var testAggregator = new ExceptionAggregator(aggregator);
-                            if (!testAggregator.HasExceptions)
-                            {
-                                var tuple = await testAggregator.RunAsync(async () =>
-                                {
-                                    // TODO: Actual test goes here?
-                                    await Task.Delay(200);
-                                    return new Tuple<decimal, string>( new decimal(0.2), "TestResult");
-                                });
-                                if (tuple != null)
-                                {
-                                    runSummary.Time = tuple.Item1;
-                                    output = tuple.Item2;
-                                }
-                            }
-
-                            var exception = testAggregator.ToException();
-                            TestResultMessage testResult;
-                            if (exception == null)
-                                testResult = new TestPassed(test, runSummary.Time, output);
-                            else
-                            {
-                                testResult = new TestFailed(test, runSummary.Time, output, exception);
-                                runSummary.Failed++;
-                            }
-
-                            if (!cancellationTokenSource.IsCancellationRequested)
-                                if (!messageBus.QueueMessage(testResult))
-                                    cancellationTokenSource.Cancel();
-                        }
-
-                        if(!messageBus.QueueMessage(new TestFinished(test, runSummary.Time, output)))
-                            cancellationTokenSource.Cancel();
-                    }
-                    #endregion
-                    
-                    //summary = await base.RunAsync(diagnosticMessageSink, messageBus, constructorArguments, aggregator, cancellationTokenSource);
-                    summary.Aggregate(runSummary);
-                }
-                finally
-                {
-                    if(!messageBus.QueueMessage(new TestCaseFinished(this, summary.Time, summary.Total, summary.Failed, summary.Skipped)))
-                        cancellationTokenSource.Cancel();
-                }
+                return new MultiNodeTestCaseRunner(this, DisplayName, SkipReason, messageBus, aggregator,
+                    cancellationTokenSource).RunAsync();
             }
-            
-            return summary;
+            return new XunitTestCaseRunner(this, DisplayName, SkipReason, constructorArguments, TestMethodArguments, messageBus, aggregator, cancellationTokenSource).RunAsync();
         }
 
         public override void Serialize(IXunitSerializationInfo data)
@@ -193,10 +120,20 @@ namespace Akka.MultiNode.TestAdapter.Internal
             {
                 throw new TestBaseTypeException();
             }
-            
-            var roles = RoleNames(specType);
 
-            return roles.Select((r, i) => new NodeTest(this, i + i, r.Name)).ToList();
+            try
+            {
+                var roles = RoleNames(specType);
+                return roles.Select((r, i) => new NodeTest(this, i + 1, r.Name)).ToList();
+            }
+            catch (Exception e)
+            {
+                SkipReason = e.ToString();
+                return new List<NodeTest>
+                {
+                    new ErrorTest(this)
+                };
+            }
         }
         
         private IEnumerable<RoleName> RoleNames(Type specType)
@@ -229,7 +166,6 @@ namespace Akka.MultiNode.TestAdapter.Internal
             var current = configUser;
             while (current != null)
             {
-
                 var ctorWithConfig = current
                     .GetConstructors(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance)
                     .FirstOrDefault(c => null != c.GetParameters().FirstOrDefault(p => p.ParameterType.GetTypeInfo().IsSubclassOf(baseConfigType)));
@@ -241,13 +177,13 @@ namespace Akka.MultiNode.TestAdapter.Internal
             throw new TestConfigurationException(configUser);
         }
 
-        private object[] ConfigConstructorParamValues(Type configType)
+        private object?[] ConfigConstructorParamValues(Type configType)
         {
             var ctors = configType.GetConstructors(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
             var empty = ctors.FirstOrDefault(c => !c.GetParameters().Any());
 
             return empty != null
-                ? new object[0]
+                ? Array.Empty<object>()
                 : ctors.First().GetParameters().Select(p => p.ParameterType.GetTypeInfo().IsValueType ? Activator.CreateInstance(p.ParameterType) : null).ToArray();
         }
     }

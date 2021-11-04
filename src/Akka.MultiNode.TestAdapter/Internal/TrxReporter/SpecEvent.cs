@@ -9,7 +9,7 @@ using System;
 
 namespace Akka.MultiNode.TestAdapter.Internal.TrxReporter
 {
-    public class SpecEvent<T>
+    internal class SpecEvent<T>
     {
         public SpecEvent(DateTime time, T value)
         {

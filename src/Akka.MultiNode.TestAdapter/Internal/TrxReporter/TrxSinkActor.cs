@@ -16,7 +16,7 @@ using Akka.MultiNode.TestAdapter.Internal.TrxReporter.Models;
 
 namespace Akka.MultiNode.TestAdapter.Internal.TrxReporter
 {
-    public class TrxSinkActor : TestCoordinatorEnabledMessageSink
+    internal class TrxSinkActor : TestCoordinatorEnabledMessageSink
     {
         public TrxSinkActor(string suiteName, string userName, string computerName, bool useTestCoordinator)
             : base(useTestCoordinator)

@@ -12,7 +12,7 @@ using JetBrains.TeamCity.ServiceMessages.Write.Special;
 
 namespace Akka.MultiNode.TestAdapter.Internal.Sinks
 {
-    public class TeamCityMessageSinkActor : TestCoordinatorEnabledMessageSink
+    internal class TeamCityMessageSinkActor : TestCoordinatorEnabledMessageSink
     {
         private readonly ITeamCityWriter _teamCityWriter;
         private readonly ITeamCityTestsSubWriter _teamCityTestSuiteWriter;
@@ -93,7 +93,7 @@ namespace Akka.MultiNode.TestAdapter.Internal.Sinks
     /// <summary>
     /// <see cref="IMessageSink"/> implementation that writes directly to the console.
     /// </summary>
-    public class TeamCityMessageSink : MessageSink
+    internal class TeamCityMessageSink : MessageSink
     {
         public TeamCityMessageSink(Action<string> writer, string suiteName)
             : base(Props.Create(() => new TeamCityMessageSinkActor(writer, suiteName, true)))

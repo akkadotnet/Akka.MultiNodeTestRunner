@@ -18,7 +18,7 @@ namespace Akka.MultiNode.TestAdapter.Internal.Sinks
     /// 
     /// Has no persistence capabilities. Can optionally use a <see cref="TestRunCoordinator"/> to provide total "end of test" reporting.
     /// </summary>
-    public class ConsoleMessageSinkActor : TestCoordinatorEnabledMessageSink
+    internal class ConsoleMessageSinkActor : TestCoordinatorEnabledMessageSink
     {
         public ConsoleMessageSinkActor(bool useTestCoordinator) : base(useTestCoordinator)
         {
@@ -198,7 +198,7 @@ namespace Akka.MultiNode.TestAdapter.Internal.Sinks
     /// <summary>
     /// <see cref="IMessageSink"/> implementation that writes directly to the console.
     /// </summary>
-    public class ConsoleMessageSink : MessageSink
+    internal class ConsoleMessageSink : MessageSink
     {
         public ConsoleMessageSink()
             : base(Props.Create(() => new ConsoleMessageSinkActor(true)))

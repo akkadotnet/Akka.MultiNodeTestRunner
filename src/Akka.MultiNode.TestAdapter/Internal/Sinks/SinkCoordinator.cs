@@ -18,14 +18,14 @@ namespace Akka.MultiNode.TestAdapter.Internal.Sinks
     /// <summary>
     /// Top-level actor responsible for managing all <see cref="MessageSink"/> instances.
     /// </summary>
-    public class SinkCoordinator : ReceiveActor
+    internal class SinkCoordinator : ReceiveActor
     {
         #region Message classes
 
         /// <summary>
         /// Used to signal that we need to enable a given <see cref="MessageSink"/> instance
         /// </summary>
-        public class EnableSink
+        internal class EnableSink
         {
             public EnableSink(MessageSink sink)
             {
