@@ -41,7 +41,7 @@ namespace Akka.MultiNode.TestAdapter.Tests.Internal.MultiNodeTestRunnerDiscovery
             Action testDelegate = () =>
             {
                 var testCase = typeof(DiscoveryCases.DefaultConstructorOnDerivedClassSpec);
-                var constructor = MultiNodeTest.FindConfigConstructor(testCase);
+                var constructor = MultiNodeTestCase.FindConfigConstructor(testCase);
                 constructor.Should().NotBeNull();
             };
 
@@ -70,16 +70,17 @@ namespace Akka.MultiNode.TestAdapter.Tests.Internal.MultiNodeTestRunnerDiscovery
                     .Select(n => n.Role), new[] {"RoleProp", "RoleField"});
         }
 
-        private static List<MultiNodeTest> DiscoverSpecs()
+        private static List<MultiNodeTestCase> DiscoverSpecs()
         {
             var assemblyPath = new Uri(typeof(DiscoveryCases).GetTypeInfo().Assembly.Location).LocalPath; 
+            
             using (var controller = new XunitFrontController(AppDomainSupport.IfAvailable, assemblyPath))
             {
                 using (var discovery = new Discovery(assemblyPath))
                 {
                     controller.Find(false, discovery, TestFrameworkOptions.ForDiscovery());
                     discovery.Finished.WaitOne();
-                    return discovery.MultiNodeTests;
+                    return discovery.TestCases;
                 }
             }
         }

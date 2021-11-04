@@ -11,7 +11,7 @@ using static Akka.MultiNode.TestAdapter.Internal.TrxReporter.Models.XmlHelper;
 
 namespace Akka.MultiNode.TestAdapter.Internal.TrxReporter.Models
 {
-    public class Times : ITestEntity
+    internal class Times : ITestEntity
     {
         public Times()
         {
