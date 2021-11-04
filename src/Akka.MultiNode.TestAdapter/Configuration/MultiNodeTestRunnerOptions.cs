@@ -1,7 +1,9 @@
+using System;
 using System.Collections.Generic;
-using Microsoft.VisualStudio.TestPlatform.ObjectModel.Adapter;
+using Newtonsoft.Json;
 
-namespace Akka.MultiNode.TestAdapter
+#nullable enable
+namespace Akka.MultiNode.TestAdapter.Configuration
 {
     /// <summary>
     /// MultiNodeTestRunnerOptions
@@ -11,76 +13,73 @@ namespace Akka.MultiNode.TestAdapter
         /// <summary>
         /// Default options
         /// </summary>
-        public static readonly MultiNodeTestRunnerOptions Default = new MultiNodeTestRunnerOptions(
-            null, null, null, null, 0, null, null, null, false, false, false);
+        public static readonly MultiNodeTestRunnerOptions Default = new MultiNodeTestRunnerOptions();
 
+        [Obsolete(message:"Only used for deserialization")]
+        public MultiNodeTestRunnerOptions()
+        { }
+        
         public MultiNodeTestRunnerOptions(
-            IFrameworkHandle frameworkHandle,
-            string outputDirectory,
-            string failedSpecsDirectory, 
-            string listenAddress,
-            int listenPort,
-            List<string> specNames,
-            string platform,
-            string reporter,
-            bool clearOutputDirectory,
-            bool teamCityFormattingOn,
-            bool designMode)
+            string? outputDirectory = null,
+            string? failedSpecsDirectory = null, 
+            string? listenAddress = null,
+            int? listenPort = null,
+            string? platform = null,
+            string? reporter = null,
+            bool? clearOutputDirectory = null,
+            bool? teamCityFormattingOn = null)
         {
             OutputDirectory = outputDirectory ?? "TestResults";
             FailedSpecsDirectory = failedSpecsDirectory ?? "FAILED_SPECS_LOGS";
             ListenAddress = listenAddress ?? "127.0.0.1";
-            ListenPort = listenPort;
-            SpecNames = specNames;
-            Platform = platform;
+            ListenPort = listenPort ?? 0;
+            Platform = platform ?? string.Empty;
             Reporter = reporter ?? "console";
-            ClearOutputDirectory = clearOutputDirectory;
-            TeamCityFormattingOn = teamCityFormattingOn;
-            DesignMode = designMode;
-            FrameworkHandle = frameworkHandle;
+            ClearOutputDirectory = clearOutputDirectory ?? false;
+            TeamCityFormattingOn = teamCityFormattingOn ?? false;
         }
-       
-        public IFrameworkHandle FrameworkHandle { get; }
-        
+
         /// <summary>
         /// File output directory
         /// </summary>
-        public string OutputDirectory { get; }
+        [JsonProperty("outputDirectory")]
+        public string OutputDirectory { get; } = "TestResult";
         /// <summary>
         /// Subdirectory to store failed specs logs
         /// </summary>
-        public string FailedSpecsDirectory { get; }
+        [JsonProperty("failedSpecsDirectory")] 
+        public string FailedSpecsDirectory { get; } = "FAILED_SPECS_LOGS";
         /// <summary>
         /// MNTR controller listener address
         /// </summary>
-        public string ListenAddress { get; }
+        [JsonProperty("listenAddress")] 
+        public string ListenAddress { get; } = "127.0.0.1";
+
         /// <summary>
         /// MNTR controller listener port. Set 0 to use random available port
         /// </summary>
-        public int ListenPort { get; }
-        /// <summary>
-        /// List of spec names to be executed. Other specs are skipped 
-        /// </summary>
-        public List<string> SpecNames { get; }
+        [JsonProperty("listenPort")]
+        public int ListenPort { get; } = 0;
+
         /// <summary>
         /// Reporter. "trx"/"teamcity"/"console"
         /// </summary>
-        public string Reporter { get; }
+        [JsonProperty("reporter")]
+        public string Reporter { get; } = "console";
+
         /// <summary>
         /// If set, performs output directory cleanup before running tests
         /// </summary>
-        public bool ClearOutputDirectory { get; }
+        [JsonProperty("clearOutputDirectory")]
+        public bool ClearOutputDirectory { get; } = false;
+
         /// <summary>
         /// TeamCity formatting on/off
         /// </summary>
-        public bool TeamCityFormattingOn { get; }
+        [JsonProperty("teamCityFormatting")]
+        public bool TeamCityFormattingOn { get; } = false;
         
         public string Platform { get; }
-        
-        public bool DesignMode { get; }
-
-        public MultiNodeTestRunnerOptions WithFrameworkHandle(IFrameworkHandle frameworkHandle)
-            => Copy(frameworkHandle: frameworkHandle);
         
         public MultiNodeTestRunnerOptions WithOutputDirectory(string outputDirectory)
             => Copy(outputDirectory: outputDirectory);
@@ -94,9 +93,6 @@ namespace Akka.MultiNode.TestAdapter
         public MultiNodeTestRunnerOptions WithListenPort(int listenPort)
             => Copy(listenPort: listenPort);
 
-        public MultiNodeTestRunnerOptions WithSpecNames(List<string> specNames)
-            => Copy(specNames: specNames);
-
         public MultiNodeTestRunnerOptions WithPlatform(string platform)
             => Copy(platform: platform);
 
@@ -109,32 +105,23 @@ namespace Akka.MultiNode.TestAdapter
         public MultiNodeTestRunnerOptions WithTeamCityFormatting(bool teamCityFormattingOn)
             => Copy(teamCityFormattingOn: teamCityFormattingOn);
         
-        public MultiNodeTestRunnerOptions WithDesignMode(bool designMode)
-            => Copy(designMode: designMode);
-
         private MultiNodeTestRunnerOptions Copy(
-            IFrameworkHandle frameworkHandle = null,
-            string outputDirectory = null,
-            string failedSpecsDirectory = null,
-            string listenAddress = null,
+            string? outputDirectory = null,
+            string? failedSpecsDirectory = null,
+            string? listenAddress = null,
             int? listenPort = null,
-            List<string> specNames = null,
-            string platform = null,
-            string reporter = null,
+            string? platform = null,
+            string? reporter = null,
             bool? clearOutputDirectory = null,
-            bool? teamCityFormattingOn = null,
-            bool? designMode = null)
+            bool? teamCityFormattingOn = null)
             => new MultiNodeTestRunnerOptions(
-                frameworkHandle: frameworkHandle ?? FrameworkHandle,
                 outputDirectory: outputDirectory ?? OutputDirectory,
                 failedSpecsDirectory: failedSpecsDirectory ?? FailedSpecsDirectory,
                 listenAddress: listenAddress ?? ListenAddress,
                 listenPort: listenPort ?? ListenPort,
-                specNames: specNames ?? SpecNames,
                 platform: platform ?? Platform,
                 reporter: reporter ?? Reporter,
                 clearOutputDirectory: clearOutputDirectory ?? ClearOutputDirectory,
-                teamCityFormattingOn: teamCityFormattingOn ?? TeamCityFormattingOn,
-                designMode: designMode ?? DesignMode);
+                teamCityFormattingOn: teamCityFormattingOn ?? TeamCityFormattingOn);
     }
 }

@@ -13,7 +13,7 @@ namespace Akka.MultiNode.TestAdapter.Internal.Sinks
     /// <summary>
     /// Actor responsible for directing the flow of all messages for each test run.
     /// </summary>
-    public abstract class MessageSinkActor : ReceiveActor
+    internal abstract class MessageSinkActor : ReceiveActor
     {
         #region Message classes
 

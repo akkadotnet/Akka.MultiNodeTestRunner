@@ -14,7 +14,7 @@ namespace Akka.MultiNode.TestAdapter.Internal.Sinks
     /// Actor that just writes dumb messages to the file system - used for capturing
     /// raw logs from individual nodes.
     /// </summary>
-    public class FileSystemAppenderActor : ReceiveActor
+    internal class FileSystemAppenderActor : ReceiveActor
     {
         private readonly string _fullFilePath;
 

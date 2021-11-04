@@ -18,6 +18,19 @@ namespace Akka.MultiNode.TestAdapter.Internal
                 innerException)
         { }
     }
+    
+    public class TestConfigurationConstructorException: Exception
+    {
+        public TestConfigurationConstructorException(Type type)
+            : base($"[{type}] constructor, which is a subclass of {typeof(MultiNodeConfig)}, throws an exception")
+        { }
+
+        public TestConfigurationConstructorException(Type type, Exception innerException)
+            : base(
+                $"[{type}] constructor, which is a subclass of {typeof(MultiNodeConfig)}, throws an exception", 
+                innerException)
+        { }
+    }
 
     public class TestBaseTypeException: Exception
     {

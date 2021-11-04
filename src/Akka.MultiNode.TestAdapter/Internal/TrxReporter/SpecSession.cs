@@ -11,7 +11,7 @@ using Akka.MultiNode.TestAdapter.Internal.Sinks;
 
 namespace Akka.MultiNode.TestAdapter.Internal.TrxReporter
 {
-    public class SpecSession
+    internal class SpecSession
     {
         private readonly List<SpecEvent<NodeCompletedSpecWithSuccess>> _successes = new List<SpecEvent<NodeCompletedSpecWithSuccess>>();
         private readonly List<SpecEvent<NodeCompletedSpecWithFail>> _fails = new List<SpecEvent<NodeCompletedSpecWithFail>>();

@@ -14,7 +14,7 @@ namespace Akka.MultiNode.TestAdapter.Internal.Reporting
     /// <summary>
     /// Actor responsible for processing test messages for an individual node within a multi-node test
     /// </summary>
-    public class NodeDataActor : ReceiveActor
+    internal class NodeDataActor : ReceiveActor
     {
         /// <summary>
         /// Data that will be processed and aggregated for an individual node

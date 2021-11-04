@@ -1,0 +1,10 @@
+{
+  "outputDirectory": "TestResult",
+  "failedSpecsDirectory": "FAILED_SPECS_LOGS",
+  "listenAddress": "127.0.0.1",
+  "listenPort":  0,
+  "specNames": [],
+  "reporter": "console",
+  "clearOutputDirectory": false,
+  "teamCityFormatting": false
+}

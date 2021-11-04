@@ -161,7 +161,7 @@ namespace Akka.MultiNode.TestAdapter.Internal.Reporting
     /// <summary>
     /// Messages emitted directly by the test runner itself for an individual spec
     /// </summary>
-    public class MultiNodeTestRunnerMessage : MultiNodeMessage
+    internal class MultiNodeTestRunnerMessage : MultiNodeMessage
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="MultiNodeTestRunnerMessage"/> class.
@@ -220,7 +220,7 @@ namespace Akka.MultiNode.TestAdapter.Internal.Reporting
     /// Used in cases where a log message was broken up across multiple lines and this fragment has to be appended
     /// to a previous message in the timeline
     /// </summary>
-    public class MultiNodeLogMessageFragment : MultiNodeMessage
+    internal class MultiNodeLogMessageFragment : MultiNodeMessage
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="MultiNodeLogMessageFragment"/> class.
@@ -238,7 +238,7 @@ namespace Akka.MultiNode.TestAdapter.Internal.Reporting
     /// <summary>
     /// Message from a node containing log information
     /// </summary>
-    public class MultiNodeLogMessage : MultiNodeMessage
+    internal class MultiNodeLogMessage : MultiNodeMessage
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="MultiNodeLogMessage"/> class.

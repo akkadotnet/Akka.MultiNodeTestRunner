@@ -17,7 +17,7 @@ using Akka.Event;
 
 namespace Akka.MultiNode.TestAdapter.Internal.Sinks
 {
-    public class TimelineLogCollectorActor : ReceiveActor
+    internal class TimelineLogCollectorActor : ReceiveActor
     {
         private readonly SortedList<DateTime, HashSet<LogMessageInfo>> _timeline = new SortedList<DateTime, HashSet<LogMessageInfo>>();
         
