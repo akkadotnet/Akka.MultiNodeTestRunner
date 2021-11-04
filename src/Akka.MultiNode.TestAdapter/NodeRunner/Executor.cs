@@ -14,7 +14,6 @@ using System.Runtime.Loader;
 using System.Threading;
 using Akka.Actor;
 using Akka.IO;
-using Akka.MultiNode.TestAdapter.Internal.Environment;
 using Akka.MultiNode.TestAdapter.Internal.Sinks;
 using Akka.Remote.TestKit;
 using Xunit;
@@ -32,10 +31,15 @@ namespace Akka.MultiNode.TestAdapter.NodeRunner
             var maxProcessWaitTimeout = TimeSpan.FromMinutes(5);
             IActorRef logger = null;
 
+            Environment.SetEnvironmentVariable(MultiNodeFactAttribute.MultiNodeTestEnvironmentName, "1");
             try
             {
                 CommandLine.Initialize(args);
                 
+                var runner = CommandLine.GetPropertyOrDefault("multinode.test-runner", null);
+                if (runner != "multinode")
+                    return 2;
+
                 var nodeIndex = CommandLine.GetInt32("multinode.index");
                 var nodeRole = CommandLine.GetProperty("multinode.role");
                 var assemblyFileName = CommandLine.GetProperty("multinode.test-assembly");
@@ -53,8 +57,6 @@ namespace Akka.MultiNode.TestAdapter.NodeRunner
                     var tcpClient = logger = system.ActorOf<RunnerTcpClient>();
                     system.Tcp().Tell(new Tcp.Connect(listenEndpoint), tcpClient);
 
-                    MultiNodeEnvironment.Initialize();
-                    
                     // In NetCore, if the assembly file hasn't been touched, 
                     // XunitFrontController would fail loading external assemblies and its dependencies.
                     
@@ -181,6 +183,10 @@ namespace Akka.MultiNode.TestAdapter.NodeRunner
                 Console.WriteLine($"Unexpected FATAL exception: {ex}");
                 Environment.Exit(1); //signal failure
                 return 1;
+            }
+            finally
+            {
+                Environment.SetEnvironmentVariable(MultiNodeFactAttribute.MultiNodeTestEnvironmentName, null);
             }
             
             void FlushLogMessages()

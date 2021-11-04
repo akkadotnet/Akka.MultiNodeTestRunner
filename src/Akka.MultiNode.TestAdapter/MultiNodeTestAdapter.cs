@@ -6,7 +6,6 @@ using System.IO;
 using System.Linq;
 using System.Xml;
 using Akka.MultiNode.TestAdapter.Internal;
-using Akka.MultiNode.TestAdapter.Internal.Environment;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel.Adapter;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel.Logging;
@@ -27,11 +26,6 @@ namespace Akka.MultiNode.TestAdapter
     [ExtensionUri(Constants.ExecutorUriString)]
     public class MultiNodeTestAdapter : ITestDiscoverer, ITestExecutor
     {
-        public MultiNodeTestAdapter()
-        {
-            MultiNodeEnvironment.Initialize();
-        }
-        
         /// <summary>
         /// Discovers the tests available from the provided container.
         /// </summary>
@@ -82,6 +76,9 @@ namespace Akka.MultiNode.TestAdapter
             var testCases = rawTestCases.ToList();
             var testResults = new ConcurrentDictionary<string, TestResult>();
             var options = BuildOptions(runContext, frameworkHandle);
+            // Perform output cleanup before anything is logged
+            if (options.ClearOutputDirectory && Directory.Exists(options.OutputDirectory))
+                Directory.Delete(options.OutputDirectory, true);
 
             foreach (var group in testCases.GroupBy(t => Path.GetFullPath(t.Source)))
             {
@@ -120,6 +117,9 @@ namespace Akka.MultiNode.TestAdapter
         public void RunTests(IEnumerable<string> sources, IRunContext runContext, IFrameworkHandle frameworkHandle)
         {
             var options = BuildOptions(runContext, frameworkHandle);
+            // Perform output cleanup before anything is logged
+            if (options.ClearOutputDirectory && Directory.Exists(options.OutputDirectory))
+                Directory.Delete(options.OutputDirectory, true);
             var testResults = new ConcurrentDictionary<string, TestResult>();
             
             var testAssemblyPaths = sources.ToList();
@@ -147,7 +147,7 @@ namespace Akka.MultiNode.TestAdapter
             var runSettings = runContext.RunSettings;
             if (runSettings == null)
             {
-                return MultiNodeTestRunnerOptions.Default;
+                return MultiNodeTestRunnerOptions.Default.WithFrameworkHandle(frameworkHandle);
             }
             
             var runConfiguration = XmlRunSettingsUtilities.GetRunConfigurationNode(runSettings.SettingsXml);
@@ -158,7 +158,7 @@ namespace Akka.MultiNode.TestAdapter
             if (runConfiguration.ResultsDirectorySet)
                 options = options.WithOutputDirectory(runConfiguration.ResultsDirectory);
             
-            return options;
+            return options.WithFrameworkHandle(frameworkHandle);
         }
 
         private static MultiNodeTestRunner CreateRunner(

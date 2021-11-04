@@ -112,14 +112,14 @@ namespace Akka.MultiNode.TestAdapter.Internal.Sinks
             var matchRunnerLog = RunnerLogMessageRegex.Match(messageStr);
             if (matchRunnerLog.Success) return MultiNodeTestRunnerMessageType.RunnerLogMessage;
 
+            var matchFailureReason = NodeFailureReasonRegex.Match(messageStr);
+            if(matchFailureReason.Success) return MultiNodeTestRunnerMessageType.NodeFailureException;
+
             var matchStatus = NodePassStatusRegex.Match(messageStr);
             if (matchStatus.Success)
             {
                 return matchStatus.Groups["status"].Value.Equals(NodePassed) ? MultiNodeTestRunnerMessageType.NodePassMessage : MultiNodeTestRunnerMessageType.NodeFailMessage;
             }
-
-            var matchFailureReason = NodeFailureReasonRegex.Match(messageStr);
-            if(matchFailureReason.Success) return MultiNodeTestRunnerMessageType.NodeFailureException;
 
             var nodeLogFragmentStatus = NodeLogFragmentRegex.Match(messageStr);
             if(nodeLogFragmentStatus.Success) return MultiNodeTestRunnerMessageType.NodeLogFragment;
@@ -239,36 +239,45 @@ namespace Akka.MultiNode.TestAdapter.Internal.Sinks
 
         public void Offer(string messageStr)
         {
-            var messageType = DetermineMessageType(messageStr);
-            if (messageType == MultiNodeTestRunnerMessageType.Unknown)
+            switch (DetermineMessageType(messageStr))
             {
-                HandleUnknownMessageType(messageStr);
-                return;
-            }
-
-            if (messageType == MultiNodeTestRunnerMessageType.RunnerLogMessage)
-            {
-                LogMessageForTestRunner runnerLog;
-                if (!TryParseLogMessage(messageStr, out runnerLog)) throw new InvalidOperationException("could not parse test runner log message: " + messageStr);
-                MessageSinkActorRef.Tell(runnerLog);
-            }
-            else if (messageType == MultiNodeTestRunnerMessageType.NodePassMessage)
-            {
-                NodeCompletedSpecWithSuccess nodePass;
-                if (!TryParseSuccessMessage(messageStr, out nodePass)) throw new InvalidOperationException("could not parse node spec pass message: " + messageStr);
-                MessageSinkActorRef.Tell(nodePass);
-            }
-            else if (messageType == MultiNodeTestRunnerMessageType.NodeFailMessage)
-            {
-                NodeCompletedSpecWithFail nodeFail;
-                if (!TryParseFailureMessage(messageStr, out nodeFail)) throw new InvalidOperationException("could not parse node spec fail message: " + messageStr);
-                MessageSinkActorRef.Tell(nodeFail);
-            }
-            else if (messageType == MultiNodeTestRunnerMessageType.NodeFailureException)
-            {
-                NodeCompletedSpecWithFail nodeFail;
-                if (!TryParseFailureExceptionMessage(messageStr, out nodeFail)) throw new InvalidOperationException("could not parse node spec failure + EXCEPTION message: " + messageStr);
-                MessageSinkActorRef.Tell(nodeFail);
+                case MultiNodeTestRunnerMessageType.Unknown:
+                    HandleUnknownMessageType(messageStr);
+                    return;
+                
+                case MultiNodeTestRunnerMessageType.RunnerLogMessage:
+                    if (!TryParseLogMessage(messageStr, out LogMessageForTestRunner runnerLog)) 
+                        throw new InvalidOperationException("could not parse test runner log message: " + messageStr);
+                    MessageSinkActorRef.Tell(runnerLog);
+                    return;
+                
+                case MultiNodeTestRunnerMessageType.NodePassMessage:
+                    if (!TryParseSuccessMessage(messageStr, out var nodePass)) 
+                        throw new InvalidOperationException("could not parse node spec pass message: " + messageStr);
+                    MessageSinkActorRef.Tell(nodePass);
+                    return;
+                
+                case MultiNodeTestRunnerMessageType.NodeFailMessage:
+                    if (!TryParseFailureMessage(messageStr, out var nodeFail)) 
+                        throw new InvalidOperationException("could not parse node spec fail message: " + messageStr);
+                    MessageSinkActorRef.Tell(nodeFail);
+                    return;
+                
+                case MultiNodeTestRunnerMessageType.NodeFailureException:
+                    if (!TryParseFailureExceptionMessage(messageStr, out var nodeFailEx)) 
+                        throw new InvalidOperationException("could not parse node spec failure + EXCEPTION message: " + messageStr);
+                    MessageSinkActorRef.Tell(nodeFailEx);
+                    return;
+                
+                case MultiNodeTestRunnerMessageType.NodeLogFragment:
+                case MultiNodeTestRunnerMessageType.NodeLogMessage:
+                    if (!TryParseLogMessage(messageStr, out LogMessageFragmentForNode fragmentLog)) 
+                        throw new InvalidOperationException("could not parse test runner log message: " + messageStr);
+                    MessageSinkActorRef.Tell(fragmentLog);
+                    break;
+                
+                default:
+                    throw new ArgumentOutOfRangeException();
             }
         }
 
