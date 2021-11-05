@@ -77,7 +77,8 @@ namespace Akka.MultiNode.TestAdapter.Internal
             var frameworkParts = attr.FrameworkName.Split(',');
             var versionParts = frameworkParts[1].Split('=');
             var platformName = (frameworkParts[0].Replace(".", "") + versionParts[1].Replace("v", "").Replace(".", "_")).ToLowerInvariant();
-            Options = OptionsReader.Load(testCase.AssemblyPath).WithPlatform(platformName);
+            Options = OptionsReader.Load(testCase.AssemblyPath);
+            Options.Platform = platformName;
         }
 
         protected override async Task<RunSummary> RunTestAsync()
@@ -97,7 +98,7 @@ akka.io.tcp {{
             var listenEndpoint = new IPEndPoint(IPAddress.Parse(Options.ListenAddress), Options.ListenPort);
             TestRunSystem.Tcp().Tell(new Tcp.Bind(tcpLogger, listenEndpoint), sender: tcpLogger);
 
-            EnableAllSinks(TestCase.AssemblyPath, Options);
+            // EnableAllSinks(TestCase.AssemblyPath, Options);
             
             // If port was set random, request the actual port from TcpLoggingServer
             ListenPort = Options.ListenPort > 0 
@@ -109,7 +110,7 @@ akka.io.tcp {{
 
             var timelineCollector = TestRunSystem.ActorOf(Props.Create(() => new TimelineLogCollectorActor()));
             //TODO: might need to do some validation here to avoid the 260 character max path error on Windows
-            var folder = Directory.CreateDirectory(Path.Combine(Options.OutputDirectory, TestCase.DisplayName));
+            var folder = Directory.CreateDirectory(Path.Combine(Options.OutputDirectory, TestCase.MethodName));
             var testOutputDir = folder.FullName;
 
             var tasks = new List<Task<RunSummary>>();
@@ -181,7 +182,7 @@ akka.io.tcp {{
 
             if (summary.Failed > 0)
             {
-                var failedSpecPath = Path.GetFullPath(Path.Combine(options.OutputDirectory, options.FailedSpecsDirectory, $"{TestCase.DisplayName}.txt"));
+                var failedSpecPath = Path.GetFullPath(Path.Combine(options.OutputDirectory, options.FailedSpecsDirectory, $"{TestCase.MethodName}.txt"));
                 var dumpFailureArtifactTask = timelineCollector.Ask<Done>(new TimelineLogCollectorActor.DumpToFile(failedSpecPath));
                 dumpTasks.Add(dumpFailureArtifactTask);
             }

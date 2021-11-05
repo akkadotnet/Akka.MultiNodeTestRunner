@@ -11,22 +11,14 @@ using Newtonsoft.Json;
 
 namespace Akka.MultiNode.TestAdapter.Configuration
 {
-    internal class OptionsException : Exception
-    {
-        public OptionsException(string message) : base(message)
-        {
-            
-        }
-    }
-    
     public static class OptionsReader
     {
         public static MultiNodeTestRunnerOptions Load(string assemblyFileName)
         {
             var assemblyName = Path.GetFileNameWithoutExtension(assemblyFileName);
             var directoryName = Path.GetDirectoryName(assemblyFileName) ?? "";
-            return LoadFile(Path.Combine(directoryName, $"{assemblyName}.xunit.runner.json"))
-                   ?? LoadFile(Path.Combine(directoryName, "xunit.runner.json")) 
+            return LoadFile(Path.Combine(directoryName, $"{assemblyName}.xunit.multinode.runner.json"))
+                   ?? LoadFile(Path.Combine(directoryName, "xunit.multinode.runner.json")) 
                    ?? MultiNodeTestRunnerOptions.Default;
         }
 
@@ -34,26 +26,73 @@ namespace Akka.MultiNode.TestAdapter.Configuration
         {
             try
             {
+                if(!File.Exists(configFileName))
+                {
+                    return null;
+                }                
                 using var stream = File.OpenRead(configFileName);
                 return Load(stream);
             }
             catch
-            {
-                return null;
-            }
+            { }
+            return null;
         }
 
         private static MultiNodeTestRunnerOptions Load(Stream configStream)
         {
-            using (var reader = new StreamReader(configStream))
+            var result = new MultiNodeTestRunnerOptions();
+            try
             {
-                return JsonConvert.DeserializeObject<MultiNodeTestRunnerOptions>(reader.ReadToEnd(),
-                    new JsonSerializerSettings
+                using (var reader = new StreamReader(configStream))
+                {
+                    var config = (JsonObject) JsonDeserializer.Deserialize(reader);
+                    foreach (var propertyName in config.Keys)
                     {
-                        MissingMemberHandling = MissingMemberHandling.Ignore,
-                        NullValueHandling = NullValueHandling.Ignore
-                    });
+                        var propertyValue = config.Value(propertyName);
+
+                        switch (propertyValue)
+                        {
+                            case JsonBoolean booleanValue:
+                                if (string.Equals(propertyName, Configuration.ClearOutputDirectory, StringComparison.OrdinalIgnoreCase))
+                                    result.ClearOutputDirectory = booleanValue.Value;
+                                if (string.Equals(propertyName, Configuration.TeamCityFormatting, StringComparison.OrdinalIgnoreCase))
+                                    result.TeamCityFormattingOn = booleanValue.Value;
+                                break;
+                            
+                            case JsonString stringValue:
+                                if (string.Equals(propertyName, Configuration.OutputDirectory, StringComparison.OrdinalIgnoreCase))
+                                    result.OutputDirectory = stringValue.Value;
+                                if (string.Equals(propertyName, Configuration.FailedSpecsDirectory, StringComparison.OrdinalIgnoreCase))
+                                    result.FailedSpecsDirectory = stringValue.Value;
+                                if(string.Equals(propertyName, Configuration.ListenAddress, StringComparison.OrdinalIgnoreCase))
+                                    result.ListenAddress = stringValue.Value;
+                                if(string.Equals(propertyName, Configuration.Reporter, StringComparison.OrdinalIgnoreCase))
+                                    result.Reporter = stringValue.Value;
+                                break;
+                            
+                            case JsonNumber numberValue when string.Equals(propertyName, Configuration.ListenPort, StringComparison.OrdinalIgnoreCase):
+                                int.TryParse(numberValue.Raw, out var port);
+                                if(port != 0)
+                                    result.ListenPort = port;
+                                break;
+                        }
+                    }
+                }
             }
+            catch { }
+
+            return result;
+        }
+        
+        static class Configuration
+        {
+            public const string OutputDirectory = "outputDirectory";
+            public const string FailedSpecsDirectory = "failedSpecsDirectory";
+            public const string ListenAddress = "listenAddress";
+            public const string ListenPort = "listenPort";
+            public const string Reporter = "reporter";
+            public const string ClearOutputDirectory = "clearOutputDirectory";
+            public const string TeamCityFormatting = "teamCityFormatting";
         }        
     }
 }

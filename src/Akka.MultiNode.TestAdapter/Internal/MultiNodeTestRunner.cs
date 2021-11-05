@@ -153,7 +153,7 @@ namespace Akka.MultiNode.TestAdapter.Internal
                 _messageBus.QueueMessage(testResult);
             }
 
-            var specFolder = Directory.CreateDirectory(Path.Combine(_options.OutputDirectory, TestCase.DisplayName));
+            var specFolder = Directory.CreateDirectory(Path.Combine(_options.OutputDirectory, TestCase.MethodName));
             var logFilePath = Path.GetFullPath(Path.Combine(specFolder.FullName, $"node{_test.Node}__{_test.Role}__{_options.Platform}.txt"));
             File.WriteAllText(logFilePath, Output);
 
