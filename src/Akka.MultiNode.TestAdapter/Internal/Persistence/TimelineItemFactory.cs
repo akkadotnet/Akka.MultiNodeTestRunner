@@ -9,7 +9,7 @@ using System;
 
 namespace Akka.MultiNode.TestAdapter.Internal.Persistence
 {
-    public static class TimelineItemFactory
+    internal static class TimelineItemFactory
     {
         private static readonly string[] CssClasses =
         {

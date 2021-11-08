@@ -1,38 +1,32 @@
-﻿// -----------------------------------------------------------------------
-// <copyright file="XUnitSinkAdapter.cs" company="Akka.NET Project">
-//     Copyright (C) 2009-2021 Lightbend Inc. <http://www.lightbend.com>
-//     Copyright (C) 2013-2021 .NET Foundation <https://github.com/akkadotnet/akka.net>
+﻿//-----------------------------------------------------------------------
+// <copyright file="ConsoleMessageSinkActor.cs" company="Akka.NET Project">
+//     Copyright (C) 2009-2019 Lightbend Inc. <http://www.lightbend.com>
+//     Copyright (C) 2013-2019 .NET Foundation <https://github.com/akkadotnet/akka.net>
 // </copyright>
-// -----------------------------------------------------------------------
+//-----------------------------------------------------------------------
 
 using System;
 using System.Linq;
 using Akka.Actor;
-using Akka.Event;
 using Akka.MultiNode.TestAdapter.Internal.Reporting;
-using Microsoft.VisualStudio.TestPlatform.ObjectModel.Adapter;
-using Microsoft.VisualStudio.TestPlatform.ObjectModel.Logging;
-using Microsoft.VisualStudio.TestPlatform.Utilities;
+using DiagnosticMessage = Xunit.DiagnosticMessage;
 
 namespace Akka.MultiNode.TestAdapter.Internal.Sinks
 {
     /// <summary>
-    /// <see cref="MessageSinkActor"/> implementation that redirects all logs to the <see cref="IFrameworkHandle"/> VSTest adapter.
+    /// <see cref="MessageSinkActor"/> implementation that logs all of its output directly to the <see cref="Console"/>.
     /// 
     /// Has no persistence capabilities. Can optionally use a <see cref="TestRunCoordinator"/> to provide total "end of test" reporting.
     /// </summary>
-    public class FrameworkHandleMessageSinkActor: TestCoordinatorEnabledMessageSink
+    internal class DiagnosticMessageSinkActor : TestCoordinatorEnabledMessageSink
     {
-        private readonly IFrameworkHandle _frameworkHandle;
-        private readonly ConsoleOutput _consoleOutput;
+        private readonly Xunit.Abstractions.IMessageSink _diagnosticSink;
         
-        public FrameworkHandleMessageSinkActor(
-            bool useTestCoordinator,
-            IFrameworkHandle frameworkHandle)
-            : base(useTestCoordinator)
+        public DiagnosticMessageSinkActor(
+            Xunit.Abstractions.IMessageSink diagnosticSink, 
+            bool useTestCoordinator) : base(useTestCoordinator)
         {
-            _frameworkHandle = frameworkHandle;
-            _consoleOutput = ConsoleOutput.Instance;
+            _diagnosticSink = diagnosticSink;
         }
 
         #region Message handling
@@ -144,74 +138,71 @@ namespace Akka.MultiNode.TestAdapter.Internal.Sinks
 
         #endregion
 
-        #region FrameworkHandle output methods
+        #region Diagnostic output methods
 
         /// <summary>
         /// Used to print a spec status message (spec starting, finishing, failed, etc...)
         /// </summary>
         private void WriteSpecMessage(string message)
         {
-            _frameworkHandle.SendMessage(
-                TestMessageLevel.Informational, 
-                $"[RUNNER][{DateTime.UtcNow.ToShortTimeString()}]: {message}");
+            _diagnosticSink?.OnMessage(new DiagnosticMessage(
+                "[RUNNER][{0}]: {1}", DateTime.UtcNow.ToShortTimeString(),
+                message));
         }
 
         private void WriteSpecPass(int nodeIndex, string nodeRole, string message)
         {
-            _frameworkHandle.SendMessage(
-                TestMessageLevel.Informational, 
-                $"[NODE{nodeIndex}:{nodeRole}][{DateTime.UtcNow.ToShortTimeString()}]: SPEC PASSED: {message}");
+            _diagnosticSink?.OnMessage(new DiagnosticMessage(
+                "[NODE #{0}({1})][{2}]: SPEC PASSED: {3}", 
+                nodeIndex,
+                nodeRole,
+                DateTime.UtcNow.ToShortTimeString(),
+                message));
         }
 
         private void WriteSpecFail(int nodeIndex, string nodeRole, string message)
         {
-            _frameworkHandle.SendMessage(
-                TestMessageLevel.Error, 
-                $"[NODE{nodeIndex}:{nodeRole}][{DateTime.UtcNow.ToShortTimeString()}]: SPEC FAILED: {message}");
+            _diagnosticSink?.OnMessage(new DiagnosticMessage(
+                "[NODE{0}:{1}][{2}]: SPEC FAILED: {3}", 
+                nodeIndex,
+                nodeRole,
+                DateTime.UtcNow.ToShortTimeString(),
+                message
+            ));
         }
 
         private void WriteRunnerMessage(LogMessageForTestRunner nodeMessage)
         {
-            switch (nodeMessage.Level)
-            {
-                case LogLevel.WarningLevel:
-                    _frameworkHandle.SendMessage(TestMessageLevel.Warning, nodeMessage.ToString());
-                    break;
-                case LogLevel.ErrorLevel:
-                    _frameworkHandle.SendMessage(TestMessageLevel.Error, nodeMessage.ToString());
-                    break;
-                case LogLevel.DebugLevel:
-                case LogLevel.InfoLevel:
-                default:
-                    _frameworkHandle.SendMessage(TestMessageLevel.Informational, nodeMessage.ToString());
-                    break;
-            }
+            _diagnosticSink?.OnMessage(new DiagnosticMessage(nodeMessage.ToString()));
         }
 
         private void WriteNodeMessage(LogMessageFragmentForNode nodeMessage)
         {
-            _frameworkHandle.SendMessage(TestMessageLevel.Informational, nodeMessage.ToString());
+            _diagnosticSink?.OnMessage(new DiagnosticMessage(nodeMessage.ToString()));
         }
-
         #endregion
     }
-    
+
     /// <summary>
-    /// <see cref="IMessageSink"/> implementation that redirects outputs to <see cref="IFrameworkHandle"/>.
+    /// <see cref="IMessageSink"/> implementation that writes directly to the console.
     /// </summary>
-    public class FrameworkHandleMessageSink : MessageSink
+    internal class DiagnosticMessageSink : MessageSink
     {
-        private readonly IFrameworkHandle _frameworkHandle;
+        private readonly Xunit.Abstractions.IMessageSink _diagnosticSink;
         
-        public FrameworkHandleMessageSink(IFrameworkHandle frameworkHandle)
-            : base(Props.Create(() => new FrameworkHandleMessageSinkActor(true, frameworkHandle)))
+        public DiagnosticMessageSink(
+            Xunit.Abstractions.IMessageSink diagnosticSink)
+            : base(Props.Create(() => new DiagnosticMessageSinkActor(diagnosticSink, true)))
         {
-            _frameworkHandle = frameworkHandle;
+            _diagnosticSink = diagnosticSink;
         }
 
         protected override void HandleUnknownMessageType(string message)
         {
-            _frameworkHandle.SendMessage(TestMessageLevel.Warning, $"Unknown message: {message}");
+            _diagnosticSink?.OnMessage(new DiagnosticMessage(
+                "[RUNNER][{0}]: Unknown message: {1}", 
+                DateTime.UtcNow.ToShortTimeString(),
+                message));
         }
     }
 }

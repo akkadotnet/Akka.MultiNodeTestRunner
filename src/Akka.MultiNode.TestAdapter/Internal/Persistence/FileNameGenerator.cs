@@ -10,7 +10,7 @@ using System.IO;
 
 namespace Akka.MultiNode.TestAdapter.Internal.Persistence
 {
-    public class FileNameGenerator
+    internal static class FileNameGenerator
     {
         public static string GenerateFileName(string assemblyName, string platform, string fileExtension)
         {
@@ -19,7 +19,7 @@ namespace Akka.MultiNode.TestAdapter.Internal.Persistence
 
         public static string GenerateFileName(string assemblyName, string platform, string fileExtension, DateTime utcNow)
         {
-            return $"{assemblyName.Replace(".dll", "")}-{utcNow.Ticks}-{platform}{fileExtension}";
+            return $"{assemblyName.Replace(".dll", "")}-{platform}{fileExtension}";
         }
 
         public static string GenerateFileName(string folderPath, string assemblyName, string platform, string fileExtension, DateTime utcNow)

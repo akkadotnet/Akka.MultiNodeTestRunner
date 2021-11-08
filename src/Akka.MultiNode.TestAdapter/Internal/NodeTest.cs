@@ -5,15 +5,36 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
+using Xunit.Abstractions;
+using Xunit.Sdk;
+using LongLivedMarshalByRefObject = Xunit.LongLivedMarshalByRefObject;
+
 namespace Akka.MultiNode.TestAdapter.Internal
 {
-    public class NodeTest
+    public class NodeTest : LongLivedMarshalByRefObject, ITest
     {
-        public int Node { get; set; }
-        public string Role { get; set; }
-        public MultiNodeTest Test { get; set; }
+        public NodeTest(MultiNodeTestCase testCase, int node, string role)
+        {
+            TestCase = testCase;
+            Node = node;
+            Role = role;
+        }
 
-        public string Name => $"{Test.MethodName}_node{Node}[{Role}]";
+        public int Node { get; }
+        public string Role { get; }
+        public virtual string DisplayName => $"Node {Node} [{Role}]";
+        public MultiNodeTestCase TestCase { get; }
+        ITestCase ITest.TestCase => TestCase;
+        public string Name => $"{TestCase.DisplayName}_node{Node}[{Role}]";
+    }
+
+    internal class ErrorTest : NodeTest
+    {
+        public ErrorTest(MultiNodeTestCase testCase) : base(testCase, 0, "")
+        {
+        }
+
+        public override string DisplayName => "ERRORED";
     }
 }
 

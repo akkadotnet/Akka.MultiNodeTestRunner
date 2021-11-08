@@ -16,7 +16,7 @@ namespace Akka.MultiNode.TestAdapter.Internal.Sinks
     /// <summary>
     /// A file system <see cref="MessageSink"/> implementation
     /// </summary>
-    public class FileSystemMessageSink : MessageSink
+    internal class FileSystemMessageSink : MessageSink
     {
         public FileSystemMessageSink(string assemblyName, string platform)
             : this(
@@ -43,7 +43,7 @@ namespace Akka.MultiNode.TestAdapter.Internal.Sinks
     /// <summary>
     /// <see cref="MessageSink"/> responsible for writing to the file system.
     /// </summary>
-    public class FileSystemMessageSinkActor : TestCoordinatorEnabledMessageSink
+    internal class FileSystemMessageSinkActor : TestCoordinatorEnabledMessageSink
     {
         protected IPersistentTestRunStore FileStore;
         protected string FileName;

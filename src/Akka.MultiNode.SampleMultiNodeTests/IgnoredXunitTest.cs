@@ -1,5 +1,6 @@
 using System;
 using Xunit;
+using MultiNodeFactAttribute = Akka.MultiNode.TestAdapter.MultiNodeFactAttribute;
 
 namespace Akka.MultiNode.TestAdapter.SampleTests
 {

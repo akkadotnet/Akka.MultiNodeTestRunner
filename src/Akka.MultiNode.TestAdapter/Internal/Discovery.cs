@@ -9,19 +9,16 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
-using Akka.MultiNode.TestAdapter.Internal;
-using Akka.Remote.TestKit;
 using Xunit.Abstractions;
 using Xunit.Sdk;
 
-namespace Akka.MultiNode.TestAdapter
+namespace Akka.MultiNode.TestAdapter.Internal
 {
-    public class Discovery : IMessageSink, IDisposable
+    internal class Discovery : IMessageSink, IDisposable
     {
         // There can be multiple fact attributes in a single class, but our convention
         // limits them to 1 fact attribute per test class
-        public List<MultiNodeTest> MultiNodeTests { get; }
-        public List<ITestCase> TestCases { get; }
+        public List<MultiNodeTestCase> TestCases { get; }
         public List<ErrorMessage> Errors { get; } = new List<ErrorMessage>();
         public bool WasSuccessful => Errors.Count == 0;
 
@@ -33,8 +30,7 @@ namespace Akka.MultiNode.TestAdapter
         public Discovery(string assemblyPath)
         {
             _assemblyPath = assemblyPath;
-            MultiNodeTests = new List<MultiNodeTest>();
-            TestCases = new List<ITestCase>();
+            TestCases = new List<MultiNodeTestCase>();
             Finished = new ManualResetEvent(false);
         }
 
@@ -49,11 +45,10 @@ namespace Akka.MultiNode.TestAdapter
                     if (testClass.IsAbstract) 
                         break;
                     
-                    if (!discovery.TestMethod.Method.GetCustomAttributes(typeof(MultiNodeFactAttribute)).Any())
-                        break;
-                    
-                    MultiNodeTests.Add(new MultiNodeTest(discovery, _assemblyPath));
-                    TestCases.Add(discovery.TestCase);
+                    foreach (var c in discovery.TestCases.Where(t => t is MultiNodeTestCase).Cast<MultiNodeTestCase>())
+                    {
+                        TestCases.Add(c);
+                    }
                     break;
                 case IDiscoveryCompleteMessage _:
                     Finished.Set();

@@ -2,7 +2,7 @@
   <PropertyGroup>
     <Copyright>Copyright © 2013-2019 Akka.NET Team</Copyright>
     <Authors>Akka.NET Team</Authors>
-    <VersionPrefix>0.1.14</VersionPrefix>
+    <VersionPrefix>1.0.0</VersionPrefix>
     <PackageIconUrl>http://getakka.net/images/akkalogo.png</PackageIconUrl>
     <PackageProjectUrl>https://github.com/akkadotnet/akka.net</PackageProjectUrl>
     <PackageLicenseUrl>https://github.com/akkadotnet/akka.net/blob/master/LICENSE</PackageLicenseUrl>
@@ -25,13 +25,16 @@
     <FluentAssertionsVersion>6.2.0</FluentAssertionsVersion>
     <FsCheckVersion>2.9.0</FsCheckVersion>
     <AkkaVersion>1.4.27</AkkaVersion>
+    <!--
+    <AkkaVersion>1.4.28-beta637717616449070703</AkkaVersion>
+    -->
     <AkkaPackageTags>akka;actors;actor model;Akka;concurrency</AkkaPackageTags>
   </PropertyGroup>
   <PropertyGroup>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
   </PropertyGroup>
   <PropertyGroup>
-    <PackageReleaseNotes>Temp local nuget</PackageReleaseNotes>
+    <PackageReleaseNotes>- Fix [result folder clearing, add documentation](https://github.com/akkadotnet/Akka.MultiNodeTestRunner/pull/95)</PackageReleaseNotes>
   </PropertyGroup>
   <!-- SourceLink support for all Akka.NET projects -->
   <ItemGroup>

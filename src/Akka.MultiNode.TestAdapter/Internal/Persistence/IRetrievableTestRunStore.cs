@@ -13,7 +13,7 @@ namespace Akka.MultiNode.TestAdapter.Internal.Persistence
     /// Persistent store for retrieving <see cref="TestRunTree" /> instances
     /// from disk.
     /// </summary>
-    public interface IRetrievableTestRunStore :IPersistentTestRunStore
+    internal interface IRetrievableTestRunStore :IPersistentTestRunStore
     {
         bool TestRunExists(string filePath);
 

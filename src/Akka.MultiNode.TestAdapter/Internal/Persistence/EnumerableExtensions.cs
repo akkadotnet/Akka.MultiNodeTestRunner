@@ -9,7 +9,7 @@ using System.Collections.Generic;
 
 namespace Akka.MultiNode.TestAdapter.Internal.Persistence
 {
-    public static class EnumerableExtensions
+    internal static class EnumerableExtensions
     {
         public static IEnumerable<T> Concat<T>(this IEnumerable<T> source, T item)
         {

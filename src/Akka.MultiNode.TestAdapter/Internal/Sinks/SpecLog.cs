@@ -12,7 +12,7 @@ namespace Akka.MultiNode.TestAdapter.Internal.Sinks
     /// <summary>
     /// SpecLog
     /// </summary>
-    public class SpecLog
+    internal class SpecLog
     {
         /// <summary>
         /// Aggregated timeline logs for all notes in spec
