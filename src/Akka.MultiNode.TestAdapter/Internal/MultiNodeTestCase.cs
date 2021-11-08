@@ -35,7 +35,7 @@ namespace Akka.MultiNode.TestAdapter.Internal
                 testMethodArguments)
         { }
         
-        public virtual string AssemblyPath { get; protected set; }
+        public virtual string? AssemblyPath { get; protected set; }
         public virtual string TypeName => TestMethod.TestClass.Class.Name;
         public virtual string MethodName => TestMethod.Method.Name;
 
@@ -91,8 +91,8 @@ namespace Akka.MultiNode.TestAdapter.Internal
         {
             if (!InExecutionMode)
             {
-                return new MultiNodeTestCaseRunner(this, DisplayName, SkipReason, messageBus, aggregator,
-                    cancellationTokenSource).RunAsync();
+                return new MultiNodeTestCaseRunner(this, DisplayName, SkipReason, messageBus, diagnosticMessageSink, 
+                    aggregator, cancellationTokenSource).RunAsync();
             }
             return new XunitTestCaseRunner(this, DisplayName, SkipReason, constructorArguments, TestMethodArguments, messageBus, aggregator, cancellationTokenSource).RunAsync();
         }

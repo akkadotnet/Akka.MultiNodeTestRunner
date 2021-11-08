@@ -54,15 +54,15 @@ namespace Akka.MultiNode.TestAdapter.Internal.Sinks
         /// </summary>
         private void SetReceive()
         {
-            Receive<BeginNewSpec>(spec => HandleNewSpec(spec));
-            Receive<EndSpec>(endspec => HandleEndSpec(endspec));
-            Receive<LogMessageFragmentForNode>(node => HandleNodeMessageFragment(node));
-            Receive<LogMessageForTestRunner>(node => HandleRunnerMessage(node));
-            Receive<NodeCompletedSpecWithSuccess>(success => HandleNodeSpecPass(success));
-            Receive<NodeCompletedSpecWithFail>(fail => HandleNodeSpecFail(fail));
-            Receive<EndTestRun>(end => HandleTestRunEnd(end));
-            Receive<TestRunTree>(tree => HandleTestRunTree(tree));
-            Receive<BeginSinkTerminate>(terminate => HandleSinkTerminate(terminate));
+            Receive<BeginNewSpec>(HandleNewSpec);
+            Receive<EndSpec>(HandleEndSpec);
+            Receive<LogMessageFragmentForNode>(HandleNodeMessageFragment);
+            Receive<LogMessageForTestRunner>(HandleRunnerMessage);
+            Receive<NodeCompletedSpecWithSuccess>(HandleNodeSpecPass);
+            Receive<NodeCompletedSpecWithFail>(HandleNodeSpecFail);
+            Receive<EndTestRun>(HandleTestRunEnd);
+            Receive<TestRunTree>(HandleTestRunTree);
+            Receive<BeginSinkTerminate>(HandleSinkTerminate);
             AdditionalReceives();
         }
 

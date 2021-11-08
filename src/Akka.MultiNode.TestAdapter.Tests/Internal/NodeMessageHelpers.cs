@@ -8,10 +8,13 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Akka.Event;
 using Akka.MultiNode.TestAdapter.Internal;
 using Akka.MultiNode.TestAdapter.Internal.Reporting;
 using Akka.MultiNode.TestAdapter.Tests.Internal.Utils;
+using Xunit.Abstractions;
 using Xunit.Sdk;
 
 namespace Akka.MultiNode.TestAdapter.Tests.Internal
@@ -214,6 +217,12 @@ namespace Akka.MultiNode.TestAdapter.Tests.Internal
             protected override List<NodeTest> LoadDetails()
             {
                 return _indices.Select(i => new NodeTest(this, i, DummyRoleFor + i)).ToList();
+            }
+
+            public override Task<RunSummary> RunAsync(IMessageSink diagnosticMessageSink, IMessageBus messageBus, object[] constructorArguments,
+                ExceptionAggregator aggregator, CancellationTokenSource cancellationTokenSource)
+            {
+                return Task.FromResult(new RunSummary());
             }
         }
         

@@ -20,6 +20,8 @@ using Akka.MultiNode.TestAdapter.Internal.Persistence;
 using Akka.MultiNode.TestAdapter.Internal.Sinks;
 using Akka.MultiNode.TestAdapter.Internal.TrxReporter;
 using Akka.MultiNode.TestAdapter.Configuration;
+using Akka.MultiNode.TestAdapter.Helpers;
+using Xunit.Abstractions;
 using Xunit.Sdk;
 
 namespace Akka.MultiNode.TestAdapter.Internal
@@ -34,7 +36,6 @@ namespace Akka.MultiNode.TestAdapter.Internal
         
         private ActorSystem TestRunSystem { get; set; }
         private IActorRef SinkCoordinator { get; set; }
-        private int ListenPort { get; set; }
         private MultiNodeTestRunnerOptions Options { get; }
         
         /// <summary>
@@ -57,15 +58,19 @@ namespace Akka.MultiNode.TestAdapter.Internal
         /// </summary>
         private MethodInfo TestMethod { get; }
 
+        private readonly Xunit.Abstractions.IMessageSink _diagnosticSink;
+
         public MultiNodeTestCaseRunner(
             MultiNodeTestCase testCase,
             string displayName,
             string skipReason,
             IMessageBus messageBus,
+            Xunit.Abstractions.IMessageSink diagnosticSink,
             ExceptionAggregator aggregator,
             CancellationTokenSource cancellationTokenSource) 
             : base(testCase, messageBus, aggregator, cancellationTokenSource)
         {
+            _diagnosticSink = diagnosticSink;
             DisplayName = displayName;
             SkipReason = skipReason;
 
@@ -79,10 +84,47 @@ namespace Akka.MultiNode.TestAdapter.Internal
             var platformName = (frameworkParts[0].Replace(".", "") + versionParts[1].Replace("v", "").Replace(".", "_")).ToLowerInvariant();
             Options = OptionsReader.Load(testCase.AssemblyPath);
             Options.Platform = platformName;
+            
+            if (Options.ListenPort == 0)
+                Options.ListenPort = SocketUtil.TemporaryTcpAddress(Options.ListenIpAddress).Port;
         }
 
         protected override async Task<RunSummary> RunTestAsync()
         {
+            // Shortcut the spec if it is skipped
+            if (!string.IsNullOrEmpty(SkipReason))
+            {
+                foreach (var test in TestCase.Nodes)
+                {
+                    MessageBus.QueueMessage(new TestStarting(test));
+                    MessageBus.QueueMessage(new TestSkipped(test, SkipReason));
+                }
+
+                return new RunSummary
+                {
+                    Total = TestCase.Nodes.Count,
+                    Skipped = TestCase.Nodes.Count
+                };
+            }
+
+            // Shortcut the spec if it already failed
+            if (Aggregator.HasExceptions)
+            {
+                var exception = Aggregator.ToException();
+                foreach (var test in TestCase.Nodes)
+                {
+                    MessageBus.QueueMessage(new TestStarting(test));
+                    MessageBus.QueueMessage(new TestFailed(test, 0, "Test failed before being executed", exception));
+                }
+
+                return new RunSummary
+                {
+                    Total = TestCase.Nodes.Count,
+                    Failed = TestCase.Nodes.Count
+                };
+            }
+            
+            // Run the actual spec
             var config = ConfigurationFactory.ParseString($@"
 akka.io.tcp {{
     buffer-pool = ""akka.io.tcp.disabled-buffer-pool""
@@ -91,29 +133,23 @@ akka.io.tcp {{
 ");
             TestRunSystem = ActorSystem.Create("TestRunnerLogging", config);
 
-            var suiteName = Path.GetFileNameWithoutExtension(Path.GetFullPath(TestCase.AssemblyPath));
-            SinkCoordinator = CreateSinkCoordinator(Options, suiteName);
+            SinkCoordinator = TestRunSystem.ActorOf(Props.Create(()
+                => new SinkCoordinator(new[] { new DiagnosticMessageSink(_diagnosticSink) })), "sinkCoordinator");
 
             var tcpLogger = TestRunSystem.ActorOf(Props.Create(() => new TcpLoggingServer(SinkCoordinator)), "TcpLogger");
             var listenEndpoint = new IPEndPoint(IPAddress.Parse(Options.ListenAddress), Options.ListenPort);
             TestRunSystem.Tcp().Tell(new Tcp.Bind(tcpLogger, listenEndpoint), sender: tcpLogger);
 
-            // EnableAllSinks(TestCase.AssemblyPath, Options);
-            
-            // If port was set random, request the actual port from TcpLoggingServer
-            ListenPort = Options.ListenPort > 0 
-                ? Options.ListenPort 
-                : tcpLogger.Ask<int>(TcpLoggingServer.GetBoundPort.Instance).Result;
-
-            PublishRunnerMessage($"Starting test {TestCase.MethodName}");
+            PublishRunnerMessage($"Starting test {TestCase.DisplayName}");
             StartNewSpec();
 
             var timelineCollector = TestRunSystem.ActorOf(Props.Create(() => new TimelineLogCollectorActor()));
             //TODO: might need to do some validation here to avoid the 260 character max path error on Windows
-            var folder = Directory.CreateDirectory(Path.Combine(Options.OutputDirectory, TestCase.MethodName));
+            var folder = Directory.CreateDirectory(Path.Combine(Options.OutputDirectory, TestCase.DisplayName));
             var testOutputDir = folder.FullName;
-
+            
             var tasks = new List<Task<RunSummary>>();
+            var serverPort = SocketUtil.TemporaryTcpAddress("localhost").Port;
             foreach (var nodeTest in TestCase.Nodes)
             {
                 //Loop through each test, work out number of nodes to run on and kick off process
@@ -123,11 +159,12 @@ akka.io.tcp {{
                         $@"-Dmultinode.test-method=""{nodeTest.TestCase.MethodName}""",
                         $@"-Dmultinode.max-nodes={TestCase.Nodes.Count}",
                         $@"-Dmultinode.server-host=""{"localhost"}""",
+                        $@"-Dmultinode.server-port={serverPort}",
                         $@"-Dmultinode.host=""{"localhost"}""",
                         $@"-Dmultinode.index={nodeTest.Node - 1}",
                         $@"-Dmultinode.role=""{nodeTest.Role}""",
                         $@"-Dmultinode.listen-address={Options.ListenAddress}",
-                        $@"-Dmultinode.listen-port={ListenPort}",
+                        $@"-Dmultinode.listen-port={Options.ListenPort}",
                         $@"-Dmultinode.test-assembly=""{TestCase.AssemblyPath}"""
                     };
 
@@ -143,9 +180,22 @@ akka.io.tcp {{
             // Wait for all nodes to finish and collect results
             while (tasks.Count > 0)
             {
+                // TODO: might be a bug source if await throws
                 var finished = await Task.WhenAny(tasks);
                 tasks.Remove(finished);
                 summary.Aggregate(finished.Result);
+            }
+            
+            try
+            {
+                // Limit TCP logger unbind to 10 seconds, abort the test if failed. 
+                await tcpLogger.Ask<TcpLoggingServer.ListenerStopped>(
+                    new TcpLoggingServer.StopListener(),
+                    TimeSpan.FromSeconds(10));
+            }
+            catch
+            {
+                CancellationTokenSource.Cancel();
             }
 
             // Save timelined logs to file system
@@ -153,15 +203,26 @@ akka.io.tcp {{
             
             await FinishSpec(timelineCollector);
 
-            if(tcpLogger != null)
-                await tcpLogger.Ask<TcpLoggingServer.ListenerStopped>(new TcpLoggingServer.StopListener(), TimeSpan.FromMinutes(1));
-            
             SinkCoordinator.Tell(new SinkCoordinator.CloseAllSinks());
 
             // Block until all Sinks have been terminated.
-            var shutdown = CoordinatedShutdown.Get(TestRunSystem);
-            await shutdown.Run(CoordinatedShutdown.ActorSystemTerminateReason.Instance);
-
+            var cts2 = new CancellationTokenSource();
+            try
+            {
+                // Limit test ActorSystem shutdown to 5 seconds, abort the test if failed
+                var timeoutTask = Task.Delay(TimeSpan.FromSeconds(5), cts2.Token);
+                var shutdownTask = TestRunSystem.WhenTerminated;
+                var task = await Task.WhenAny(timeoutTask, shutdownTask);
+                if(task != timeoutTask)
+                    cts2.Cancel();
+                else
+                    CancellationTokenSource.Cancel();
+            }
+            finally
+            {
+                cts2.Dispose();
+            }
+            
             return summary;
         }
 
@@ -173,73 +234,17 @@ akka.io.tcp {{
         {
             if (testOutputDir == null) return;
 
+            var logLines = await timelineCollector.Ask<string[]>(new TimelineLogCollectorActor.GetLog());
+            
+            // Dump aggregated timeline to file for this test
             var dumpPath = Path.GetFullPath(Path.Combine(testOutputDir, "aggregated.txt"));
-            var dumpTasks = new List<Task>()
-            {
-                // Dump aggregated timeline to file for this test
-                timelineCollector.Ask<Done>(new TimelineLogCollectorActor.DumpToFile(dumpPath)),
-            };
+            File.AppendAllLines(dumpPath, logLines);
 
             if (summary.Failed > 0)
             {
-                var failedSpecPath = Path.GetFullPath(Path.Combine(options.OutputDirectory, options.FailedSpecsDirectory, $"{TestCase.MethodName}.txt"));
-                var dumpFailureArtifactTask = timelineCollector.Ask<Done>(new TimelineLogCollectorActor.DumpToFile(failedSpecPath));
-                dumpTasks.Add(dumpFailureArtifactTask);
+                var failedSpecPath = Path.GetFullPath(Path.Combine(options.OutputDirectory, options.FailedSpecsDirectory, $"{TestCase.DisplayName}.txt"));
+                File.AppendAllLines(failedSpecPath, logLines);
             }
-
-            await Task.WhenAll(dumpTasks);
-        }
-
-        private IActorRef CreateSinkCoordinator(MultiNodeTestRunnerOptions options, string suiteName)
-        {
-            Props coordinatorProps;
-            switch (options.Reporter.ToLowerInvariant())
-            {
-                case "trx":
-                    coordinatorProps = Props.Create(() => new SinkCoordinator(new[] {new TrxMessageSink(suiteName)}));
-                    break;
-
-                case "teamcity":
-                    coordinatorProps = Props.Create(() =>
-                        new SinkCoordinator(new[] {new TeamCityMessageSink(Console.WriteLine, suiteName)}));
-                    break;
-
-                case "console":
-                    coordinatorProps = Props.Create(() => new SinkCoordinator(new[] {new ConsoleMessageSink()}));
-                    break;
-
-                default:
-                    throw new ArgumentException(
-                        $"Given reporter name '{options.Reporter}' is not understood, valid reporters are: trx, teamcity, and console");
-            }
-
-            return TestRunSystem.ActorOf(coordinatorProps, "sinkCoordinator");
-        }
-
-        private void EnableAllSinks(string assemblyName, MultiNodeTestRunnerOptions options)
-        {
-            var now = DateTime.UtcNow;
-
-            // if multinode.output-directory wasn't specified, the results files will be written
-            // to the same directory as the test assembly.
-            var outputDirectory = options.OutputDirectory;
-
-            MessageSink CreateJsonFileSink()
-            {
-                var fileName = FileNameGenerator.GenerateFileName(outputDirectory, assemblyName, Options.Platform, ".json", now);
-                var jsonStoreProps = Props.Create(() => new FileSystemMessageSinkActor(new JsonPersistentTestRunStore(), fileName, !options.TeamCityFormattingOn, true));
-                return new FileSystemMessageSink(jsonStoreProps);
-            }
-
-            MessageSink CreateVisualizerFileSink()
-            {
-                var fileName = FileNameGenerator.GenerateFileName(outputDirectory, assemblyName, Options.Platform, ".html", now);
-                var visualizerProps = Props.Create(() => new FileSystemMessageSinkActor(new VisualizerPersistentTestRunStore(), fileName, !options.TeamCityFormattingOn, true));
-                return new FileSystemMessageSink(visualizerProps);
-            }
-
-            SinkCoordinator.Tell(new SinkCoordinator.EnableSink(CreateJsonFileSink()));
-            SinkCoordinator.Tell(new SinkCoordinator.EnableSink(CreateVisualizerFileSink()));
         }
 
         private void StartNewSpec()

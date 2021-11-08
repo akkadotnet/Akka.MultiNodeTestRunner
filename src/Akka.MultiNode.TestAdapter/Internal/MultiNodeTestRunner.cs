@@ -9,6 +9,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -17,6 +18,12 @@ using Akka.MultiNode.TestAdapter.Configuration;
 using Akka.MultiNode.TestAdapter.Internal.Sinks;
 using Akka.MultiNode.TestAdapter.NodeRunner;
 using Xunit.Sdk;
+using TestFailed = Xunit.Sdk.TestFailed;
+using TestFinished = Xunit.Sdk.TestFinished;
+using TestPassed = Xunit.Sdk.TestPassed;
+using TestResultMessage = Xunit.Sdk.TestResultMessage;
+using TestSkipped = Xunit.Sdk.TestSkipped;
+using TestStarting = Xunit.Sdk.TestStarting;
 
 namespace Akka.MultiNode.TestAdapter.Internal
 {
@@ -101,98 +108,75 @@ namespace Akka.MultiNode.TestAdapter.Internal
             var summary = new RunSummary { Total = 1 };
 
             _messageBus.QueueMessage(new TestStarting(_test));
-            if (!string.IsNullOrEmpty(_skipReason))
+            var aggregator = new ExceptionAggregator(_aggregator);
+            var returnCode = -1;
+
+            if (!aggregator.HasExceptions)
             {
-                summary.Skipped++;
-                _messageBus.QueueMessage(new TestSkipped(_test, _skipReason));
+                await aggregator.RunAsync(async () =>
+                {
+                    var stopwatch = Stopwatch.StartNew();
+                    try
+                    {
+                        returnCode = await RunNode();
+                    }
+                    finally
+                    {
+                        stopwatch.Stop();
+                        summary.Time = (decimal)stopwatch.Elapsed.TotalSeconds;
+                    }
+                });
+            }
+
+            TestResultMessage testResult;
+            var exception = aggregator.ToException();
+            if (exception == null)
+            {
+                switch (returnCode)
+                {
+                    case 0:
+                        testResult = new TestPassed(_test, summary.Time, Output);
+                        break;
+                    default:
+                        summary.Failed++;
+                        
+                        testResult = new TestFailed(
+                            test: _test,
+                            executionTime: summary.Time,
+                            output: Output, 
+                            exceptionTypes: _exceptionType.ToArray(),
+                            messages: _exceptionMessage.ToArray(),
+                            stackTraces: _exceptionStacktrace.ToArray(),
+                            exceptionParentIndices: Enumerable.Range(0, _exceptionType.Count).ToArray());
+                        break;
+                }
             }
             else
             {
-                var aggregator = new ExceptionAggregator(_aggregator);
-                var returnCode = -1;
-
-                if (!aggregator.HasExceptions)
-                {
-                    await aggregator.RunAsync(async () =>
-                    {
-                        var stopwatch = Stopwatch.StartNew();
-                        try
-                        {
-                            returnCode = await RunNode();
-                        }
-                        finally
-                        {
-                            stopwatch.Stop();
-                            summary.Time = (decimal)stopwatch.Elapsed.TotalSeconds;
-                        }
-                    });
-                }
-
-                TestResultMessage testResult;
-                var exception = aggregator.ToException();
-                if (exception == null)
-                {
-                    switch (returnCode)
-                    {
-                        case 0:
-                            testResult = new TestPassed(_test, summary.Time, Output);
-                            break;
-                        default:
-                            summary.Failed++;
-                            
-                            testResult = new TestFailed(_test, summary.Time, Output, ReconstructException());
-                            break;
-                    }
-                }
-                else
-                {
-                    testResult = new TestFailed(_test, summary.Time, Output, exception);
-                    summary.Failed++;
-                }
-
-                _messageBus.QueueMessage(testResult);
+                testResult = new TestFailed(_test, summary.Time, Output, exception);
+                summary.Failed++;
             }
 
-            var specFolder = Directory.CreateDirectory(Path.Combine(_options.OutputDirectory, TestCase.MethodName));
+            _messageBus.QueueMessage(testResult);
+            var specFolder = Directory.CreateDirectory(Path.Combine(_options.OutputDirectory, TestCase.DisplayName));
             var logFilePath = Path.GetFullPath(Path.Combine(specFolder.FullName, $"node{_test.Node}__{_test.Role}__{_options.Platform}.txt"));
-            File.WriteAllText(logFilePath, Output);
+            bool dumpSuccess;
+            do
+            {
+                try
+                {
+                    File.AppendAllText(logFilePath, Output);
+                    dumpSuccess = true;
+                }
+                catch
+                {
+                    dumpSuccess = false;
+                }
+            } while (!dumpSuccess);
 
             _messageBus.QueueMessage(new TestFinished(_test, summary.Time, Output));
             
             return summary;
-        }
-
-        private TestFailedException ReconstructException()
-        {
-            _exceptionType.Reverse();
-            _exceptionMessage.Reverse();
-            _exceptionStacktrace.Reverse();
-
-            TestFailedException currentException = null;
-            for (var i = 0; i < _exceptionType.Count; ++i)
-            {
-                if (currentException == null)
-                {
-                    currentException = new TestFailedException(
-                        _exceptionType[i], 
-                        _exceptionMessage[i],
-                        _exceptionStacktrace[i]);
-                }
-                else
-                {
-                    currentException = new TestFailedException(
-                        _exceptionType[i], 
-                        _exceptionMessage[i],
-                        _exceptionStacktrace[i], 
-                        currentException);
-                }
-            }
-            
-            _exceptionType.Reverse();
-            _exceptionMessage.Reverse();
-            _exceptionStacktrace.Reverse();
-
-            return currentException;
         }
 
         private void ExtractExceptionData(string data)
@@ -248,9 +232,13 @@ namespace Akka.MultiNode.TestAdapter.Internal
                     {
                         _sinkCoordinator.Tell(new NodeCompletedSpecWithSuccess(_test.Node, _test.Role, _test.DisplayName + " passed."));
                     }
+                    else
+                    {
+                        _sinkCoordinator.Tell(new NodeCompletedSpecWithFail(_test.Node, _test.Role, _test.DisplayName + " passed."));
+                    }
                 };
                 opt.OutputDataReceived = OutputHandler;
-                //opt.ErrorDataReceived = OutputHandler;
+                opt.ErrorDataReceived = OutputHandler;
             }, _cancellationTokenSource.Token);
             
             _sinkCoordinator.Tell(new SinkCoordinator.RunnerMessage($"Started node {_test.Node} : {_test.Role} on pid {process.Id}"));

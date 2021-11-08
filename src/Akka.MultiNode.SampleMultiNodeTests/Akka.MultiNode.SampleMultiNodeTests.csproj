@@ -8,8 +8,6 @@
     <ItemGroup>
         <PackageReference Include="Akka.Cluster.TestKit" Version="$(AkkaVersion)" />
         <PackageReference Include="Microsoft.NET.Test.Sdk" Version="$(TestSdkVersion)" />
-        <PackageReference Include="xunit" Version="$(XunitVersion)" />
-        <PackageReference Include="xunit.runner.visualstudio" Version="$(XunitVersion)" />
     </ItemGroup>
 
     <ItemGroup>

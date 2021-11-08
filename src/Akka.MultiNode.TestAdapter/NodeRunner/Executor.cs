@@ -16,6 +16,7 @@ using Akka.MultiNode.TestAdapter.Internal;
 using Akka.MultiNode.TestAdapter.Internal.Sinks;
 using Akka.Remote.TestKit;
 using Xunit;
+using Dns = System.Net.Dns;
 
 namespace Akka.MultiNode.TestAdapter.NodeRunner
 {
@@ -47,7 +48,7 @@ namespace Akka.MultiNode.TestAdapter.NodeRunner
 
                 try
                 {
-                    var system = ActorSystem.Create("NoteTestRunner-" + nodeIndex);
+                    var system = ActorSystem.Create("NodeTestRunner-" + nodeIndex);
                     logger = system.ActorOf<RunnerTcpClient>();
                     system.Tcp().Tell(new Tcp.Connect(listenEndpoint), logger);
 

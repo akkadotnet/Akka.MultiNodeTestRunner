@@ -55,8 +55,6 @@ namespace Akka.MultiNode.TestAdapter.Configuration
                             case JsonBoolean booleanValue:
                                 if (string.Equals(propertyName, Configuration.ClearOutputDirectory, StringComparison.OrdinalIgnoreCase))
                                     result.ClearOutputDirectory = booleanValue.Value;
-                                if (string.Equals(propertyName, Configuration.TeamCityFormatting, StringComparison.OrdinalIgnoreCase))
-                                    result.TeamCityFormattingOn = booleanValue.Value;
                                 break;
                             
                             case JsonString stringValue:
@@ -66,8 +64,6 @@ namespace Akka.MultiNode.TestAdapter.Configuration
                                     result.FailedSpecsDirectory = stringValue.Value;
                                 if(string.Equals(propertyName, Configuration.ListenAddress, StringComparison.OrdinalIgnoreCase))
                                     result.ListenAddress = stringValue.Value;
-                                if(string.Equals(propertyName, Configuration.Reporter, StringComparison.OrdinalIgnoreCase))
-                                    result.Reporter = stringValue.Value;
                                 break;
                             
                             case JsonNumber numberValue when string.Equals(propertyName, Configuration.ListenPort, StringComparison.OrdinalIgnoreCase):
@@ -90,9 +86,7 @@ namespace Akka.MultiNode.TestAdapter.Configuration
             public const string FailedSpecsDirectory = "failedSpecsDirectory";
             public const string ListenAddress = "listenAddress";
             public const string ListenPort = "listenPort";
-            public const string Reporter = "reporter";
             public const string ClearOutputDirectory = "clearOutputDirectory";
-            public const string TeamCityFormatting = "teamCityFormatting";
         }        
     }
 }

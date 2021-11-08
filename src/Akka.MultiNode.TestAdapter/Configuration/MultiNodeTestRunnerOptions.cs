@@ -1,3 +1,8 @@
+using System.Linq;
+using System.Net;
+using System.Net.Sockets;
+using Akka.Configuration;
+
 #nullable enable
 namespace Akka.MultiNode.TestAdapter.Configuration
 {
@@ -24,7 +29,25 @@ namespace Akka.MultiNode.TestAdapter.Configuration
         /// <summary>
         /// MNTR controller listener address
         /// </summary>
-        public string ListenAddress { get; set; } = "127.0.0.1";
+        public string ListenAddress
+        {
+            get => ListenIpAddress.ToString();
+            set
+            {
+                if (!IPAddress.TryParse(value, out var address))
+                {
+                    var addresses = Dns.GetHostAddresses(value);
+                    address = 
+                        addresses.FirstOrDefault(ip => ip.AddressFamily == AddressFamily.InterNetwork) ??
+                        addresses.FirstOrDefault(ip => ip.AddressFamily == AddressFamily.InterNetworkV6) ??
+                        throw new ConfigurationException($"Invalid ListenAddress [{value}]. ListenAddress must be IPv4, IPv6, or a host name");
+                }
+
+                ListenIpAddress = address;
+            } 
+        }
+        
+        public IPAddress ListenIpAddress { get; private set; } = IPAddress.Parse("127.0.0.1");
 
         /// <summary>
         /// MNTR controller listener port. Set 0 to use random available port
@@ -32,20 +55,10 @@ namespace Akka.MultiNode.TestAdapter.Configuration
         public int ListenPort { get; set; }
 
         /// <summary>
-        /// Reporter. "trx"/"teamcity"/"console"
-        /// </summary>
-        public string Reporter { get; set; } = "console";
-
-        /// <summary>
         /// If set, performs output directory cleanup before running tests
         /// </summary>
         public bool ClearOutputDirectory { get; set; }
 
-        /// <summary>
-        /// TeamCity formatting on/off
-        /// </summary>
-        public bool TeamCityFormattingOn { get; set; }
-        
         public string Platform { get; set; }
     }
 }
