@@ -13,7 +13,7 @@ namespace Akka.MultiNode.TestAdapter.Internal.Persistence
     /// Persistent store for saving <see cref="TestRunTree"/> instances
     /// from disk.
     /// </summary>
-    public interface IPersistentTestRunStore
+    internal interface IPersistentTestRunStore
     {
         bool SaveTestRun(string filePath, TestRunTree data);
     }

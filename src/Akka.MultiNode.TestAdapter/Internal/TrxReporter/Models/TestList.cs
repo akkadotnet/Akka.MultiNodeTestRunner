@@ -10,7 +10,7 @@ using static Akka.MultiNode.TestAdapter.Internal.TrxReporter.Models.XmlHelper;
 
 namespace Akka.MultiNode.TestAdapter.Internal.TrxReporter.Models
 {
-    public class TestList : ITestEntity
+    internal class TestList : ITestEntity
     {
         public TestList(string name)
         {

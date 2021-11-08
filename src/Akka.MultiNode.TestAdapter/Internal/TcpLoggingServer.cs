@@ -7,7 +7,7 @@ using Akka.IO;
 using Akka.Util;
 using Akka.Util.Internal;
 
-namespace Akka.MultiNode.TestAdapter
+namespace Akka.MultiNode.TestAdapter.Internal
 {
     internal class TcpLoggingServer : ReceiveActor
     {
@@ -18,12 +18,14 @@ namespace Akka.MultiNode.TestAdapter
         private Option<int> _boundPort;
         private IImmutableSet<IActorRef> _boundPortSubscribers = ImmutableHashSet<IActorRef>.Empty;
 
+        private string _buffer = string.Empty;
+
         public TcpLoggingServer(IActorRef sinkCoordinator)
         {
             Receive<Tcp.Bound>(bound =>
             {
                 // When bound, save port and notify requestors if any
-                _boundPort = (bound.LocalAddress as IPEndPoint).Port;
+                _boundPort = ((IPEndPoint)bound.LocalAddress).Port;
                 _boundPortSubscribers.ForEach(s => s.Tell(_boundPort.Value));
                 
                 _tcpManager = Sender;
@@ -49,8 +51,19 @@ namespace Akka.MultiNode.TestAdapter
 
             Receive<Tcp.Received>(received =>
             {
-                var message = received.Data.ToString();
-                sinkCoordinator.Tell(message);
+                // It should be unlikely that a single stack trace be bigger than 10 Kib,
+                // but we should buffer this anyway, just in case.
+                //
+                // An edge case would be when a message is __exactly__ 10240 bytes in size,
+                // but that should be extremely unlikely
+                if (received.Data.Count >= MultiNodeTestCaseRunner.TcpBufferSize)
+                {
+                    _buffer += received.Data;
+                    return;
+                }
+
+                sinkCoordinator.Tell(_buffer + received.Data);
+                _buffer = string.Empty;
             });
 
             Receive<StopListener>(_ =>

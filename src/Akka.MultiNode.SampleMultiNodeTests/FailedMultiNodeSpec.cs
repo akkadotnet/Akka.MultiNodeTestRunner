@@ -1,6 +1,7 @@
 using System;
 using Akka.Cluster.TestKit;
 using Akka.Remote.TestKit;
+using MultiNodeFactAttribute = Akka.MultiNode.TestAdapter.MultiNodeFactAttribute;
 
 namespace Akka.MultiNode.TestAdapter.SampleTests
 {

@@ -17,12 +17,15 @@ using Akka.Event;
 
 namespace Akka.MultiNode.TestAdapter.Internal.Sinks
 {
-    public class TimelineLogCollectorActor : ReceiveActor
+    internal class TimelineLogCollectorActor : ReceiveActor
     {
+        private readonly bool _appendLogOutput;
         private readonly SortedList<DateTime, HashSet<LogMessageInfo>> _timeline = new SortedList<DateTime, HashSet<LogMessageInfo>>();
         
-        public TimelineLogCollectorActor()
+        public TimelineLogCollectorActor(bool appendLogOutput)
         {
+            _appendLogOutput = appendLogOutput;
+            
             Receive<LogMessage>(msg =>
             {
                 var parsedInfo = new LogMessageInfo(msg);
@@ -48,6 +51,11 @@ namespace Akka.MultiNode.TestAdapter.Internal.Sinks
                 
                 Sender.Tell(log);
             });
+
+            Receive<GetLog>(_ =>
+            {
+                Sender.Tell(_timeline.Select(pairs => pairs.Value).SelectMany(msg => msg).Select(m => m.ToString()).ToArray());
+            });
             
             Receive<DumpToFile>(dump =>
             {
@@ -55,8 +63,26 @@ namespace Akka.MultiNode.TestAdapter.Internal.Sinks
                 var dir = new DirectoryInfo(Path.GetDirectoryName(dump.FilePath));
                 if (!dir.Exists)
                     dir.Create();
+
+                var lines = 
+                    _timeline.Select(pairs => pairs.Value).SelectMany(msg => msg).Select(m => m.ToString()).ToArray();
+                bool dumpSuccess;
+                do
+                {
+                    try
+                    {
+                        if(!_appendLogOutput && File.Exists(dump.FilePath))
+                            File.Delete(dump.FilePath);
+                        
+                        File.AppendAllLines(dump.FilePath, lines);
+                        dumpSuccess = true;
+                    }
+                    catch
+                    {
+                        dumpSuccess = false;
+                    }
+                } while (!dumpSuccess);
                 
-                File.AppendAllLines(dump.FilePath, _timeline.Select(pairs => pairs.Value).SelectMany(msg => msg).Select(m => m.ToString()));
                 Sender.Tell(Done.Instance);
             });
             
@@ -192,6 +218,8 @@ namespace Akka.MultiNode.TestAdapter.Internal.Sinks
 
         public class GetSpecLog { }
 
+        public class GetLog { }
+        
         public class DumpToFile
         {
             public DumpToFile(string filePath)

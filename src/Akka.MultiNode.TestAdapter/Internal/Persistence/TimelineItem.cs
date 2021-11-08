@@ -9,7 +9,7 @@ using System;
 
 namespace Akka.MultiNode.TestAdapter.Internal.Persistence
 {
-    public class TimelineItem
+    internal class TimelineItem
     {
         private const string EventFormat = "{{ className:'{0}', content:'{1}', start:'{2}', group:{3}, title:'{4}' }}";
 

@@ -13,7 +13,7 @@ namespace Akka.MultiNode.TestAdapter.Internal.Persistence
     /// <summary>
     /// Stores test run as a html page.
     /// </summary>
-    public class VisualizerPersistentTestRunStore : IPersistentTestRunStore
+    internal class VisualizerPersistentTestRunStore : IPersistentTestRunStore
     {
         public bool SaveTestRun(string filePath, TestRunTree data)
         {

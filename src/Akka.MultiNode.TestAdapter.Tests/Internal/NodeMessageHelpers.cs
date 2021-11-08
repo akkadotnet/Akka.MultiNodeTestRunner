@@ -8,10 +8,14 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Akka.Event;
 using Akka.MultiNode.TestAdapter.Internal;
 using Akka.MultiNode.TestAdapter.Internal.Reporting;
 using Akka.MultiNode.TestAdapter.Tests.Internal.Utils;
+using Xunit.Abstractions;
+using Xunit.Sdk;
 
 namespace Akka.MultiNode.TestAdapter.Tests.Internal
 {
@@ -23,8 +27,8 @@ namespace Akka.MultiNode.TestAdapter.Tests.Internal
         internal const string DummyRoleFor = "Dummy_role_for_";
         internal static readonly Random Random = new Random();
 
-        public static MultiNodeTest BuildNodeTests(IEnumerable<int> nodeIndicies)
-            => new MockMultiNodeTest(nodeIndicies);
+        public static MultiNodeTestCase BuildNodeTests(IEnumerable<int> nodeIndicies)
+            => new MockMultiNodeTestCase(nodeIndicies);
 
         /// <summary>
         /// Meta-function for generating a distribution of messages across multiple nodes
@@ -186,9 +190,12 @@ namespace Akka.MultiNode.TestAdapter.Tests.Internal
         }
         #endregion
         
-        internal class MockMultiNodeTest : MultiNodeTest
+        internal class MockMultiNodeTestCase : MultiNodeTestCase
         {
-            public MockMultiNodeTest(IEnumerable<int> nodeIndices)
+            [Obsolete("Called by the de-serializer; should only be called by deriving classes for de-serialization purposes")]
+            public MockMultiNodeTestCase() { }
+            
+            public MockMultiNodeTestCase(IEnumerable<int> nodeIndices)
             {
                 _indices = nodeIndices;
                 MethodName = AlphaNumericString();
@@ -200,16 +207,22 @@ namespace Akka.MultiNode.TestAdapter.Tests.Internal
             
             public override string MethodName { get; }
             public override string TypeName { get; }
-            public override string AssemblyPath { get; }
-            public override string SkipReason { get; set; }
+            public override string AssemblyPath { get; protected set; }
+
+            protected override void Initialize()
+            {
+                InternalNodes = LoadDetails();
+            }
+
             protected override List<NodeTest> LoadDetails()
             {
-                return _indices.Select(i => new NodeTest
-                {
-                    Node = i,
-                    Role = DummyRoleFor + i,
-                    Test = this
-                }).ToList();
+                return _indices.Select(i => new NodeTest(this, i, DummyRoleFor + i)).ToList();
+            }
+
+            public override Task<RunSummary> RunAsync(IMessageSink diagnosticMessageSink, IMessageBus messageBus, object[] constructorArguments,
+                ExceptionAggregator aggregator, CancellationTokenSource cancellationTokenSource)
+            {
+                return Task.FromResult(new RunSummary());
             }
         }
         

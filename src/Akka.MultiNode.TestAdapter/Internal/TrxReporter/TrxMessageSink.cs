@@ -11,7 +11,7 @@ using Akka.MultiNode.TestAdapter.Internal.Sinks;
 
 namespace Akka.MultiNode.TestAdapter.Internal.TrxReporter
 {
-    public class TrxMessageSink : MessageSink
+    internal class TrxMessageSink : MessageSink
     {
         public TrxMessageSink(string suiteName)
             : base(Props.Create(() => new TrxSinkActor(suiteName, System.Environment.UserName, System.Environment.MachineName, true)))
