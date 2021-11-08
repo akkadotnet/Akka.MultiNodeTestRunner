@@ -16,7 +16,7 @@ namespace Akka.MultiNode.TestAdapter.Internal.Sinks
     /// A <see cref="MessageSinkActor"/> implementation that is capable of using a <see cref="TestRunCoordinator"/> for 
     /// test run summaries and other purposes.
     /// </summary>
-    public abstract class TestCoordinatorEnabledMessageSink : MessageSinkActor
+    internal abstract class TestCoordinatorEnabledMessageSink : MessageSinkActor
     {
         protected IActorRef TestCoordinatorActorRef;
         protected bool UseTestCoordinator;

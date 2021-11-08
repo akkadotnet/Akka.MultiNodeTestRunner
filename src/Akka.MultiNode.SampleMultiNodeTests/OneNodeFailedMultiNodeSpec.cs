@@ -1,6 +1,7 @@
 using System;
 using Akka.Cluster.TestKit;
 using Akka.Remote.TestKit;
+using MultiNodeFactAttribute = Akka.MultiNode.TestAdapter.MultiNodeFactAttribute;
 
 namespace Akka.MultiNode.TestAdapter.SampleTests
 {
@@ -33,7 +34,7 @@ namespace Akka.MultiNode.TestAdapter.SampleTests
         }
 
         [MultiNodeFact]
-        public void Should_fail()
+        public void One_node_failed_should_fail()
         {
             RunOn(() => throw new Exception("Spec should fail"), _config.First);
         }

@@ -16,40 +16,40 @@ namespace Akka.MultiNode.TestAdapter.Internal.Sinks
     /// <summary>
     /// Message type for signaling that a new spec is ready to be run
     /// </summary>
-    public class BeginNewSpec
+    internal class BeginNewSpec
     {
-        public BeginNewSpec(MultiNodeTest test)
+        public BeginNewSpec(MultiNodeTestCase testCase)
         {
-            Test = test;
+            TestCase = testCase;
         }
         
-        public MultiNodeTest Test { get; }
+        public MultiNodeTestCase TestCase { get; }
 
-        public string ClassName => Test.TypeName;
+        public string ClassName => TestCase.TypeName;
 
-        public string MethodName => Test.MethodName;
+        public string MethodName => TestCase.MethodName;
 
-        public IList<NodeTest> Nodes => Test.Nodes;
+        public IList<NodeTest> Nodes => TestCase.Nodes;
     }
 
     /// <summary>
     /// Message type for indicating that the current spec has ended.
     /// </summary>
-    public class EndSpec
+    internal class EndSpec
     {
         public EndSpec()
         { }
 
-        public EndSpec(MultiNodeTest test, SpecLog log)
+        public EndSpec(MultiNodeTestCase testCase, SpecLog log)
         {
-            Test = test;
+            TestCase = testCase;
             Log = log;
         }
         
-        public MultiNodeTest Test { get; }
+        public MultiNodeTestCase TestCase { get; }
 
-        public string ClassName => Test?.TypeName;
-        public string MethodName => Test?.MethodName;
+        public string ClassName => TestCase?.TypeName;
+        public string MethodName => TestCase?.MethodName;
         public SpecLog Log { get; }
     }
 

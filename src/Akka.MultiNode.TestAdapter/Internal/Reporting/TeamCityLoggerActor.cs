@@ -10,7 +10,7 @@ using Akka.Actor;
 
 namespace Akka.MultiNode.TestAdapter.Internal.Reporting
 {
-    public class TeamCityLoggerActor : ReceiveActor
+    internal class TeamCityLoggerActor : ReceiveActor
     {
         private readonly bool _unMuted = false;
         public TeamCityLoggerActor(bool unMuted)

@@ -5,6 +5,7 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -17,14 +18,14 @@ namespace Akka.MultiNode.TestAdapter.Internal.Sinks
     /// <summary>
     /// Top-level actor responsible for managing all <see cref="MessageSink"/> instances.
     /// </summary>
-    public class SinkCoordinator : ReceiveActor
+    internal class SinkCoordinator : ReceiveActor
     {
         #region Message classes
 
         /// <summary>
         /// Used to signal that we need to enable a given <see cref="MessageSink"/> instance
         /// </summary>
-        public class EnableSink
+        internal class EnableSink
         {
             public EnableSink(MessageSink sink)
             {
@@ -85,13 +86,15 @@ namespace Akka.MultiNode.TestAdapter.Internal.Sinks
         protected int TotalReceiveClosedConfirmations = 0;
         protected int ReceivedSinkCloseConfirmations = 0;
 
+        protected ILoggingAdapter Log { get; }
+
         /// <summary>
         /// Leave the console message sink enabled by default
         /// </summary>
         public SinkCoordinator()
             : this(new[] { new ConsoleMessageSink() })
         {
-
+            Log = Context.GetLogger();
         }
 
         public SinkCoordinator(IEnumerable<MessageSink> defaultSinks)
@@ -153,8 +156,8 @@ namespace Akka.MultiNode.TestAdapter.Internal.Sinks
             });
             Receive<string>(PublishToChildren);
             Receive<NodeCompletedSpecWithSuccess>(PublishToChildren);
-            Receive<MultiNodeTest>(BeginSpec);
-            Receive<EndSpec>(spec => EndSpec(spec.Test, spec.Log));
+            Receive<MultiNodeTestCase>(BeginSpec);
+            Receive<EndSpec>(spec => EndSpec(spec.TestCase, spec.Log));
             Receive<RunnerMessage>(PublishToChildren);
         }
 
@@ -165,16 +168,16 @@ namespace Akka.MultiNode.TestAdapter.Internal.Sinks
         }
 
 
-        private void EndSpec(MultiNodeTest test, SpecLog specLog)
+        private void EndSpec(MultiNodeTestCase testCase, SpecLog specLog)
         {
             foreach (var sink in Sinks)
-                sink.EndTest(test, specLog);
+                sink.EndTest(testCase, specLog);
         }
 
-        private void BeginSpec(MultiNodeTest test)
+        private void BeginSpec(MultiNodeTestCase testCase)
         {
             foreach (var sink in Sinks)
-                sink.BeginTest(test);
+                sink.BeginTest(testCase);
         }
 
         private void PublishToChildren(RunnerMessage message)
@@ -192,7 +195,18 @@ namespace Akka.MultiNode.TestAdapter.Internal.Sinks
         private void PublishToChildren(string message)
         {
             foreach (var sink in Sinks)
-                sink.Offer(message);
+            {
+                try
+                {
+                    sink.Offer(message);
+                }
+                catch (Exception e)
+                {
+                    // This message might never make it to console, due to the way dotnet test is being set,
+                    // but at least this catch would not cause the SinkCoordinator to die mid test because of an exception
+                    Log.Error(e, "Sink {0} failed to process message {1}: {2}", sink.GetType(), message, e.Message);
+                }
+            }
         }
 
         #endregion

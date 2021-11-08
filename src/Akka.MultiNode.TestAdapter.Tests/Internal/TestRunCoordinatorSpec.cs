@@ -11,11 +11,15 @@ using Akka.Actor;
 using Akka.MultiNode.TestAdapter.Internal.Reporting;
 using Akka.MultiNode.TestAdapter.Internal.Sinks;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Akka.MultiNode.TestAdapter.Tests.Internal
 {
     public class TestRunCoordinatorSpec : TestKit.Xunit2.TestKit
     {
+        public TestRunCoordinatorSpec(ITestOutputHelper output) : base((ActorSystem)null, output)
+        {}
+        
         [Fact]
         public void TestRunCoordinator_should_start_and_route_messages_to_SpecRunCoordinator()
         {
@@ -62,8 +66,9 @@ namespace Akka.MultiNode.TestAdapter.Tests.Internal
 
             var beginSpec = new BeginNewSpec(NodeMessageHelpers.BuildNodeTests(nodeIndexes));
 
+            var probe = CreateTestProbe(Sys);
             //register the TestActor as a subscriber for FactData announcements
-            testRunCoordinator.Tell(new TestRunCoordinator.SubscribeFactCompletionMessages(TestActor));
+            testRunCoordinator.Tell(new TestRunCoordinator.SubscribeFactCompletionMessages(probe.Ref));
 
             //begin a new spec
             testRunCoordinator.Tell(beginSpec);
@@ -82,7 +87,7 @@ namespace Akka.MultiNode.TestAdapter.Tests.Internal
             //end the spec
             testRunCoordinator.Tell(new EndSpec());
 
-            var factData = ExpectMsg<FactData>();
+            var factData = probe.ExpectMsg<FactData>();
             Assert.True(factData.Passed.Value, "Spec should have passed");
             Assert.True(factData.NodeFacts.All(x => x.Value.Passed.Value), "All individual nodes should have reported test pass");
         }
