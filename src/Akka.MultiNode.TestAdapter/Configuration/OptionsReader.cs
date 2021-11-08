@@ -53,8 +53,8 @@ namespace Akka.MultiNode.TestAdapter.Configuration
                         switch (propertyValue)
                         {
                             case JsonBoolean booleanValue:
-                                if (string.Equals(propertyName, Configuration.ClearOutputDirectory, StringComparison.OrdinalIgnoreCase))
-                                    result.ClearOutputDirectory = booleanValue.Value;
+                                if (string.Equals(propertyName, Configuration.AppendLogOutput, StringComparison.OrdinalIgnoreCase))
+                                    result.AppendLogOutput = booleanValue.Value;
                                 break;
                             
                             case JsonString stringValue:
@@ -86,7 +86,7 @@ namespace Akka.MultiNode.TestAdapter.Configuration
             public const string FailedSpecsDirectory = "failedSpecsDirectory";
             public const string ListenAddress = "listenAddress";
             public const string ListenPort = "listenPort";
-            public const string ClearOutputDirectory = "clearOutputDirectory";
+            public const string AppendLogOutput = "appendLogOutput";
         }        
     }
 }

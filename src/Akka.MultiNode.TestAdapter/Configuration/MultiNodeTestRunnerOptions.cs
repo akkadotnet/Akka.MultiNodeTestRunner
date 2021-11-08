@@ -57,7 +57,7 @@ namespace Akka.MultiNode.TestAdapter.Configuration
         /// <summary>
         /// If set, performs output directory cleanup before running tests
         /// </summary>
-        public bool ClearOutputDirectory { get; set; }
+        public bool AppendLogOutput { get; set; } = true;
 
         public string? Platform { get; set; }
     }

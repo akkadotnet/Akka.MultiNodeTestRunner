@@ -165,6 +165,9 @@ namespace Akka.MultiNode.TestAdapter.Internal
             {
                 try
                 {
+                    if(!_options.AppendLogOutput && File.Exists(logFilePath))
+                        File.Delete(logFilePath);
+                    
                     File.AppendAllText(logFilePath, Output);
                     dumpSuccess = true;
                 }
