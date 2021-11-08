@@ -143,10 +143,7 @@ akka.io.tcp {{
             PublishRunnerMessage($"Starting test {TestCase.DisplayName}");
             StartNewSpec();
 
-            var timelineCollector = TestRunSystem.ActorOf(Props.Create(() => new TimelineLogCollectorActor()));
-            //TODO: might need to do some validation here to avoid the 260 character max path error on Windows
-            var folder = Directory.CreateDirectory(Path.Combine(Options.OutputDirectory, TestCase.DisplayName));
-            var testOutputDir = folder.FullName;
+            var timelineCollector = TestRunSystem.ActorOf(Props.Create(() => new TimelineLogCollectorActor(Options.AppendLogOutput)));
             
             var tasks = new List<Task<RunSummary>>();
             var serverPort = SocketUtil.TemporaryTcpAddress("localhost").Port;
@@ -199,7 +196,7 @@ akka.io.tcp {{
             }
 
             // Save timelined logs to file system
-            await DumpAggregatedSpecLogs(summary, Options, testOutputDir, timelineCollector);
+            await DumpAggregatedSpecLogs(summary, timelineCollector);
             
             await FinishSpec(timelineCollector);
 
@@ -226,24 +223,31 @@ akka.io.tcp {{
             return summary;
         }
 
-        private async Task DumpAggregatedSpecLogs(
-            RunSummary summary,
-            MultiNodeTestRunnerOptions options, 
-            string testOutputDir,
-            IActorRef timelineCollector)
+        private async Task DumpAggregatedSpecLogs(RunSummary summary, IActorRef timelineCollector)
         {
-            if (testOutputDir == null) return;
+            var dumpPath = Path.GetFullPath(Path.Combine(Path.Combine(Options.OutputDirectory, TestCase.DisplayName), "aggregated.txt"));
+            var failedSpecPath = Path.GetFullPath(Path.Combine(Options.OutputDirectory, Options.FailedSpecsDirectory, $"{TestCase.DisplayName}.txt"));
+
+            if (!Options.AppendLogOutput)
+            {
+                if(File.Exists(dumpPath))
+                    File.Delete(dumpPath);
+                if(File.Exists(failedSpecPath))
+                    File.Delete(failedSpecPath);
+            }
 
             var logLines = await timelineCollector.Ask<string[]>(new TimelineLogCollectorActor.GetLog());
             
             // Dump aggregated timeline to file for this test
-            var dumpPath = Path.GetFullPath(Path.Combine(testOutputDir, "aggregated.txt"));
             File.AppendAllLines(dumpPath, logLines);
 
             if (summary.Failed > 0)
             {
-                var failedSpecPath = Path.GetFullPath(Path.Combine(options.OutputDirectory, options.FailedSpecsDirectory, $"{TestCase.DisplayName}.txt"));
                 Directory.CreateDirectory(Path.GetDirectoryName(failedSpecPath));
+                
+                if(!Options.AppendLogOutput && File.Exists(failedSpecPath))
+                    File.Delete(failedSpecPath);
+                
                 File.AppendAllLines(failedSpecPath, logLines);
             }
         }

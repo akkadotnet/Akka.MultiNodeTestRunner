@@ -19,10 +19,13 @@ namespace Akka.MultiNode.TestAdapter.Internal.Sinks
 {
     internal class TimelineLogCollectorActor : ReceiveActor
     {
+        private readonly bool _appendLogOutput;
         private readonly SortedList<DateTime, HashSet<LogMessageInfo>> _timeline = new SortedList<DateTime, HashSet<LogMessageInfo>>();
         
-        public TimelineLogCollectorActor()
+        public TimelineLogCollectorActor(bool appendLogOutput)
         {
+            _appendLogOutput = appendLogOutput;
+            
             Receive<LogMessage>(msg =>
             {
                 var parsedInfo = new LogMessageInfo(msg);
@@ -68,6 +71,9 @@ namespace Akka.MultiNode.TestAdapter.Internal.Sinks
                 {
                     try
                     {
+                        if(!_appendLogOutput && File.Exists(dump.FilePath))
+                            File.Delete(dump.FilePath);
+                        
                         File.AppendAllLines(dump.FilePath, lines);
                         dumpSuccess = true;
                     }
