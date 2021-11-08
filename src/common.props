@@ -15,7 +15,7 @@
     <CodeDomVersion>5.0.0</CodeDomVersion>
     <TeamCityVersion>3.0.13</TeamCityVersion>
     <SystemRuntimeLoaderVersion>4.3.0</SystemRuntimeLoaderVersion>
-    <DependencyModelVersion>5.0.0</DependencyModelVersion>
+    <DependencyModelVersion>6.0.0</DependencyModelVersion>
     <NewtonsoftJsonVersion>12.0.3</NewtonsoftJsonVersion>
     <NBenchVersion>1.2.2</NBenchVersion>
     <ProtobufVersion>3.11.2</ProtobufVersion>
