@@ -59,6 +59,6 @@ namespace Akka.MultiNode.TestAdapter.Configuration
         /// </summary>
         public bool ClearOutputDirectory { get; set; }
 
-        public string Platform { get; set; }
+        public string? Platform { get; set; }
     }
 }

@@ -44,7 +44,10 @@ namespace Akka.MultiNode.RemoteHost
             {
                 token.Register(() =>
                 {
-                    process.Kill();
+                    try
+                    {
+                        process.Kill();
+                    } catch{}
                 });
             }
 

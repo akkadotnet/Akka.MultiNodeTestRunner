@@ -1,3 +1,6 @@
+using Xunit;
+
+[assembly: CollectionBehavior(DisableTestParallelization = true)]
 namespace Akka.MultiNode.TestAdapter.SampleTests.Metadata
 {
     /// <summary>

@@ -192,7 +192,7 @@ namespace Akka.MultiNode.TestAdapter.Internal.Sinks
         
         public DiagnosticMessageSink(
             Xunit.Abstractions.IMessageSink diagnosticSink)
-            : base(Props.Create(() => new DiagnosticMessageSinkActor(diagnosticSink, false)))
+            : base(Props.Create(() => new DiagnosticMessageSinkActor(diagnosticSink, true)))
         {
             _diagnosticSink = diagnosticSink;
         }

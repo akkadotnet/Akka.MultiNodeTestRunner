@@ -243,6 +243,7 @@ akka.io.tcp {{
             if (summary.Failed > 0)
             {
                 var failedSpecPath = Path.GetFullPath(Path.Combine(options.OutputDirectory, options.FailedSpecsDirectory, $"{TestCase.DisplayName}.txt"));
+                Directory.CreateDirectory(Path.GetDirectoryName(failedSpecPath));
                 File.AppendAllLines(failedSpecPath, logLines);
             }
         }
