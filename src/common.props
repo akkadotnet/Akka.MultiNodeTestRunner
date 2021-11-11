@@ -24,7 +24,7 @@
     <NetStandardLibVersion>netstandard2.0</NetStandardLibVersion>
     <FluentAssertionsVersion>6.2.0</FluentAssertionsVersion>
     <FsCheckVersion>2.9.0</FsCheckVersion>
-    <AkkaVersion>1.4.27</AkkaVersion>
+    <AkkaVersion>1.4.28</AkkaVersion>
     <!--
     <AkkaVersion>1.4.28-beta637717616449070703</AkkaVersion>
     -->
