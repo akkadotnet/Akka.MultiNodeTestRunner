@@ -225,16 +225,12 @@ akka.io.tcp {{
 
         private async Task DumpAggregatedSpecLogs(RunSummary summary, IActorRef timelineCollector)
         {
-            var dumpPath = Path.GetFullPath(Path.Combine(Path.Combine(Options.OutputDirectory, TestCase.DisplayName), "aggregated.txt"));
-            var failedSpecPath = Path.GetFullPath(Path.Combine(Options.OutputDirectory, Options.FailedSpecsDirectory, $"{TestCase.DisplayName}.txt"));
-
-            if (!Options.AppendLogOutput)
-            {
-                if(File.Exists(dumpPath))
-                    File.Delete(dumpPath);
-                if(File.Exists(failedSpecPath))
-                    File.Delete(failedSpecPath);
-            }
+            var dumpFolder = Path.GetFullPath(Path.Combine(Options.OutputDirectory, TestCase.DisplayName)); 
+            var dumpPath = Path.Combine(dumpFolder, "aggregated.txt");
+            
+            Directory.CreateDirectory(dumpFolder);                
+            if (!Options.AppendLogOutput && File.Exists(dumpPath))
+                File.Delete(dumpPath);
 
             var logLines = await timelineCollector.Ask<string[]>(new TimelineLogCollectorActor.GetLog());
             
@@ -243,8 +239,10 @@ akka.io.tcp {{
 
             if (summary.Failed > 0)
             {
-                Directory.CreateDirectory(Path.GetDirectoryName(failedSpecPath));
+                var failedSpecFolder = Path.GetFullPath(Path.Combine(Options.OutputDirectory, Options.FailedSpecsDirectory));
+                var failedSpecPath = Path.Combine(failedSpecFolder, $"{TestCase.DisplayName}.txt");
                 
+                Directory.CreateDirectory(failedSpecFolder);
                 if(!Options.AppendLogOutput && File.Exists(failedSpecPath))
                     File.Delete(failedSpecPath);
                 

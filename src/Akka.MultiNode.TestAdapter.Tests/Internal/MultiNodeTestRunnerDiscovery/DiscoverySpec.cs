@@ -21,7 +21,7 @@ namespace Akka.MultiNode.TestAdapter.Tests.Internal.MultiNodeTestRunnerDiscovery
         public void No_abstract_classes()
         {
             var discoveredSpecs = DiscoverSpecs();
-            Assert.DoesNotContain(discoveredSpecs, s => s.TypeName == nameof(DiscoveryCases.NoAbstractClassesSpec));
+            Assert.False(discoveredSpecs.ContainsKey(KeyFromSpecName(nameof(DiscoveryCases.NoAbstractClassesSpec))));
         }
 
         [Fact(DisplayName = "Deeply inherited classes are discoverable")]
@@ -30,9 +30,7 @@ namespace Akka.MultiNode.TestAdapter.Tests.Internal.MultiNodeTestRunnerDiscovery
             var discoveredSpecs = DiscoverSpecs();
             Assert.Equal(
                 "DeeplyInheritedChildRole", 
-                discoveredSpecs
-                    .FirstOrDefault(s => s.TypeName == KeyFromSpecName(nameof(DiscoveryCases.DeeplyInheritedChildSpec)))?.Nodes
-                    .First().Role);
+                discoveredSpecs[KeyFromSpecName(nameof(DiscoveryCases.DeeplyInheritedChildSpec))].First().Role);
         }
 
         [Fact(DisplayName = "Child test class with default constructors are ok")]
@@ -52,25 +50,19 @@ namespace Akka.MultiNode.TestAdapter.Tests.Internal.MultiNodeTestRunnerDiscovery
         public void Discovered_count_equals_number_of_roles_mult_specs()
         {
             var discoveredSpecs = DiscoverSpecs();
-            Assert.Equal(5, discoveredSpecs
-                .FirstOrDefault(s => s.TypeName == KeyFromSpecName(nameof(DiscoveryCases.FloodyChildSpec1)))?.Nodes.Count);
-            Assert.Equal(5, discoveredSpecs
-                .FirstOrDefault(s => s.TypeName == KeyFromSpecName(nameof(DiscoveryCases.FloodyChildSpec2)))?.Nodes.Count);
-            Assert.Equal(5, discoveredSpecs
-                .FirstOrDefault(s => s.TypeName == KeyFromSpecName(nameof(DiscoveryCases.FloodyChildSpec3)))?.Nodes.Count);
+            Assert.Equal(5, discoveredSpecs[KeyFromSpecName(nameof(DiscoveryCases.FloodyChildSpec1))].Count);
+            Assert.Equal(5, discoveredSpecs[KeyFromSpecName(nameof(DiscoveryCases.FloodyChildSpec2))].Count);
+            Assert.Equal(5, discoveredSpecs[KeyFromSpecName(nameof(DiscoveryCases.FloodyChildSpec3))].Count);
         }
 
-        [Fact(DisplayName = "Only public props and fields are considered when looking for RoleNames")]
-        public void Public_props_and_fields_are_considered()
+        [Fact(DisplayName = "Only the MultiNodeConfig.Roles property is used to compute the number of Roles in MultiNodeFact")]
+        public void Only_MultiNodeConfig_role_count_used()
         {
             var discoveredSpecs = DiscoverSpecs();
-            Assert.Equal(
-                discoveredSpecs
-                    .FirstOrDefault(test => test.TypeName == KeyFromSpecName(nameof(DiscoveryCases.DiverseSpec)))?.Nodes
-                    .Select(n => n.Role), new[] {"RoleProp", "RoleField"});
+            Assert.Equal(10, discoveredSpecs[KeyFromSpecName(nameof(DiscoveryCases.NoReflectionSpec))].Select(c => c.Role).Count());
         }
-
-        private static List<MultiNodeTestCase> DiscoverSpecs()
+        
+        private static Dictionary<string, List<NodeTest>> DiscoverSpecs()
         {
             var assemblyPath = new Uri(typeof(DiscoveryCases).GetTypeInfo().Assembly.Location).LocalPath; 
             
@@ -80,7 +72,9 @@ namespace Akka.MultiNode.TestAdapter.Tests.Internal.MultiNodeTestRunnerDiscovery
                 {
                     controller.Find(false, discovery, TestFrameworkOptions.ForDiscovery());
                     discovery.Finished.WaitOne();
-                    return discovery.TestCases;
+                    return discovery
+                        .TestCases
+                        .ToDictionary(t => t.TypeName, t => t.Nodes);
                 }
             }
         }
