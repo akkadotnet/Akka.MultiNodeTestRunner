@@ -5,6 +5,7 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
+using System.Linq;
 using Akka.Remote.TestKit;
 
 namespace Akka.MultiNode.TestAdapter.Tests.Internal.MultiNodeTestRunnerDiscovery
@@ -139,6 +140,31 @@ namespace Akka.MultiNode.TestAdapter.Tests.Internal.MultiNodeTestRunnerDiscovery
             }
         }
 
+        public class NoReflectionConfig : MultiNodeConfig
+        {
+            public NoReflectionConfig()
+            {
+                foreach(var i in Enumerable.Range(1, 10))
+                {
+                    Role("node-" + i);
+                }
+            }
+        }
+
+        public class NoReflectionSpec : MultiNodeSpec
+        {
+            public NoReflectionSpec(NoReflectionConfig config): base(config, typeof(NoReflectionSpec))
+            {
+            }
+
+            [MultiNodeFact(Skip = "Only for discovery tests")]
+            public void Dummy()
+            {
+            }
+
+            protected override int InitialParticipantsValueFactory { get; }
+        }
+        
         public class DiverseConfig : MultiNodeConfig
         {
             public RoleName RoleProp { get; set; }
