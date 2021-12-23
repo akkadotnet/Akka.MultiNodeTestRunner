@@ -1,3 +1,23 @@
+#### 1.1.0-beta2 December 23 2019 ####
+- [Add support for Xunit TestFrameworkAttribute attribute](https://github.com/akkadotnet/Akka.MultiNodeTestRunner/pull/116)
+
+In this release we added `MultiNodeTestFramework` to simplify non-parallel test setup. This test 
+framework is a simple override of the built-in `XunitTestFramework` that disables/ignores the
+Xunit `CollectionBehaviorAttribute`, put all test classes from a single assembly into a single test 
+collection, and disables the test collection parallelization.
+
+To use this test framework, you will need to add an assembly level attribute that tells Xunit to
+use this custom test framework instead:
+
+```c#
+[assembly: TestFramework("Akka.MultiNode.TestAdapter.MultiNodeTestFramework", "Akka.MultiNode.TestAdapter")]
+```
+
+Note that you can also use this assembly level attribute to achieve more or less the same effect:
+```c#
+[assembly: CollectionBehavior(DisableTestParallelization = true)]
+```
+
 #### 1.1.0-beta1 October 20 2019 ####
 
 - [Switch to pure Xunit implementation](https://github.com/akkadotnet/Akka.MultiNodeTestRunner/pull/105)
