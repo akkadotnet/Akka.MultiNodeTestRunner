@@ -111,11 +111,11 @@ namespace Akka.MultiNode.TestAdapter.Internal.Reporting
                 if (_currentSpecRunActor == null) return;
                 _currentSpecRunActor.Forward(message);
             });
-            Receive<BeginNewSpec>(spec => ReceiveBeginSpecRun(spec));
-            ReceiveAsync<EndSpec>(spec => ReceiveEndSpecRun(spec));
+            Receive<BeginNewSpec>(ReceiveBeginSpecRun);
+            ReceiveAsync<EndSpec>(spec => _currentSpecRunActor != null ? ReceiveEndSpecRun(spec) : Task.CompletedTask);
             Receive<RequestTestRunState>(state => Sender.Tell(TestRunData.Copy(TestRunPassed(TestRunData))));
-            Receive<SubscribeFactCompletionMessages>(messages => AddSubscriber(messages));
-            Receive<UnsubscribeFactCompletionMessages>(messages => RemoveSubscriber(messages));
+            Receive<SubscribeFactCompletionMessages>(AddSubscriber);
+            Receive<UnsubscribeFactCompletionMessages>(RemoveSubscriber);
             ReceiveAsync<EndTestRun>(async run =>
             {
                 //clean up the current spec, if it hasn't been done already

@@ -1,6 +1,6 @@
 using Xunit;
 
-[assembly: CollectionBehavior(DisableTestParallelization = true)]
+[assembly: TestFramework("Akka.MultiNode.TestAdapter.MultiNodeTestFramework", "Akka.MultiNode.TestAdapter")]
 namespace Akka.MultiNode.TestAdapter.SampleTests.Metadata
 {
     /// <summary>
