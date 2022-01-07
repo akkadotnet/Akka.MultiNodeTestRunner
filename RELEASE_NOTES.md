@@ -1,4 +1,8 @@
-#### 1.1.0-beta2 December 23 2019 ####
+#### 1.1.0 January 6 2022 ####
+
+Version 1.1.0 release.
+
+#### 1.1.0-beta2 December 23 2021 ####
 - [Add support for Xunit TestFrameworkAttribute attribute](https://github.com/akkadotnet/Akka.MultiNodeTestRunner/pull/116)
 
 In this release we added `MultiNodeTestFramework` to simplify non-parallel test setup. This test 
@@ -18,7 +22,7 @@ Note that you can also use this assembly level attribute to achieve more or less
 [assembly: CollectionBehavior(DisableTestParallelization = true)]
 ```
 
-#### 1.1.0-beta1 October 20 2019 ####
+#### 1.1.0-beta1 October 20 2021 ####
 
 - [Switch to pure Xunit implementation](https://github.com/akkadotnet/Akka.MultiNodeTestRunner/pull/105)
 
