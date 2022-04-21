@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Xml.Linq;
+using Akka.MultiNode.TestAdapter.Configuration;
 using Akka.MultiNode.TestAdapter.Internal.Reporting;
 using Akka.MultiNode.TestAdapter.Internal.Sinks;
 using Akka.MultiNode.TestAdapter.Internal.TrxReporter.Models;
@@ -18,7 +19,12 @@ namespace Akka.MultiNode.TestAdapter.Internal.TrxReporter
 {
     internal class TrxSinkActor : TestCoordinatorEnabledMessageSink
     {
-        public TrxSinkActor(string suiteName, string userName, string computerName, bool useTestCoordinator)
+        public TrxSinkActor(
+            string suiteName, 
+            string userName,
+            string computerName,
+            bool useTestCoordinator,
+            MultiNodeTestRunnerOptions options)
             : base(useTestCoordinator)
         {
             _computerName = computerName;
@@ -26,11 +32,13 @@ namespace Akka.MultiNode.TestAdapter.Internal.TrxReporter
             {
                 RunUser = userName
             };
+            _options = options;
         }
 
         private readonly string _computerName;
         private readonly TestRun _testRun;
         private SpecSession _session;
+        private MultiNodeTestRunnerOptions _options;
 
         protected override void AdditionalReceives()
         {
@@ -99,7 +107,7 @@ namespace Akka.MultiNode.TestAdapter.Internal.TrxReporter
                 _testRun.Serialize()
             );
 
-            doc.Save(Path.Combine(Directory.GetCurrentDirectory(), $@"mntr-{DateTime.UtcNow:yyyy'-'MM'-'dd'T'HH'-'mm'-'ss'-'fffffffK}.trx"));
+            doc.Save(Path.Combine(Path.GetFullPath(_options.OutputDirectory), $@"mntr-{DateTime.UtcNow:yyyy'-'MM'-'dd'T'HH'-'mm'-'ss'-'fffffffK}.trx"));
         }
 
         private static void ReportSpec(SpecSession session, TestRun testRun, string computerName, SpecLog log)
