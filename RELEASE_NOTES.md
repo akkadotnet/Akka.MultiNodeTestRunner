@@ -1,3 +1,9 @@
+#### 1.1.1 April 21 2022 ####
+
+* [Updated Akka.NET to 1.4.37](https://github.com/akkadotnet/akka.net/releases/tag/1.4.37)
+* [Enabled the built-in TRX reporter](https://github.com/akkadotnet/Akka.MultiNodeTestRunner/pull/134) that is compatible with AzDo test error reporting.
+To enable this TRX reporter, add `"useBuiltInTrxReporter": true` inside the `xunit.multinode.runner.json` settings file.
+
 #### 1.1.0 January 6 2022 ####
 
 Version 1.1.0 release.

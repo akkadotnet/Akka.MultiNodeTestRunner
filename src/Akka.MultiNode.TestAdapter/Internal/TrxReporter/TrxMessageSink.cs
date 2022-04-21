@@ -7,14 +7,16 @@
 
 using System;
 using Akka.Actor;
+using Akka.MultiNode.TestAdapter.Configuration;
 using Akka.MultiNode.TestAdapter.Internal.Sinks;
 
 namespace Akka.MultiNode.TestAdapter.Internal.TrxReporter
 {
     internal class TrxMessageSink : MessageSink
     {
-        public TrxMessageSink(string suiteName)
-            : base(Props.Create(() => new TrxSinkActor(suiteName, System.Environment.UserName, System.Environment.MachineName, true)))
+        public TrxMessageSink(string suiteName, MultiNodeTestRunnerOptions options)
+            : base(Props.Create(() => 
+                new TrxSinkActor(suiteName, Environment.UserName, Environment.MachineName, true, options)))
         {
         }
 

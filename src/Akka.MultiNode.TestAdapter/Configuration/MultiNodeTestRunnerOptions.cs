@@ -60,5 +60,7 @@ namespace Akka.MultiNode.TestAdapter.Configuration
         public bool AppendLogOutput { get; set; } = true;
 
         public string? Platform { get; set; }
+
+        public bool UseBuiltInTrxReporter { get; set; }
     }
 }
