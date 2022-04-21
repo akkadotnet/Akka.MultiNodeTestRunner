@@ -10,9 +10,9 @@
   </PropertyGroup>
   <PropertyGroup>
     <XunitVersion>2.4.1</XunitVersion>
-    <TestSdkVersion>17.0.0</TestSdkVersion>
+    <TestSdkVersion>17.1.0</TestSdkVersion>
     <HyperionVersion>0.9.12</HyperionVersion>
-    <CodeDomVersion>5.0.0</CodeDomVersion>
+    <CodeDomVersion>6.0.0</CodeDomVersion>
     <TeamCityVersion>3.0.13</TeamCityVersion>
     <SystemRuntimeLoaderVersion>4.3.0</SystemRuntimeLoaderVersion>
     <DependencyModelVersion>5.0.0</DependencyModelVersion>
@@ -22,9 +22,9 @@
     <NetCoreTestVersion>netcoreapp3.1</NetCoreTestVersion>
     <NetTestVersion>net5.0</NetTestVersion>
     <NetStandardLibVersion>netstandard2.0</NetStandardLibVersion>
-    <FluentAssertionsVersion>6.3.0</FluentAssertionsVersion>
+    <FluentAssertionsVersion>6.6.0</FluentAssertionsVersion>
     <FsCheckVersion>2.9.0</FsCheckVersion>
-    <AkkaVersion>1.4.31</AkkaVersion>
+    <AkkaVersion>1.4.37</AkkaVersion>
     <!--
     <AkkaVersion>1.4.28-beta637717616449070703</AkkaVersion>
     -->

@@ -133,8 +133,15 @@ akka.io.tcp {{
 ");
             TestRunSystem = ActorSystem.Create("TestRunnerLogging", config);
 
+            var sinks = new List<MessageSink>
+            {
+                new DiagnosticMessageSink(_diagnosticSink)
+            };
+            if(Options.UseBuiltInTrxReporter)
+                sinks.Add(new TrxMessageSink(DisplayName, Options));
+            
             SinkCoordinator = TestRunSystem.ActorOf(Props.Create(()
-                => new SinkCoordinator(new[] { new DiagnosticMessageSink(_diagnosticSink) })), "sinkCoordinator");
+                => new SinkCoordinator(sinks)), "sinkCoordinator");
 
             var tcpLogger = TestRunSystem.ActorOf(Props.Create(() => new TcpLoggingServer(SinkCoordinator)), "TcpLogger");
             var listenEndpoint = new IPEndPoint(IPAddress.Parse(Options.ListenAddress), Options.ListenPort);
