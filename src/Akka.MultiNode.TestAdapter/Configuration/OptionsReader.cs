@@ -55,6 +55,8 @@ namespace Akka.MultiNode.TestAdapter.Configuration
                             case JsonBoolean booleanValue:
                                 if (string.Equals(propertyName, Configuration.AppendLogOutput, StringComparison.OrdinalIgnoreCase))
                                     result.AppendLogOutput = booleanValue.Value;
+                                if (string.Equals(propertyName, Configuration.UseBuiltInTrxReporter, StringComparison.OrdinalIgnoreCase))
+                                    result.UseBuiltInTrxReporter = booleanValue.Value;
                                 break;
                             
                             case JsonString stringValue:
@@ -87,6 +89,7 @@ namespace Akka.MultiNode.TestAdapter.Configuration
             public const string ListenAddress = "listenAddress";
             public const string ListenPort = "listenPort";
             public const string AppendLogOutput = "appendLogOutput";
+            public const string UseBuiltInTrxReporter = "useBuiltInTrxReporter";
         }        
     }
 }
