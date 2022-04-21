@@ -22,7 +22,7 @@
     <NetCoreTestVersion>netcoreapp3.1</NetCoreTestVersion>
     <NetTestVersion>net5.0</NetTestVersion>
     <NetStandardLibVersion>netstandard2.0</NetStandardLibVersion>
-    <FluentAssertionsVersion>6.3.0</FluentAssertionsVersion>
+    <FluentAssertionsVersion>6.6.0</FluentAssertionsVersion>
     <FsCheckVersion>2.9.0</FsCheckVersion>
     <AkkaVersion>1.4.35</AkkaVersion>
     <!--
