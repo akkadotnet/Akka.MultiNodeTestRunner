@@ -9,7 +9,7 @@
     <NoWarn>$(NoWarn);CS1591;xUnit1013</NoWarn>
   </PropertyGroup>
   <PropertyGroup>
-    <XunitVersion>2.4.1</XunitVersion>
+    <XunitVersion>2.4.2</XunitVersion>
     <TestSdkVersion>17.1.0</TestSdkVersion>
     <HyperionVersion>0.9.12</HyperionVersion>
     <CodeDomVersion>6.0.0</CodeDomVersion>
