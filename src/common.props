@@ -10,7 +10,7 @@
   </PropertyGroup>
   <PropertyGroup>
     <XunitVersion>2.4.1</XunitVersion>
-    <TestSdkVersion>17.1.0</TestSdkVersion>
+    <TestSdkVersion>17.3.0</TestSdkVersion>
     <HyperionVersion>0.9.12</HyperionVersion>
     <CodeDomVersion>6.0.0</CodeDomVersion>
     <TeamCityVersion>3.0.13</TeamCityVersion>
