@@ -5,11 +5,12 @@ trigger:
     include:
       - dev
       - master
+      - v1.*
 
 pr:
   autoCancel: true # indicates whether additional pushes to a PR should cancel in-progress runs for the same PR. Defaults to true
   branches:
-    include: [ dev, master ] # branch names which will trigger a build
+    include: [ dev, master, v1.* ] # branch names which will trigger a build
 
 name: $(Year:yyyy).$(Month).$(DayOfMonth)$(Rev:.r)
 
@@ -18,7 +19,7 @@ jobs:
     parameters:
       name: 'windows_pr'
       displayName: 'Windows PR Validation'
-      vmImage: 'windows-2019'
+      vmImage: 'windows-latest'
       scriptFileName: build.cmd
       scriptArgs: all
       outputDirectory: 'bin/nuget'
@@ -27,7 +28,7 @@ jobs:
     parameters:
       name: 'linux_pr'
       displayName: 'Linux PR Validation'
-      vmImage: 'ubuntu-20.04'
+      vmImage: 'ubuntu-latest'
       scriptFileName: ./build.sh
       scriptArgs: all
       outputDirectory: 'bin/nuget'
