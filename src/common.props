@@ -1,33 +1,30 @@
 <Project>
   <PropertyGroup>
-    <Copyright>Copyright © 2013-2019 Akka.NET Team</Copyright>
+    <Copyright>Copyright © 2013-2023 Akka.NET Team</Copyright>
     <Authors>Akka.NET Team</Authors>
     <VersionPrefix>1.0.0</VersionPrefix>
-    <PackageIconUrl>http://getakka.net/images/akkalogo.png</PackageIconUrl>
+    <PackageIconUrl>https://getakka.net/images/akkalogo.png</PackageIconUrl>
     <PackageProjectUrl>https://github.com/akkadotnet/akka.net</PackageProjectUrl>
     <PackageLicenseUrl>https://github.com/akkadotnet/akka.net/blob/master/LICENSE</PackageLicenseUrl>
     <NoWarn>$(NoWarn);CS1591;xUnit1013</NoWarn>
   </PropertyGroup>
   <PropertyGroup>
-    <XunitVersion>2.4.1</XunitVersion>
-    <TestSdkVersion>17.1.0</TestSdkVersion>
-    <HyperionVersion>0.9.12</HyperionVersion>
+    <XunitVersion>2.4.2</XunitVersion>
+    <XunitRunnerVersion>2.4.2</XunitRunnerVersion>
+    <TestSdkVersion>17.4.1</TestSdkVersion>
     <CodeDomVersion>6.0.0</CodeDomVersion>
     <TeamCityVersion>3.0.13</TeamCityVersion>
     <SystemRuntimeLoaderVersion>4.3.0</SystemRuntimeLoaderVersion>
     <DependencyModelVersion>5.0.0</DependencyModelVersion>
-    <NewtonsoftJsonVersion>12.0.3</NewtonsoftJsonVersion>
-    <NBenchVersion>1.2.2</NBenchVersion>
-    <ProtobufVersion>3.11.2</ProtobufVersion>
+    <NewtonsoftJsonVersion>[13.0.1,)</NewtonsoftJsonVersion>
+    <NBenchVersion>2.0.1</NBenchVersion>
+    <ProtobufVersion>3.21.12</ProtobufVersion>
     <NetCoreTestVersion>netcoreapp3.1</NetCoreTestVersion>
     <NetTestVersion>net6.0</NetTestVersion>
     <NetStandardLibVersion>netstandard2.0</NetStandardLibVersion>
     <FluentAssertionsVersion>6.6.0</FluentAssertionsVersion>
-    <FsCheckVersion>2.9.0</FsCheckVersion>
-    <AkkaVersion>1.4.37</AkkaVersion>
-    <!--
-    <AkkaVersion>1.4.28-beta637717616449070703</AkkaVersion>
-    -->
+    <FsCheckVersion>2.16.5</FsCheckVersion>
+    <AkkaVersion>1.5.0-beta1</AkkaVersion>
     <AkkaPackageTags>akka;actors;actor model;Akka;concurrency</AkkaPackageTags>
   </PropertyGroup>
   <PropertyGroup>
