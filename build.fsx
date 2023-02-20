@@ -14,7 +14,7 @@ let configuration = "Release"
 
 // Configuration values for tests
 let testNetCoreVersion = "netcoreapp3.1"
-let testNetVersion = "net5.0"
+let testNetVersion = "net6.0"
 
 // Metadata used when signing packages and DLLs
 let signingName = "Akka.MultiNode.TestAdapter"
