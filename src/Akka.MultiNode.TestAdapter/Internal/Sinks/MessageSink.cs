@@ -101,10 +101,10 @@ namespace Akka.MultiNode.TestAdapter.Internal.Sinks
         /*
          * Regular expressions - go big or go home. [Aaronontheweb]
          */
-        private const string RunnerLogMessageRegexString = @"\[(?<level>(\w)*)\]\[(?<time>\d{1,4}[- /.]\d{1,4}[- /.]\d{1,4}\s\d{1,2}:\d{1,2}:\d{1,2}(\s(AM|PM)){0,1})\](?<thread>\[(\w|\s)*\])\[(?<logsource>(\[|\w|:|/|\(|\)|\]|\.|-|\$|%|\+|#|\^|@)*)\]\s(?<message>(\w|\s|:|<|\.|\+|>|,|\[|/|-|]|%|\$|\+|\^|@)*)";
-        protected static readonly Regex RunnerLogMessageRegex = new Regex(RunnerLogMessageRegexString);
+        private const string RunnerLogMessageRegexString = @"\[(?<level>[\w]*)\]\[(?<date>[\d\/ :.Z+-]*)\]\[(?<thread>[\w|\s]*)\]\[(?<logsource>[\[\w:\/\(\)\]\.\$%\+#\^@)-]*)\]\s(?<message>.*)";
+        protected static readonly Regex RunnerLogMessageRegex = new Regex(RunnerLogMessageRegexString, RegexOptions.Compiled);
 
-        private const string NodeLogFragmentRegexString = @"\[(\w){4}(?<node>[0-9]{1,2})(?<role>:\w+)?\](?<message>(.)*)";
+        private const string NodeLogFragmentRegexString = @"\[\w{4}(?<node>[0-9]{1,4})[:]?(?<role>:\w+)?\](?<message>.*)";
         protected static readonly Regex NodeLogFragmentRegex = new Regex(NodeLogFragmentRegexString);
 
         public static MultiNodeTestRunnerMessageType DetermineMessageType(string messageStr)
@@ -139,7 +139,7 @@ namespace Akka.MultiNode.TestAdapter.Internal.Sinks
             var message = matchLog.Groups["message"].Value;
             var nodeIndex = Int32.Parse(matchLog.Groups["node"].Value);
             var nodeRoleGroup = matchLog.Groups["role"];
-            var nodeRole = nodeRoleGroup.Success ? nodeRoleGroup.Value.Substring(1) : String.Empty;
+            var nodeRole = nodeRoleGroup.Success ? nodeRoleGroup.Value : string.Empty;
             logMessage = new LogMessageFragmentForNode(nodeIndex, nodeRole, message, DateTime.UtcNow);
 
             return true;
