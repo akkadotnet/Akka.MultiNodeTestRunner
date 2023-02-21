@@ -1,3 +1,8 @@
+#### 1.5.0-beta1 February 21 2023
+
+* [Updated Akka.NET to 1.5.0-beta1](https://github.com/akkadotnet/akka.net/releases/tag/1.5.0)
+* [Bump XUnit from 2.4.1 to 2.4.2](https://github.com/akkadotnet/Akka.MultiNodeTestRunner/pull/163)
+
 #### 1.1.1 April 21 2022 ####
 
 * [Updated Akka.NET to 1.4.37](https://github.com/akkadotnet/akka.net/releases/tag/1.4.37)
