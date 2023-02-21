@@ -61,7 +61,8 @@ namespace Akka.MultiNode.TestAdapter.Tests.Internal
         {
             var loggingActor = Sys.ActorOf<LoggingActor>();
             Sys.EventStream.Subscribe(TestActor, typeof(Debug));
-            loggingActor.Tell("LOG ME... but like the test runner this time!");
+            var message = "LOG ME... but like the test runner this time!";
+            loggingActor.Tell(message);
 
             //capture the logged message
             var foundMessage = ExpectMsg<Debug>();
@@ -73,6 +74,7 @@ namespace Akka.MultiNode.TestAdapter.Tests.Internal
 
             Assert.Equal(foundMessage.LogLevel(), runnerMessage.Level);
             Assert.Equal(foundMessage.LogSource, runnerMessage.LogSource);
+            Assert.Equal(foundMessage.Message.ToString(), $"Received message {message}");
         }
 
         [Fact]
