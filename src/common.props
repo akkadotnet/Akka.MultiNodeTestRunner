@@ -12,7 +12,7 @@
     <XunitVersion>2.4.2</XunitVersion>
     <XunitRunnerVersion>2.4.2</XunitRunnerVersion>
     <TestSdkVersion>17.5.0</TestSdkVersion>
-    <CodeDomVersion>6.0.0</CodeDomVersion>
+    <CodeDomVersion>7.0.0</CodeDomVersion>
     <TeamCityVersion>3.0.13</TeamCityVersion>
     <SystemRuntimeLoaderVersion>4.3.0</SystemRuntimeLoaderVersion>
     <DependencyModelVersion>5.0.0</DependencyModelVersion>
