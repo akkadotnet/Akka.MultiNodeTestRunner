@@ -24,7 +24,7 @@
     <NetStandardLibVersion>netstandard2.0</NetStandardLibVersion>
     <FluentAssertionsVersion>6.6.0</FluentAssertionsVersion>
     <FsCheckVersion>2.16.5</FsCheckVersion>
-    <AkkaVersion>1.5.0</AkkaVersion>
+    <AkkaVersion>1.5.1</AkkaVersion>
     <AkkaPackageTags>akka;actors;actor model;Akka;concurrency</AkkaPackageTags>
   </PropertyGroup>
   <PropertyGroup>
