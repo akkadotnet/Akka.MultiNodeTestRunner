@@ -13,7 +13,7 @@
     <XunitRunnerVersion>2.4.5</XunitRunnerVersion>
     <TestSdkVersion>17.6.3</TestSdkVersion>
     <CodeDomVersion>7.0.0</CodeDomVersion>
-    <TeamCityVersion>3.0.13</TeamCityVersion>
+    <TeamCityVersion>4.0.0</TeamCityVersion>
     <SystemRuntimeLoaderVersion>4.3.0</SystemRuntimeLoaderVersion>
     <DependencyModelVersion>5.0.0</DependencyModelVersion>
     <NewtonsoftJsonVersion>[13.0.1,)</NewtonsoftJsonVersion>
