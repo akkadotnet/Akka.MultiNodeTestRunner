@@ -11,7 +11,7 @@
   <PropertyGroup>
     <XunitVersion>2.4.2</XunitVersion>
     <XunitRunnerVersion>2.4.5</XunitRunnerVersion>
-    <TestSdkVersion>17.6.3</TestSdkVersion>
+    <TestSdkVersion>17.7.2</TestSdkVersion>
     <CodeDomVersion>7.0.0</CodeDomVersion>
     <TeamCityVersion>3.0.13</TeamCityVersion>
     <SystemRuntimeLoaderVersion>4.3.0</SystemRuntimeLoaderVersion>
