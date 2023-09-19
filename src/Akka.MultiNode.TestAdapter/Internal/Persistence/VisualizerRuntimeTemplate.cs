@@ -28,117 +28,65 @@ namespace Akka.MultiNode.TestAdapter.Internal.Persistence
         /// </summary>
         public virtual string TransformText()
         {
-            this.Write("\r\n<html>\r\n<head>\r\n\t<script src=\"https://cdnjs.cloudflare.com/ajax/libs/vis/4.8.1/" +
-                    "vis.min.js\"></script>\r\n\t<link href=\"https://cdnjs.cloudflare.com/ajax/libs/vis/4" +
-                    ".8.1/vis.min.css\" rel=\"stylesheet\" type=\"text/css\" />\r\n\t<style type=\"text/css\">\r" +
-                    "\n\t\t.vis-item-one { border-color:#00AABF; background-color:#7FD4DF; }\r\n\t\t.vis-ite" +
-                    "m-two { border-color:#0D9DBC; background-color:#86CEDD; }\r\n\t\t.vis-item-three { b" +
-                    "order-color:#1B91B9; background-color:#8DC8DC; }\r\n\t\t.vis-item-four { border-colo" +
-                    "r:#2885B6; background-color:#93C2DA; }\r\n\t\t.vis-item-five { border-color:#3679B3;" +
-                    " background-color:#9ABCD9; }\r\n\t\t.vis-item-six { border-color:#446DB0; background" +
-                    "-color:#A1B6D7; }\r\n\t\t.vis-item-seven { border-color:#5161AD; background-color:#A" +
-                    "8B0D6; }\r\n\t\t.vis-item-eight { border-color:#5F55AB; background-color:#AFAAD5; }\r" +
-                    "\n\t\t.vis-item-nine { border-color:#6D48A8; background-color:#B6A3D3; }\r\n\t\t.vis-it" +
-                    "em-ten { border-color:#7A3CA5; background-color:#BC9DD2; }\r\n\t\t.vis-item-eleven {" +
-                    " border-color:#8830A2; background-color:#C397D0; }\r\n\t\t.vis-item-twelve { border-" +
-                    "color:#96249F; background-color:#CA91CF; }\r\n\t\t.vis-item-thirteen { border-color:" +
-                    "#A3189C; background-color:#D18BCD; }\r\n\t\t.vis-item-fourteen { border-color:#B10C9" +
-                    "9; background-color:#D885CC; }\r\n\t\t.vis-item-fifteen { border-color:#BF0097; back" +
-                    "ground-color:#DF7FCB; }\r\n\t\tdiv.cross-image {\r\n\t\t\twidth:            16px;\r\n\t\t\thei" +
-                    "ght:           16px;\r\n\t\t\tbackground-image: url(\'data:image/png;base64,iVBORw0KGg" +
-                    "oAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABGdBTUEAAK/INwWK6QAAABl0RVh0U29mdHdhcmUAQW" +
-                    "RvYmUgSW1hZ2VSZWFkeXHJZTwAAAIhSURBVDjLlZPrThNRFIWJicmJz6BWiYbIkYDEG0JbBiitDQgm0P" +
-                    "uFXqSAtKXtpE2hNuoPTXwSnwtExd6w0pl2OtPlrphKLSXhx07OZM769qy19wwAGLhM1ddC184+d18QMz" +
-                    "oq3lfsD3LZ7Y3XbE5DL6Atzuyilc5Ciyd7IHVfgNcDYTQ2tvDr5crn6uLSvX+Av2Lk36FFpSVENDe3Ox" +
-                    "DZu8apO5rROJDLo30+Nlvj5RnTlVNAKs1aCVFr7b4BPn6Cls21AWgEQlz2+Dl1h7IdA+i97A/geP65Wh" +
-                    "bmrnZZ0GIJpr6OqZqYAd5/gJpKox4Mg7pD2YoC2b0/54rJQuJZdm6Izcgma4TW1WZ0h+y8BfbyJMwBmS" +
-                    "xkjw+VObNanp5h/adwGhaTXF4NWbLj9gEONyCmUZmd10pGgf1/vwcgOT3tUQE0DdicwIod2EmSbwsKE1" +
-                    "P8QoDkcHPJ5YESjgBJkYQpIEZ2KEB51Y6y3ojvY+P8XEDN7uKS0w0ltA7QGCWHCxSWWpwyaCeLy0BkA7" +
-                    "UXyyg8fIzDoWHeBaDN4tQdSvAVdU1Aok+nsNTipIEVnkywo/FHatVkBoIhnFisOBoZxcGtQd4B0GYJNZ" +
-                    "sDSiAEadUBCkstPtN3Avs2Msa+Dt9XfxoFSNYF/Bh9gP0bOqHLAm2WUF1YQskwrVFYPWkf3h1iXwbvqG" +
-                    "fFPSGW9Eah8HSS9fuZDnS32f71m8KFY7xs/QZyu6TH2+2+FAAAAABJRU5ErkJggg==\');\r\n\t\t}\r\n\t\tdi" +
-                    "v.tick-image {\r\n\t\t\twidth:            16px;\r\n\t\t\theight:           16px;\r\n\t\t\tbackg" +
-                    "round-image: url(\'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf" +
-                    "8/9hAAAABGdBTUEAAK/INwWK6QAAABl0RVh0U29mdHdhcmUAQWRvYmUgSW1hZ2VSZWFkeXHJZTwAAAGr" +
-                    "SURBVDjLvZPZLkNhFIV75zjvYm7VGFNCqoZUJ+roKUUpjRuqp61Wq0NKDMelGGqOxBSUIBKXWtWGZxAv" +
-                    "obr8lWjChRgSF//dv9be+9trCwAI/vIE/26gXmviW5bqnb8yUK028qZjPfoPWEj4Ku5HBspgAz941IXZ" +
-                    "eze8N1bottSo8BTZviVWrEh546EO03EXpuJOdG63otJbjBKHkEp/Ml6yNYYzpuezWL4s5VMtT8acCMQc" +
-                    "b5XL3eJE8VgBlR7BeMGW9Z4yT9y1CeyucuhdTGDxfftaBO7G4L+zg91UocxVmCiy51NpiP3n2treUPuj" +
-                    "L8xhOjYOzZYsQWANyRYlU4Y9Br6oHd5bDh0bCpSOixJiWx71YY09J5pM/WEbzFcDmHvwwBu2wnikg+lE" +
-                    "j4mwBe5bC5h1OUqcwpdC60dxegRmR06TyjCF9G9z+qM2uCJmuMJmaNZaUrCSIi6X+jJIBBYtW5Cge7cd" +
-                    "7sgoHDfDaAvKQGAlRZYc6ltJlMxX03UzlaRlBdQrzSCwksLRbOpHUSb7pcsnxCCwngvM2Rm/ugUCi84f" +
-                    "ycr4l2t8Bb6iqTxSCgNIAAAAAElFTkSuQmCC\');\r\n\t\t}\r\n\t\tdiv.border {\r\n\t\t\tborder-style: d" +
-                    "ashed;\r\n\t\t\tborder-width: thin;\r\n\t\t\tmargin-bottom: 5px;\r\n\t\t}\r\n\t</style>\r\n\t<title>" +
-                    "");
+            this.Write("\r\n<html>\r\n<head>\r\n\t<script src=\"https://cdnjs.cloudflare.com/ajax/libs/vis/4.8.1/vis.min.js\"></script>\r\n\t<link href=\"https://cdnjs.cloudflare.com/ajax/libs/vis/4.8.1/vis.min.css\" rel=\"stylesheet\" type=\"text/css\" />\r\n\t<style type=\"text/css\">\r\n\t\t.vis-item-one { border-color:#00AABF; background-color:#7FD4DF; }\r\n\t\t.vis-item-two { border-color:#0D9DBC; background-color:#86CEDD; }\r\n\t\t.vis-item-three { border-color:#1B91B9; background-color:#8DC8DC; }\r\n\t\t.vis-item-four { border-color:#2885B6; background-color:#93C2DA; }\r\n\t\t.vis-item-five { border-color:#3679B3; background-color:#9ABCD9; }\r\n\t\t.vis-item-six { border-color:#446DB0; background-color:#A1B6D7; }\r\n\t\t.vis-item-seven { border-color:#5161AD; background-color:#A8B0D6; }\r\n\t\t.vis-item-eight { border-color:#5F55AB; background-color:#AFAAD5; }\r\n\t\t.vis-item-nine { border-color:#6D48A8; background-color:#B6A3D3; }\r\n\t\t.vis-item-ten { border-color:#7A3CA5; background-color:#BC9DD2; }\r\n\t\t.vis-item-eleven { border-color:#8830A2; background-color:#C397D0; }\r\n\t\t.vis-item-twelve { border-color:#96249F; background-color:#CA91CF; }\r\n\t\t.vis-item-thirteen { border-color:#A3189C; background-color:#D18BCD; }\r\n\t\t.vis-item-fourteen { border-color:#B10C99; background-color:#D885CC; }\r\n\t\t.vis-item-fifteen { border-color:#BF0097; background-color:#DF7FCB; }\r\n\t\tdiv.cross-image {\r\n\t\t\twidth:            16px;\r\n\t\t\theight:           16px;\r\n\t\t\tbackground-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABGdBTUEAAK/INwWK6QAAABl0RVh0U29mdHdhcmUAQWRvYmUgSW1hZ2VSZWFkeXHJZTwAAAIhSURBVDjLlZPrThNRFIWJicmJz6BWiYbIkYDEG0JbBiitDQgm0PuFXqSAtKXtpE2hNuoPTXwSnwtExd6w0pl2OtPlrphKLSXhx07OZM769qy19wwAGLhM1ddC184+d18QMzoq3lfsD3LZ7Y3XbE5DL6Atzuyilc5Ciyd7IHVfgNcDYTQ2tvDr5crn6uLSvX+Av2Lk36FFpSVENDe3OxDZu8apO5rROJDLo30+Nlvj5RnTlVNAKs1aCVFr7b4BPn6Cls21AWgEQlz2+Dl1h7IdA+i97A/geP65WhbmrnZZ0GIJpr6OqZqYAd5/gJpKox4Mg7pD2YoC2b0/54rJQuJZdm6Izcgma4TW1WZ0h+y8BfbyJMwBmSxkjw+VObNanp5h/adwGhaTXF4NWbLj9gEONyCmUZmd10pGgf1/vwcgOT3tUQE0DdicwIod2EmSbwsKE1P8QoDkcHPJ5YESjgBJkYQpIEZ2KEB51Y6y3ojvY+P8XEDN7uKS0w0ltA7QGCWHCxSWWpwyaCeLy0BkA7UXyyg8fIzDoWHeBaDN4tQdSvAVdU1Aok+nsNTipIEVnkywo/FHatVkBoIhnFisOBoZxcGtQd4B0GYJNZsDSiAEadUBCkstPtN3Avs2Msa+Dt9XfxoFSNYF/Bh9gP0bOqHLAm2WUF1YQskwrVFYPWkf3h1iXwbvqGfFPSGW9Eah8HSS9fuZDnS32f71m8KFY7xs/QZyu6TH2+2+FAAAAABJRU5ErkJggg==');\r\n\t\t}\r\n\t\tdiv.tick-image {\r\n\t\t\twidth:            16px;\r\n\t\t\theight:           16px;\r\n\t\t\tbackground-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABGdBTUEAAK/INwWK6QAAABl0RVh0U29mdHdhcmUAQWRvYmUgSW1hZ2VSZWFkeXHJZTwAAAGrSURBVDjLvZPZLkNhFIV75zjvYm7VGFNCqoZUJ+roKUUpjRuqp61Wq0NKDMelGGqOxBSUIBKXWtWGZxAvobr8lWjChRgSF//dv9be+9trCwAI/vIE/26gXmviW5bqnb8yUK028qZjPfoPWEj4Ku5HBspgAz941IXZeze8N1bottSo8BTZviVWrEh546EO03EXpuJOdG63otJbjBKHkEp/Ml6yNYYzpuezWL4s5VMtT8acCMQcb5XL3eJE8VgBlR7BeMGW9Z4yT9y1CeyucuhdTGDxfftaBO7G4L+zg91UocxVmCiy51NpiP3n2treUPujL8xhOjYOzZYsQWANyRYlU4Y9Br6oHd5bDh0bCpSOixJiWx71YY09J5pM/WEbzFcDmHvwwBu2wnikg+lEj4mwBe5bC5h1OUqcwpdC60dxegRmR06TyjCF9G9z+qM2uCJmuMJmaNZaUrCSIi6X+jJIBBYtW5Cge7cd7sgoHDfDaAvKQGAlRZYc6ltJlMxX03UzlaRlBdQrzSCwksLRbOpHUSb7pcsnxCCwngvM2Rm/ugUCi84fycr4l2t8Bb6iqTxSCgNIAAAAAElFTkSuQmCC');\r\n\t\t}\r\n\t\tdiv.border {\r\n\t\t\tborder-style: dashed;\r\n\t\t\tborder-width: thin;\r\n\t\t\tmargin-bottom: 5px;\r\n\t\t}\r\n\t</style>\r\n\t<title>");
             
-            #line 43 "D:\git\akkadotnet\Akka.MultiNodeTestRunner\src\Akka.MultiNode.TestAdapter\Internal\Persistence\VisualizerRuntimeTemplate.tt"
+            #line 42 "D:\git\akkadotnet\Akka.MultiNodeTestRunner\src\Akka.MultiNode.TestAdapter\Internal\Persistence\VisualizerRuntimeTemplate.tt"
  Write(Prefix); 
             
             #line default
             #line hidden
-            this.Write(@"</title>
-</head>
-<body>
-<details>
-	<summary>Help / Instructions</summary>
-	<p>Click on a timeline to activate. Click off the timeline or press ESC to deactivate</p>
-	<p>Scroll up to zoom into an active timeline. Scroll down to zoom out of an active timeline</p>
-	<p>Click and hold to move an active timeline.</p>
-</details>
-");
+            this.Write("</title>\r\n</head>\r\n<body>\r\n<details>\r\n\t<summary>Help / Instructions</summary>\r\n\t<p>Click on a timeline to activate. Click off the timeline or press ESC to deactivate</p>\r\n\t<p>Scroll up to zoom into an active timeline. Scroll down to zoom out of an active timeline</p>\r\n\t<p>Click and hold to move an active timeline.</p>\r\n</details>\r\n");
             
-            #line 52 "D:\git\akkadotnet\Akka.MultiNodeTestRunner\src\Akka.MultiNode.TestAdapter\Internal\Persistence\VisualizerRuntimeTemplate.tt"
+            #line 51 "D:\git\akkadotnet\Akka.MultiNodeTestRunner\src\Akka.MultiNode.TestAdapter\Internal\Persistence\VisualizerRuntimeTemplate.tt"
  foreach (var spec in Tree.Specs) { 
             
             #line default
             #line hidden
             this.Write("<div class=\"border\">\r\n<h3>");
             
-            #line 54 "D:\git\akkadotnet\Akka.MultiNodeTestRunner\src\Akka.MultiNode.TestAdapter\Internal\Persistence\VisualizerRuntimeTemplate.tt"
+            #line 53 "D:\git\akkadotnet\Akka.MultiNodeTestRunner\src\Akka.MultiNode.TestAdapter\Internal\Persistence\VisualizerRuntimeTemplate.tt"
  Write(spec.FactName.Replace(Prefix, "")); 
             
             #line default
             #line hidden
             this.Write("</h3>\r\n<div id=\"");
             
-            #line 55 "D:\git\akkadotnet\Akka.MultiNodeTestRunner\src\Akka.MultiNode.TestAdapter\Internal\Persistence\VisualizerRuntimeTemplate.tt"
+            #line 54 "D:\git\akkadotnet\Akka.MultiNodeTestRunner\src\Akka.MultiNode.TestAdapter\Internal\Persistence\VisualizerRuntimeTemplate.tt"
  Write(BuildSpecificationId(spec)); 
             
             #line default
             #line hidden
-            this.Write("\"></div>\r\n\r\n<script type=\"text/javascript\">\r\n\tvar container = document.getElement" +
-                    "ById(\'");
+            this.Write("\"></div>\r\n\r\n<script type=\"text/javascript\">\r\n\tvar container = document.getElementById('");
             
-            #line 58 "D:\git\akkadotnet\Akka.MultiNodeTestRunner\src\Akka.MultiNode.TestAdapter\Internal\Persistence\VisualizerRuntimeTemplate.tt"
+            #line 57 "D:\git\akkadotnet\Akka.MultiNodeTestRunner\src\Akka.MultiNode.TestAdapter\Internal\Persistence\VisualizerRuntimeTemplate.tt"
  Write(BuildSpecificationId(spec)); 
             
             #line default
             #line hidden
-            this.Write("\');\r\n\r\n\tvar items = [\r\n\t\t");
+            this.Write("');\r\n\r\n\tvar items = [\r\n\t\t");
             
-            #line 61 "D:\git\akkadotnet\Akka.MultiNodeTestRunner\src\Akka.MultiNode.TestAdapter\Internal\Persistence\VisualizerRuntimeTemplate.tt"
+            #line 60 "D:\git\akkadotnet\Akka.MultiNodeTestRunner\src\Akka.MultiNode.TestAdapter\Internal\Persistence\VisualizerRuntimeTemplate.tt"
  Write(BuildTimelineItem(spec)); 
             
             #line default
             #line hidden
             this.Write("\t];\r\n\r\n\tvar groups = [\r\n\t\t");
             
-            #line 65 "D:\git\akkadotnet\Akka.MultiNodeTestRunner\src\Akka.MultiNode.TestAdapter\Internal\Persistence\VisualizerRuntimeTemplate.tt"
+            #line 64 "D:\git\akkadotnet\Akka.MultiNodeTestRunner\src\Akka.MultiNode.TestAdapter\Internal\Persistence\VisualizerRuntimeTemplate.tt"
  Write(BuildGroupItems(spec)); 
             
             #line default
             #line hidden
             this.Write("\t];\r\n\r\n\tvar options = ");
             
-            #line 68 "D:\git\akkadotnet\Akka.MultiNodeTestRunner\src\Akka.MultiNode.TestAdapter\Internal\Persistence\VisualizerRuntimeTemplate.tt"
+            #line 67 "D:\git\akkadotnet\Akka.MultiNodeTestRunner\src\Akka.MultiNode.TestAdapter\Internal\Persistence\VisualizerRuntimeTemplate.tt"
  Write(BuildOptions(spec)); 
             
             #line default
             #line hidden
-            this.Write(";\r\n\r\n\tvar timeline = new vis.Timeline(container, items, groups, options);\r\n</scri" +
-                    "pt>\r\n</div>\r\n");
+            this.Write(";\r\n\r\n\tvar timeline = new vis.Timeline(container, items, groups, options);\r\n</script>\r\n</div>\r\n");
             
-            #line 73 "D:\git\akkadotnet\Akka.MultiNodeTestRunner\src\Akka.MultiNode.TestAdapter\Internal\Persistence\VisualizerRuntimeTemplate.tt"
+            #line 72 "D:\git\akkadotnet\Akka.MultiNodeTestRunner\src\Akka.MultiNode.TestAdapter\Internal\Persistence\VisualizerRuntimeTemplate.tt"
  } 
             
             #line default
