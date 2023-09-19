@@ -1,12 +1,9 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-  <Import Project="..\common.props" />
-
   <PropertyGroup>
     <Description>Visual Studio 2017 15.9+ Test Explorer runner for the Akka.NET MultiNode tests</Description>
     <TargetFramework>$(NetStandardLibVersion)</TargetFramework>
     <IncludeSource>true</IncludeSource>
     <IncludeSymbols>true</IncludeSymbols>
-    <LangVersion>8.0</LangVersion>
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
@@ -14,11 +11,11 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Akka.Cluster.TestKit" Version="$(AkkaVersion)" />
-    <PackageReference Include="TeamCity.ServiceMessages" Version="$(TeamCityVersion)" />
-    <PackageReference Include="System.CodeDom" Version="$(CodeDomVersion)" />
-    <PackageReference Include="System.Runtime.Loader" Version="$(SystemRuntimeLoaderVersion)" />
-    <PackageReference Include="xunit.runner.utility" Version="$(XunitVersion)" />
+    <PackageReference Include="Akka.Cluster.TestKit" />
+    <PackageReference Include="TeamCity.ServiceMessages" />
+    <PackageReference Include="System.CodeDom" />
+    <PackageReference Include="System.Runtime.Loader" />
+    <PackageReference Include="xunit.runner.utility" />
   </ItemGroup>
 
   <ItemGroup>
@@ -60,18 +57,4 @@
       <BuildOutputInPackage Include="$(OutputPath)xunit.runner.utility.netstandard15.dll" />
     </ItemGroup>
   </Target>
-  <!--
-  <ItemGroup>
-    <Compile Include="**\*.cs" Exclude="Internal\Persistence\VisualizerRuntimeTemplate.cs" />
-    <Compile Include="Internal\Persistence\VisualizerRuntimeTemplate.cs">
-      <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
-      <DependentUpon>VisualizerRuntimeTemplate.tt</DependentUpon>
-    </Compile>
-    <Content Include="Internal\Persistence\VisualizerRuntimeTemplate.tt">
-      <Generator>TextTemplatingFilePreprocessor</Generator>
-      <LastGenOutput>VisualizerRuntimeTemplate.cs</LastGenOutput>
-    </Content>
-  </ItemGroup>
-  -->
 </Project>
