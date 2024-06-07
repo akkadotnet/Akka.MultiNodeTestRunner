@@ -1,7 +1,7 @@
 <Project>
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
-    <XUnitVersion>2.5.3</XUnitVersion>
+    <XUnitVersion>2.8.1</XUnitVersion>
   </PropertyGroup>
   <!-- App dependencies -->
   <ItemGroup>
