@@ -9,7 +9,7 @@
     <PackageVersion Include="TeamCity.ServiceMessages" Version="4.1.1" />
     <PackageVersion Include="System.CodeDom" Version="8.0.0" />
     <PackageVersion Include="System.Runtime.Loader" Version="4.3.0" />
-    <PackageVersion Include="xunit.runner.utility" Version="2.8.1" />
+    <PackageVersion Include="xunit.runner.utility" Version="2.9.0" />
   </ItemGroup>
   <!-- Test dependencies -->
   <ItemGroup>
