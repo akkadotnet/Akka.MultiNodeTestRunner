@@ -1,6 +1,6 @@
 <Project>
   <PropertyGroup>
-    <Copyright>Copyright © 2013-2023 Akka.NET Team</Copyright>
+    <Copyright>Copyright © 2013-$([System.DateTime]::Now.Year) Akka.NET Team</Copyright>
     <Authors>Akka.NET Team</Authors>
     <VersionPrefix>1.5.8</VersionPrefix>
     <NoWarn>$(NoWarn);CS1591;xUnit1013</NoWarn>
@@ -8,7 +8,7 @@
   </PropertyGroup>
   <PropertyGroup>
     <NetCoreTestVersion>netcoreapp3.1</NetCoreTestVersion>
-    <NetTestVersion>net6.0</NetTestVersion>
+    <NetTestVersion>net8.0</NetTestVersion>
     <NetStandardLibVersion>netstandard2.0</NetStandardLibVersion>
   </PropertyGroup>
   <PropertyGroup>
