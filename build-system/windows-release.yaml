@@ -23,6 +23,11 @@ variables:
     value: akkadotnet/Akka.MultiNodeTestRunner
 
 steps:
+- task: UseDotNet@2
+  displayName: 'Use .NET SDK from global.json'
+  inputs:
+    useGlobalJson: true
+  
 - powershell: ./build.ps1
   displayName: 'Update Release Notes'
 
