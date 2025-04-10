@@ -68,7 +68,7 @@ jobs:
         continueOnError: true
         artifact: 'CoverageReports'
           
-      - script: dotnet pack -c Release --no-build -o $(Build.ArtifactStagingDirectory)/nuget
+      - script: dotnet pack -c Release -o $(Build.ArtifactStagingDirectory)/nuget
         displayName: 'Create packages'
           
       - task: PublishBuildArtifacts@1
