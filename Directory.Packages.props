@@ -5,7 +5,7 @@
   </PropertyGroup>
   <!-- App dependencies -->
   <ItemGroup>
-    <PackageVersion Include="Akka.Cluster.TestKit" Version="1.5.39" />
+    <PackageVersion Include="Akka.Cluster.TestKit" Version="1.5.40" />
     <PackageVersion Include="coverlet.collector" Version="6.0.4" />
     <PackageVersion Include="TeamCity.ServiceMessages" Version="4.1.1" />
     <PackageVersion Include="System.CodeDom" Version="9.0.4" />
