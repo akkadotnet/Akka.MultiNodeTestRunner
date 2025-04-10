@@ -23,15 +23,15 @@ variables:
     value: akkadotnet/Akka.MultiNodeTestRunner
 
 steps:
- - powershell: ./build.ps1
+- powershell: ./build.ps1
   displayName: 'Update Release Notes'
 
-  # Pack without version suffix for release
-  - script: dotnet pack -c Release -o $(Build.ArtifactStagingDirectory)/nuget
-    displayName: 'Create packages'
+# Pack without version suffix for release
+- script: dotnet pack -c Release -o $(Build.ArtifactStagingDirectory)/nuget
+  displayName: 'Create packages'
 
-  - script: dotnet nuget push "$(Build.ArtifactStagingDirectory)\nuget\*.nupkg" --api-key $(nugetKey) --source https://api.nuget.org/v3/index.json --skip-duplicate
-    displayName: 'Publish to NuGet.org'
+- script: dotnet nuget push "$(Build.ArtifactStagingDirectory)\nuget\*.nupkg" --api-key $(nugetKey) --source https://api.nuget.org/v3/index.json --skip-duplicate
+  displayName: 'Publish to NuGet.org'
 
 
 - task: GitHubRelease@0
