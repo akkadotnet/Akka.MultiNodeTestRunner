@@ -10,6 +10,7 @@
     </ItemGroup>
 
     <ItemGroup>
+      <PackageReference Include="FluentAssertions" VersionOverride="8.5.0" />
       <ProjectReference Include="..\Akka.MultiNode.TestAdapter\Akka.MultiNode.TestAdapter.csproj" />
     </ItemGroup>
 
