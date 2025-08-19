@@ -30,6 +30,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="FluentAssertions" />
     <Compile Update="Internal\Persistence\VisualizerRuntimeTemplate.cs">
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>
